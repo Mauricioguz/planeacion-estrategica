@@ -30,6 +30,20 @@ function initAppData() {
   if (saved) {
     try {
       appData = JSON.parse(saved);
+      // Sincronizar lotes y actividades enriquecidas de AgriControl BI
+      if (!appData.lots || appData.lots.length !== DEFAULT_APP_DATA.lots.length) {
+        appData.lots = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.lots));
+      }
+      if (appData.activities && (!appData.activities.some(a => a.lotId) || appData.activities.length < DEFAULT_APP_DATA.activities.length)) {
+        appData.activities = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.activities));
+      }
+      if (appData.teamMembers && !appData.teamMembers.some(t => t.id === 'tm-5')) {
+        appData.teamMembers = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.teamMembers));
+      }
+      if (appData.financials && appData.financials.revenues && !appData.financials.revenues.some(r => r.name.includes("Aguacate"))) {
+        appData.financials = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.financials));
+      }
+      saveAppData();
     } catch (e) {
       console.error("Error al cargar datos guardados. Usando datos base:", e);
       appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
@@ -211,6 +225,18 @@ function setupEventListeners() {
 }
 
 function populateDropdowns() {
+  // Lotes agrícolas (AgriControl BI)
+  const lotFilter = document.getElementById("filterLot");
+  const modalActLot = document.getElementById("modalActivityLot");
+  if (lotFilter && appData.lots) {
+    lotFilter.innerHTML = `<option value="all">Todos los lotes (Finca completa)</option>` +
+      appData.lots.map(l => `<option value="${l.id}">🌱 ${l.name} - ${l.crop} (${l.areaHa} Ha)</option>`).join("");
+  }
+  if (modalActLot && appData.lots) {
+    modalActLot.innerHTML = `<option value="">General / Comercial (Sin Lote Específico)</option>` +
+      appData.lots.map(l => `<option value="${l.id}">${l.name} (${l.crop} - ${l.type})</option>`).join("");
+  }
+
   // Responsables
   const respFilter = document.getElementById("filterResponsible");
   const modalRespAct = document.getElementById("modalActivityResponsible");
@@ -585,12 +611,14 @@ function renderObjectivesTable() {
 
 // ==================== MÓDULO 3: CRONOGRAMA & ACTIVIDADES ====================
 function renderActivities() {
+  const lotFilterVal = document.getElementById("filterLot")?.value || 'all';
   const respFilterVal = document.getElementById("filterResponsible")?.value || 'all';
   const pillarFilterVal = document.getElementById("filterPillar")?.value || 'all';
   const statusFilterVal = document.getElementById("filterStatus")?.value || 'all';
 
   // Filtrado
   const filteredActivities = appData.activities.filter(act => {
+    if (lotFilterVal !== 'all' && act.lotId !== lotFilterVal) return false;
     if (respFilterVal !== 'all' && act.responsibleId !== respFilterVal) return false;
     if (statusFilterVal !== 'all' && act.status !== statusFilterVal) return false;
     if (pillarFilterVal !== 'all') {
@@ -633,6 +661,7 @@ function renderGanttView(activities) {
     const obj = appData.objectives.find(o => o.id === act.objectiveId);
     const pilar = obj ? appData.pillars.find(p => p.id === obj.pillarId) : null;
     const barColor = pilar ? pilar.color : '#f59e0b';
+    const lot = appData.lots ? appData.lots.find(l => l.id === act.lotId) : null;
 
     // Cálculo posición Gantt
     const startMs = Math.max(new Date(act.startDate).getTime(), baseDate);
@@ -651,6 +680,7 @@ function renderGanttView(activities) {
             <span class="activity-code-badge">${act.code}</span> ${act.title}
           </div>
           <div class="gantt-task-meta">
+            ${lot ? `<span class="lot-pill" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600;"><i class="fa-solid fa-seedling"></i> ${lot.name} (${lot.crop})</span><span>•</span>` : ''}
             <span class="responsible-avatar-badge">
               <div class="avatar-circle" style="width: 18px; height: 18px; font-size: 0.55rem;">${resp.avatar}</div>
               ${resp.name.split(" ")[0]}
@@ -694,6 +724,7 @@ function renderKanbanView(activities) {
     if (counts[status] !== undefined) counts[status]++;
 
     const resp = appData.teamMembers.find(t => t.id === act.responsibleId) || { name: 'Sin asignar', avatar: 'NA' };
+    const lot = appData.lots ? appData.lots.find(l => l.id === act.lotId) : null;
     const targetCol = cols[status];
     if (!targetCol) return;
 
@@ -705,6 +736,7 @@ function renderKanbanView(activities) {
         <span class="activity-code-badge">${act.code}</span>
         <span style="font-size: 0.7rem; font-weight: 700; color: ${act.progress === 100 ? '#10b981' : '#f59e0b'};">${act.progress}%</span>
       </div>
+      ${lot ? `<div style="font-size: 0.68rem; color: #10b981; font-weight: 600; margin: 3px 0;"><i class="fa-solid fa-seedling"></i> ${lot.name} • <span style="color: var(--text-dim);">${lot.crop}</span></div>` : ''}
       <div class="kanban-card-title">${act.title}</div>
       <div class="kanban-card-deliverable">
         <i class="fa-solid fa-flag-checkered" style="color: var(--primary-gold); margin-top: 2px;"></i>
@@ -734,11 +766,13 @@ function renderTableView(activities) {
 
   tbody.innerHTML = activities.map(act => {
     const resp = appData.teamMembers.find(t => t.id === act.responsibleId) || { name: 'Sin asignar', avatar: 'NA' };
+    const lot = appData.lots ? appData.lots.find(l => l.id === act.lotId) : null;
     return `
       <tr>
         <td><strong>${act.code}</strong></td>
         <td>
           <div style="font-weight: 600; color: #fff;">${act.title}</div>
+          ${lot ? `<div style="font-size: 0.72rem; color: #10b981; margin-top: 2px;"><i class="fa-solid fa-seedling"></i> ${lot.name} (${lot.crop} - ${lot.type})</div>` : ''}
           <div style="font-size: 0.72rem; color: var(--text-dim);">${act.description || ''}</div>
         </td>
         <td>
@@ -1219,6 +1253,7 @@ function openNewActivityModal() {
   document.getElementById("activityModalTitle").textContent = "Registrar Nueva Actividad Estratégica";
   document.getElementById("modalActivityId").value = "";
   document.getElementById("modalActivityTitle").value = "";
+  if (document.getElementById("modalActivityLot")) document.getElementById("modalActivityLot").value = "";
   document.getElementById("modalActivityDescription").value = "";
   document.getElementById("modalActivityDeliverable").value = "";
   document.getElementById("modalActivityStartDate").value = "2026-11-01";
@@ -1239,6 +1274,7 @@ function openEditActivityModal(activityId) {
   document.getElementById("modalActivityTitle").value = act.title;
   document.getElementById("modalActivityObjective").value = act.objectiveId;
   document.getElementById("modalActivityResponsible").value = act.responsibleId;
+  if (document.getElementById("modalActivityLot")) document.getElementById("modalActivityLot").value = act.lotId || "";
   document.getElementById("modalActivityDescription").value = act.description || "";
   document.getElementById("modalActivityDeliverable").value = act.deliverable || "";
   document.getElementById("modalActivityStartDate").value = act.startDate;
@@ -1259,6 +1295,7 @@ function saveActivityFromModal() {
   const title = document.getElementById("modalActivityTitle").value.trim();
   const objId = document.getElementById("modalActivityObjective").value;
   const respId = document.getElementById("modalActivityResponsible").value;
+  const lotId = document.getElementById("modalActivityLot") ? document.getElementById("modalActivityLot").value : null;
   const desc = document.getElementById("modalActivityDescription").value.trim();
   const deliverable = document.getElementById("modalActivityDeliverable").value.trim();
   const startDate = document.getElementById("modalActivityStartDate").value;
@@ -1279,6 +1316,7 @@ function saveActivityFromModal() {
       act.title = title;
       act.objectiveId = objId;
       act.responsibleId = respId;
+      act.lotId = lotId || null;
       act.description = desc;
       act.deliverable = deliverable;
       act.startDate = startDate;
@@ -1296,6 +1334,7 @@ function saveActivityFromModal() {
       title,
       objectiveId: objId,
       responsibleId: respId,
+      lotId: lotId || null,
       description: desc,
       deliverable,
       startDate,

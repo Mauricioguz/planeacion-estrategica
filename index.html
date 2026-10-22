@@ -319,6 +319,14 @@
       <!-- Barra de Filtros -->
       <div class="filters-bar">
         <div class="filter-group">
+          <label><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> Lote / Sector:</label>
+          <select id="filterLot" class="filter-select" onchange="renderActivities()">
+            <option value="all">Todos los lotes (Finca completa)</option>
+            <!-- Opciones dinámicas de lotes -->
+          </select>
+        </div>
+
+        <div class="filter-group">
           <label><i class="fa-solid fa-user"></i> Responsable:</label>
           <select id="filterResponsible" class="filter-select" onchange="renderActivities()">
             <option value="all">Todos los responsables</option>
@@ -614,6 +622,14 @@
               <!-- Cargado dinámicamente -->
             </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> Lote / Sector Agrícola Asignado</label>
+          <select id="modalActivityLot" class="form-select">
+            <option value="">General / Comercial (Sin Lote Específico)</option>
+            <!-- Cargado dinámicamente con los 6 lotes -->
+          </select>
         </div>
 
         <div class="form-group">
