@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   populateDropdowns();
   renderAll();
   checkBackendStatus();
-  loadErpConsolidatedData();
+  switchErpModule('erp-hub-view');
   loadErpHarvestData();
   loadErpWarehouseAndStoresData();
 });
@@ -1596,6 +1596,12 @@ function showToast(message) {
 function switchErpModule(moduleId) {
   activeErpModule = moduleId;
 
+  // Barra de píldoras ERP: en el Portal de Aplicaciones (erp-hub-view) la ocultamos para mantener la pantalla 100% limpia
+  const suiteBar = document.querySelector('.erp-suite-bar');
+  if (suiteBar) {
+    suiteBar.style.display = (moduleId === 'erp-hub-view') ? 'none' : 'flex';
+  }
+
   // Actualizar píldoras del selector
   document.querySelectorAll('.erp-suite-pill').forEach(btn => btn.classList.remove('active'));
   const activeBtn = document.querySelector(`.erp-suite-pill[onclick*="${moduleId}"]`);
@@ -1616,11 +1622,14 @@ function switchErpModule(moduleId) {
     planSubNav.style.display = (moduleId === 'plan-finance-view') ? 'flex' : 'none';
   }
 
+  // Desplazar suavemente a la parte superior de la vista
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
   // Acciones al cambiar de módulo
   if (moduleId === 'plan-finance-view') {
     switchTab(activeView);
   } else if (moduleId === 'erp-hub-view') {
-    loadErpConsolidatedData();
+    // Portal de Aplicaciones
   } else if (moduleId === 'erp-harvest-view') {
     loadErpHarvestData();
   } else if (moduleId === 'erp-ghalocafe-view') {

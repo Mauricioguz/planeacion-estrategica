@@ -68,7 +68,7 @@
   </header>
 
   <!-- ==================== SUITE ERP: SELECTOR MAESTRO DE MÓDULOS (APP SWITCHER) ==================== -->
-  <div class="erp-suite-bar">
+  <div class="erp-suite-bar" id="erpSuiteBar" style="display: none;">
     <div class="erp-suite-label">
       <i class="fa-solid fa-cubes-stacked"></i> <strong>SUITE ERP FINCA LA LEONORA</strong>
     </div>
@@ -116,243 +116,172 @@
   <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
   <main class="app-main">
 
-    <!-- ==================== MÓDULO 0: CENTRO DE MANDO ERP CONSOLIDADO ==================== -->
+    <!-- ==================== MÓDULO 0: PORTAL PRINCIPAL DE APLICACIONES (APP LAUNCHER) ==================== -->
     <div id="erp-hub-view" class="erp-module-section active">
-      <!-- Hero Banner Suite ERP -->
-      <div class="erp-hub-hero">
-        <div>
-          <div class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); margin-bottom: 0.5rem; display: inline-flex;">
-            <i class="fa-solid fa-network-wired"></i> Suite Empresarial Integrada en Tiempo Real
-          </div>
-          <h2 class="erp-hub-title">Centro de Mando ERP: Finca La Leonora & GhaloCafe</h2>
-          <p class="erp-hub-subtitle">
-            Ambiente único que consolida las 4 aplicaciones y el portal web de la finca sin alterar sus bases de datos independientes. Control total de Campo, Cosecha, Tueste, Tiendas y Finanzas bajo una sola URL.
-          </p>
+      <!-- Hero de Bienvenida al Ecosistema -->
+      <div class="app-launcher-hero">
+        <div class="app-launcher-badge">
+          <i class="fa-solid fa-layer-group"></i> Ecosistema Digital Unificado
         </div>
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <button class="btn-primary" onclick="triggerExternalSync()">
-            <i class="fa-solid fa-arrows-rotate"></i> Consolidar Datos Ahora
-          </button>
-          <button class="btn-secondary" onclick="exportToExcel()">
-            <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Reporte ERP
-          </button>
-        </div>
+        <h2>Portal de Aplicaciones Finca La Leonora</h2>
+        <p>
+          Selecciona la aplicación o módulo al que deseas ingresar. Cada plataforma opera de forma independiente para sus labores operativas, mientras este centro unifica el control para la planeación financiera y estratégica.
+        </p>
       </div>
 
-      <!-- 4 Tarjetas de Cruce Maestro -->
-      <div class="kpi-grid" style="margin-bottom: 2rem;">
-        <!-- KPI 1: Cosecha Real en Bodega -->
-        <div class="kpi-card" style="--accent-color: #10b981; cursor: pointer;" onclick="switchErpModule('erp-harvest-view')">
-          <div class="kpi-top">
-            <span class="kpi-label">Cosecha Total en Bodega (Neon DB)</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
-          </div>
-          <div class="kpi-value" id="hubKpiHarvestKg">13.296 kg</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-check-circle"></i> 310 Pases</span>
-            <span class="kpi-context">Café cereza pesado en báscula</span>
-          </div>
-        </div>
+      <!-- Cuadrícula Principal de Aplicaciones (App Launcher Grid) -->
+      <div class="app-launcher-grid">
 
-        <!-- KPI 2: Café a Tueste & Ventas GhaloCafe -->
-        <div class="kpi-card" style="--accent-color: #f59e0b; cursor: pointer;" onclick="switchErpModule('erp-ghalocafe-view')">
-          <div class="kpi-top">
-            <span class="kpi-label">Red Comercial GhaloCafe</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-mug-hot"></i></div>
-          </div>
-          <div class="kpi-value" id="hubKpiStores">5 Tiendas / Bodegas</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-fire-burner"></i> 380 kg Tueste</span>
-            <span class="kpi-context">Palestina, Manizales, Villamaría, Pereira</span>
-          </div>
-        </div>
-
-        <!-- KPI 3: Lotes & Agronomía (AgriControl BI) -->
-        <div class="kpi-card" style="--accent-color: #06b6d4; cursor: pointer;" onclick="switchErpModule('erp-agricontrol-view')">
-          <div class="kpi-top">
-            <span class="kpi-label">Agronomía & Lotes (AgriControl BI)</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-seedling"></i></div>
-          </div>
-          <div class="kpi-value">6 Lotes (16.4 Ha)</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-flask"></i> 100% Suelos</span>
-            <span class="kpi-context">Café + Aguacate Hass + Plátano</span>
-          </div>
-        </div>
-
-        <!-- KPI 4: Rentabilidad & EBITDA -->
-        <div class="kpi-card" style="--accent-color: #8b5cf6; cursor: pointer;" onclick="switchErpModule('plan-finance-view')">
-          <div class="kpi-top">
-            <span class="kpi-label">EBITDA & Runway Financiero</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-vault"></i></div>
-          </div>
-          <div class="kpi-value">$62.4 M</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">+26.3% Margen</span>
-            <span class="kpi-context">3.4 meses de reserva de caja</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Matriz de las 5 Aplicaciones del Ecosistema -->
-      <div class="section-subheading" style="margin-bottom: 1rem;">
-        <h3><i class="fa-solid fa-cubes"></i> Módulos y Aplicaciones Integradas en la Suite ERP</h3>
-        <span class="badge-tag">5 Módulos Conectados</span>
-      </div>
-
-      <div class="erp-apps-grid">
         <!-- App 1: AgriControl BI -->
-        <div class="erp-app-card" onclick="switchErpModule('erp-agricontrol-view')">
-          <div class="erp-app-header">
-            <div class="erp-app-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+        <div class="app-launcher-card" style="--card-accent: #10b981;">
+          <div class="app-launcher-top">
+            <div class="app-launcher-icon" style="--icon-bg: rgba(16, 185, 129, 0.15); --icon-color: #10b981;">
               <i class="fa-solid fa-seedling"></i>
             </div>
-            <span class="badge-status in_progress"><i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea</span>
+            <span class="app-launcher-status live">
+              <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
+            </span>
           </div>
-          <div class="erp-app-title">AgriControl BI</div>
-          <p class="erp-app-desc">Control técnico agronómico, lotes en policultivo, análisis químicos de suelo, curvas de clima y agenda de labores de campo.</p>
-          <div class="erp-app-footer">
-            <span style="color: var(--emerald-finca); font-weight: 600;">6 Lotes • 16.4 Ha</span>
-            <span style="color: var(--primary-gold);">Entrar al Módulo &rarr;</span>
+          <div class="app-launcher-badge" style="color: #10b981;">Agronomía & Labores de Campo</div>
+          <h3 class="app-launcher-title">AgriControl BI</h3>
+          <p class="app-launcher-desc">
+            Supervisión técnica de los 6 lotes (16.4 Ha) en policultivo (café, aguacate hass, plátano), análisis químico de suelos, monitoreo de clima y programación de labores agrícolas.
+          </p>
+          <div class="app-launcher-meta">
+            <i class="fa-solid fa-map-pin"></i> 6 Lotes • 16.4 Hectáreas • Suelos & Clima
+          </div>
+          <div class="app-launcher-actions">
+            <button class="btn-primary" onclick="switchErpModule('erp-agricontrol-view')">
+              <i class="fa-solid fa-eye"></i> Ver Módulo
+            </button>
+            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir AgriControl BI en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
           </div>
         </div>
 
-        <!-- App 2: Control de Productividad & Cosecha -->
-        <div class="erp-app-card" onclick="switchErpModule('erp-harvest-view')">
-          <div class="erp-app-header">
-            <div class="erp-app-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+        <!-- App 2: Control de Productividad -->
+        <div class="app-launcher-card" style="--card-accent: #3b82f6;">
+          <div class="app-launcher-top">
+            <div class="app-launcher-icon" style="--icon-bg: rgba(59, 130, 246, 0.15); --icon-color: #3b82f6;">
               <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <span class="badge-status in_progress"><i class="fa-solid fa-database" style="font-size: 0.5rem;"></i> Neon DB</span>
+            <span class="app-launcher-status live">
+              <i class="fa-solid fa-database" style="font-size: 0.45rem;"></i> Neon DB
+            </span>
           </div>
-          <div class="erp-app-title">Control de Productividad</div>
-          <p class="erp-app-desc">Pesaje en báscula de café cereza, rendimiento individual por recolector, liquidación de jornales a destajo y salidas de bodega.</p>
-          <div class="erp-app-footer">
-            <span style="color: #60a5fa; font-weight: 600;">13.296 kg • 310 Pases</span>
-            <span style="color: var(--primary-gold);">Ver Cosecha &rarr;</span>
+          <div class="app-launcher-badge" style="color: #3b82f6;">Cosecha & Báscula</div>
+          <h3 class="app-launcher-title">Control de Productividad</h3>
+          <p class="app-launcher-desc">
+            Pesajes diarios en báscula de café cereza, rendimiento individual por recolector, liquidación de nómina a destajo y control de salidas de bodega hacia tostión o venta.
+          </p>
+          <div class="app-launcher-meta">
+            <i class="fa-solid fa-weight-hanging"></i> Pesajes Báscula • Nómina Recolectores
+          </div>
+          <div class="app-launcher-actions">
+            <button class="btn-primary" onclick="switchErpModule('erp-harvest-view')">
+              <i class="fa-solid fa-scale-balanced"></i> Entrar a Cosecha
+            </button>
           </div>
         </div>
 
-        <!-- App 3: GhaloCafe Comercial & Tiendas -->
-        <div class="erp-app-card" onclick="switchErpModule('erp-ghalocafe-view')">
-          <div class="erp-app-header">
-            <div class="erp-app-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+        <!-- App 3: GhaloCafe Comercial -->
+        <div class="app-launcher-card" style="--card-accent: #f59e0b;">
+          <div class="app-launcher-top">
+            <div class="app-launcher-icon" style="--icon-bg: rgba(245, 158, 11, 0.15); --icon-color: #f59e0b;">
               <i class="fa-solid fa-mug-hot"></i>
             </div>
-            <span class="badge-status in_progress"><i class="fa-solid fa-store" style="font-size: 0.5rem;"></i> 5 Puntos</span>
+            <span class="app-launcher-status live">
+              <i class="fa-solid fa-store" style="font-size: 0.45rem;"></i> 5 Puntos
+            </span>
           </div>
-          <div class="erp-app-title">GhaloCafe Comercial</div>
-          <p class="erp-app-desc">Gestión de lotes de tueste, stock de presentaciones (250g, 454g, 2.5kg) y distribución en las 5 tiendas y bodegas de la marca.</p>
-          <div class="erp-app-footer">
-            <span style="color: #fbbf24; font-weight: 600;">380 kg Tueste • 5 Tiendas</span>
-            <span style="color: var(--primary-gold);">Ver Inventario &rarr;</span>
+          <div class="app-launcher-badge" style="color: #f59e0b;">Tueste & Comercialización</div>
+          <h3 class="app-launcher-title">GhaloCafe Comercial</h3>
+          <p class="app-launcher-desc">
+            Trazabilidad de lotes de tostión, stock en presentaciones empacadas (250g, 454g, 2.5kg) y distribución a tiendas en Palestina, Manizales, Pereira y Villamaría.
+          </p>
+          <div class="app-launcher-meta">
+            <i class="fa-solid fa-shop"></i> 5 Tiendas • Stock Empacado • Marca Propia
           </div>
-        </div>
-
-        <!-- App 4: Planeación Estratégica & Finanzas -->
-        <div class="erp-app-card" onclick="switchErpModule('plan-finance-view')">
-          <div class="erp-app-header">
-            <div class="erp-app-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <span class="badge-status in_progress"><i class="fa-solid fa-shield-check" style="font-size: 0.5rem;"></i> Activo</span>
-          </div>
-          <div class="erp-app-title">Planeación & Finanzas</div>
-          <p class="erp-app-desc">P&G proyectado a 24 meses, Flujo de Caja y Runway, Diagrama de Gantt por lotes y Control de variaciones Real vs. Presupuestado.</p>
-          <div class="erp-app-footer">
-            <span style="color: #a78bfa; font-weight: 600;">P&G 24 Meses • Gantt Lotes</span>
-            <span style="color: var(--primary-gold);">Abrir Finanzas &rarr;</span>
+          <div class="app-launcher-actions">
+            <button class="btn-primary" onclick="switchErpModule('erp-ghalocafe-view')">
+              <i class="fa-solid fa-mug-hot"></i> Entrar a Comercial
+            </button>
           </div>
         </div>
 
-        <!-- App 5: Portal Web & E-Commerce -->
-        <div class="erp-app-card" onclick="switchErpModule('erp-web-view')">
-          <div class="erp-app-header">
-            <div class="erp-app-icon" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+        <!-- App 4: Portal Web & E-Commerce -->
+        <div class="app-launcher-card" style="--card-accent: #f43f5e;">
+          <div class="app-launcher-top">
+            <div class="app-launcher-icon" style="--icon-bg: rgba(244, 63, 94, 0.15); --icon-color: #f43f5e;">
               <i class="fa-solid fa-store"></i>
             </div>
-            <span class="badge-status in_progress"><i class="fa-solid fa-globe" style="font-size: 0.5rem;"></i> B2C Online</span>
+            <span class="app-launcher-status live">
+              <i class="fa-solid fa-globe" style="font-size: 0.45rem;"></i> Tienda Online
+            </span>
           </div>
-          <div class="erp-app-title">Portal Web & E-Commerce</div>
-          <p class="erp-app-desc">Vitrina digital interactiva, historia de origen en Palestina Caldas y tienda online directa al consumidor para café de especialidad.</p>
-          <div class="erp-app-footer">
-            <span style="color: #fb7185; font-weight: 600;">Meta 45% E-commerce</span>
-            <span style="color: var(--primary-gold);">Ver Tienda &rarr;</span>
+          <div class="app-launcher-badge" style="color: #f43f5e;">Canal Digital B2C</div>
+          <h3 class="app-launcher-title">Portal Web & E-Commerce</h3>
+          <p class="app-launcher-desc">
+            Vitrina digital directa al consumidor, posicionamiento de marca de Finca La Leonora, origen único en Palestina Caldas y catálogo online de café de especialidad.
+          </p>
+          <div class="app-launcher-meta">
+            <i class="fa-solid fa-cart-shopping"></i> Venta Directa Consumidor • Valor Agregado
           </div>
-        </div>
-      </div>
-
-      <!-- Flujo Integral De la Finca a la Taza (Value Stream Pipeline) -->
-      <div class="pipeline-flow-wrapper">
-        <div class="section-subheading">
-          <h3><i class="fa-solid fa-timeline"></i> Flujo Operativo Integral: De la Finca a la Taza</h3>
-          <span class="badge-tag">Trazabilidad Total</span>
-        </div>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
-          Cómo viaja la información entre los módulos sin duplicar digitación y garantizando el control de costos y rentabilidad en cada etapa:
-        </p>
-
-        <div class="pipeline-steps-grid">
-          <div class="pipeline-step-card">
-            <div class="pipeline-step-num">1</div>
-            <div class="pipeline-step-title">Campo & Suelos</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">AgriControl BI</div>
-            <div class="pipeline-step-metric">6 Lotes (16.4 Ha)</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Enmiendas químicas y podas</div>
-          </div>
-
-          <div class="pipeline-step-card">
-            <div class="pipeline-step-num">2</div>
-            <div class="pipeline-step-title">Cosecha & Pesaje</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Control Productividad</div>
-            <div class="pipeline-step-metric">13.296 kg Cereza</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Pago destajo por recolector</div>
-          </div>
-
-          <div class="pipeline-step-card">
-            <div class="pipeline-step-num">3</div>
-            <div class="pipeline-step-title">Beneficio & Bodega</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">SalidaBodega Neon</div>
-            <div class="pipeline-step-metric">2.611 kg Pergamino</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Lavado y Fermentado</div>
-          </div>
-
-          <div class="pipeline-step-card">
-            <div class="pipeline-step-num">4</div>
-            <div class="pipeline-step-title">Tueste GhaloCafe</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">GhaloCafe Comercial</div>
-            <div class="pipeline-step-metric">380 kg a Tostión</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">5 Presentaciones empacadas</div>
-          </div>
-
-          <div class="pipeline-step-card">
-            <div class="pipeline-step-num">5</div>
-            <div class="pipeline-step-title">Tiendas & E-Commerce</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Web & 5 Tiendas</div>
-            <div class="pipeline-step-metric">B2C + B2B</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Valor agregado directo</div>
-          </div>
-
-          <div class="pipeline-step-card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05);">
-            <div class="pipeline-step-num" style="background: #10b981; color: #fff;"><i class="fa-solid fa-check"></i></div>
-            <div class="pipeline-step-title" style="color: #fbbf24;">Control Financiero</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Planeación Estratégica</div>
-            <div class="pipeline-step-metric" style="color: #fbbf24;">P&G + EBITDA</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Consolidación automática</div>
+          <div class="app-launcher-actions">
+            <button class="btn-primary" onclick="switchErpModule('erp-web-view')">
+              <i class="fa-solid fa-store"></i> Ver Tienda Demo
+            </button>
           </div>
         </div>
+
+        <!-- App 5: Módulo Central: Planeación Estratégica & Finanzas -->
+        <div class="app-launcher-card" style="--card-accent: #eab308; border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));">
+          <div class="app-launcher-top">
+            <div class="app-launcher-icon" style="--icon-bg: rgba(245, 158, 11, 0.2); --icon-color: #f59e0b;">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <span class="app-launcher-status live" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-crown" style="font-size: 0.45rem;"></i> Módulo Central
+            </span>
+          </div>
+          <div class="app-launcher-badge" style="color: #fbbf24;">Consolidador Financiero & Dirección</div>
+          <h3 class="app-launcher-title">Planeación Estratégica & Finanzas</h3>
+          <p class="app-launcher-desc">
+            P&G Proyectado a 24 meses, Flujo de Caja y Runway, Cronograma Gantt por lotes y Control mensual Real vs. Presupuestado. Aquí se consolida toda la información.
+          </p>
+          <div class="app-launcher-meta" style="color: #fbbf24; background: rgba(245, 158, 11, 0.08);">
+            <i class="fa-solid fa-vault"></i> P&G 24 Meses • Flujo Caja • Gantt Lotes • Control Real
+          </div>
+          <div class="app-launcher-actions">
+            <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700; width: 100%; justify-content: center;" onclick="switchErpModule('plan-finance-view')">
+              <i class="fa-solid fa-chart-line"></i> Ingresar a Planeación &rarr;
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <!-- ==================== MÓDULO 1: PLANEACIÓN ESTRATÉGICA & FINANZAS ==================== -->
     <div id="plan-finance-view" class="erp-module-section">
 
+      <!-- Barra de Retorno al Portal Principal -->
+      <div class="module-back-bar">
+        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+        </button>
+        <div class="module-breadcrumb">
+          <span>Finca La Leonora</span> &bull; <strong style="color: #fbbf24;">Planeación Estratégica & Finanzas</strong>
+        </div>
+      </div>
+
     <!-- ==================== VISTA 1: DASHBOARD EJECUTIVO ==================== -->
     <section id="dashboard-view" class="view-section active">
       <div class="view-header">
         <div class="view-title-block">
           <h2>Cuadro de Mando Integral</h2>
-          <p>Visión consolidada del avance estratégico, desempeño comercial de valor agregado y liquidez de Finca La Leonora.</p>
+          <p>Visión ejecutiva del avance estratégico, desempeño económico y liquidez proyectada de Finca La Leonora.</p>
         </div>
         <div class="view-actions">
           <button class="btn-primary" onclick="openNewActivityModal()">
@@ -361,12 +290,12 @@
         </div>
       </div>
 
-      <!-- Tarjetas de KPIs Clave -->
-      <div class="kpi-grid">
-        <!-- KPI 1: Ingresos Acumulados -->
+      <!-- 4 Tarjetas Ejecutivas de KPIs Clave (Tablero Limpio) -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 2rem;">
+        <!-- KPI 1: Ingresos Totales -->
         <div class="kpi-card" style="--accent-color: #10b981;">
           <div class="kpi-top">
-            <span class="kpi-label">Ventas Totales Reales (Año 2026)</span>
+            <span class="kpi-label">Ventas Totales (Año 2026)</span>
             <div class="kpi-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
           </div>
           <div class="kpi-value" id="kpiTotalRevenue">$236.8 M</div>
@@ -376,60 +305,34 @@
           </div>
         </div>
 
-        <!-- KPI 2: Participación E-Commerce -->
-        <div class="kpi-card" style="--accent-color: #f59e0b;">
-          <div class="kpi-top">
-            <span class="kpi-label">Venta con Mayor Valor Agregado</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-bag-shopping"></i></div>
-          </div>
-          <div class="kpi-value" id="kpiEcommerceShare">38.4%</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-bullseye"></i> Meta 45%</span>
-            <span class="kpi-context">E-commerce directo & B2C</span>
-          </div>
-        </div>
-
-        <!-- KPI 3: Margen Bruto Real -->
-        <div class="kpi-card" style="--accent-color: #3b82f6;">
-          <div class="kpi-top">
-            <span class="kpi-label">Margen Bruto Real</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-percent"></i></div>
-          </div>
-          <div class="kpi-value" id="kpiGrossMargin">51.2%</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-check"></i> En rango</span>
-            <span class="kpi-context">Meta mínima: 50.0%</span>
-          </div>
-        </div>
-
-        <!-- KPI 4: EBITDA Operacional -->
+        <!-- KPI 2: EBITDA Operacional -->
         <div class="kpi-card" style="--accent-color: #8b5cf6;">
           <div class="kpi-top">
-            <span class="kpi-label">EBITDA Acumulado Real</span>
+            <span class="kpi-label">EBITDA Operacional</span>
             <div class="kpi-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
           </div>
           <div class="kpi-value" id="kpiEbitda">$62.4 M</div>
           <div class="kpi-footer">
             <span class="trend-pill positive">+26.3% Margen</span>
-            <span class="kpi-context">Sostenibilidad operativa</span>
+            <span class="kpi-context">Rentabilidad operativa neta</span>
           </div>
         </div>
 
-        <!-- KPI 5: Saldo de Caja & Runway -->
+        <!-- KPI 3: Saldo de Caja & Runway -->
         <div class="kpi-card" style="--accent-color: #06b6d4;">
           <div class="kpi-top">
-            <span class="kpi-label">Saldo de Caja Actual</span>
+            <span class="kpi-label">Saldo de Caja Disponible</span>
             <div class="kpi-icon-badge"><i class="fa-solid fa-vault"></i></div>
           </div>
           <div class="kpi-value" id="kpiCashBalance">$54.8 M</div>
           <div class="kpi-footer">
             <span class="trend-pill neutral"><i class="fa-solid fa-clock"></i> 3.4 meses</span>
-            <span class="kpi-context">Runway operativo</span>
+            <span class="kpi-context">Runway de reserva de caja</span>
           </div>
         </div>
 
-        <!-- KPI 6: Avance Plan Estratégico -->
-        <div class="kpi-card" style="--accent-color: #f43f5e;">
+        <!-- KPI 4: Avance Plan Estratégico -->
+        <div class="kpi-card" style="--accent-color: #f59e0b;">
           <div class="kpi-top">
             <span class="kpi-label">Avance Plan Estratégico</span>
             <div class="kpi-icon-badge"><i class="fa-solid fa-list-check"></i></div>
@@ -854,6 +757,16 @@
 
     <!-- ==================== MÓDULO 2: AGRICONTROL BI ==================== -->
     <div id="erp-agricontrol-view" class="erp-module-section">
+      <!-- Barra de Retorno al Portal Principal -->
+      <div class="module-back-bar">
+        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+        </button>
+        <div class="module-breadcrumb">
+          <span>Finca La Leonora</span> &bull; <strong style="color: #10b981;">AgriControl BI</strong>
+        </div>
+      </div>
+
       <div class="view-header">
         <div class="view-title-block">
           <h2>Módulo AgriControl BI: Gestión de Campo, Suelos & Clima</h2>
@@ -1088,6 +1001,16 @@
 
     <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
     <div id="erp-harvest-view" class="erp-module-section">
+      <!-- Barra de Retorno al Portal Principal -->
+      <div class="module-back-bar">
+        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+        </button>
+        <div class="module-breadcrumb">
+          <span>Finca La Leonora</span> &bull; <strong style="color: #3b82f6;">Control de Productividad (Cosecha)</strong>
+        </div>
+      </div>
+
       <div class="view-header">
         <div class="view-title-block">
           <h2>Módulo Control de Productividad: Cosecha, Pesajes & Liquidación</h2>
@@ -1277,6 +1200,16 @@
 
     <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (TIENDAS & STOCK) ==================== -->
     <div id="erp-ghalocafe-view" class="erp-module-section">
+      <!-- Barra de Retorno al Portal Principal -->
+      <div class="module-back-bar">
+        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+        </button>
+        <div class="module-breadcrumb">
+          <span>Finca La Leonora</span> &bull; <strong style="color: #f59e0b;">GhaloCafe Comercial</strong>
+        </div>
+      </div>
+
       <div class="view-header">
         <div class="view-title-block">
           <h2>Módulo GhaloCafe Comercial: Tueste, 5 Tiendas & Inventario</h2>
@@ -1390,6 +1323,16 @@
 
     <!-- ==================== MÓDULO 5: PORTAL WEB & E-COMMERCE ==================== -->
     <div id="erp-web-view" class="erp-module-section">
+      <!-- Barra de Retorno al Portal Principal -->
+      <div class="module-back-bar">
+        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+        </button>
+        <div class="module-breadcrumb">
+          <span>Finca La Leonora</span> &bull; <strong style="color: #f43f5e;">Portal Web & E-Commerce</strong>
+        </div>
+      </div>
+
       <div class="view-header">
         <div class="view-title-block">
           <h2>Portal Web & E-Commerce Finca La Leonora</h2>
