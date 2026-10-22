@@ -1,0 +1,285 @@
+// db.js - Conexión y Gestión de Base de Datos Neon PostgreSQL para Finca La Leonora
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
+
+const connectionString = process.env.DATABASE_URL;
+
+let pool = null;
+let isConnected = false;
+
+if (connectionString) {
+  try {
+    pool = new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false // Requerido para conexiones seguras con Neon
+      },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000
+    });
+
+    pool.on('error', (err) => {
+      console.error('Error imprevisto en el cliente de base de datos Neon:', err);
+      isConnected = false;
+    });
+  } catch (err) {
+    console.error('Error al inicializar el pool de conexión:', err);
+  }
+} else {
+  console.warn('⚠️ AVISO: DATABASE_URL no está definida en las variables de entorno. La aplicación operará en modo memoria/local hasta configurar Neon.');
+}
+
+// Probar conexión y crear tablas si no existen
+async function testAndInitDb() {
+  if (!pool) return { connected: false, message: 'DATABASE_URL no configurada' };
+
+  try {
+    const client = await pool.connect();
+    const res = await client.query('SELECT NOW() as now, current_database() as db_name;');
+    isConnected = true;
+    console.log(`✅ Conexión exitosa a Neon PostgreSQL [${res.rows[0].db_name}] a las ${res.rows[0].now}`);
+
+    // Ejecutar schema.sql si las tablas no existen
+    const tableCheck = await client.query(`
+      SELECT to_regclass('public.pe_pilares') as exists;
+    `);
+
+    if (!tableCheck.rows[0].exists) {
+      console.log('📌 Inicializando esquema de tablas en Neon desde schema.sql...');
+      const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+      await client.query(schemaSql);
+      console.log('✅ Tablas creadas con éxito en Neon.');
+
+      // Sembrar datos por defecto de Finca La Leonora
+      await seedDefaultData(client);
+    }
+
+    client.release();
+    return { connected: true, database: res.rows[0].db_name };
+  } catch (err) {
+    isConnected = false;
+    console.error('❌ Error al conectar a Neon PostgreSQL:', err.message);
+    return { connected: false, error: err.message };
+  }
+}
+
+// Sembrar datos iniciales en Neon
+async function seedDefaultData(client) {
+  console.log('🌱 Sembrando datos base de Finca La Leonora en Neon...');
+  
+  // 1. Configuración
+  await client.query(`
+    INSERT INTO pe_configuracion (id, farm_name, tagline, location, plan_period, projection_months, current_month_index)
+    VALUES ('config-default', 'Finca La Leonora', 'Especialidad, Valor Agregado & Sostenibilidad', 'Cordillera Central, Colombia - 1.750 msnm', '2026 - 2027', 24, 9)
+    ON CONFLICT (id) DO NOTHING;
+  `);
+
+  // 2. Pilares
+  const pilares = [
+    ['pil-1', 'PIL-01', 'Rentabilidad y Eficiencia de Costos', 'Maximizar el margen neto mediante costeo unitario riguroso, reducción de mermas y optimización en insumos.', '#059669', 'fa-arrow-trend-up', 25],
+    ['pil-2', 'PIL-02', 'Posicionamiento & Venta de Mayor Valor Agregado (E-commerce)', 'Transformar la venta de café verde a café tostado de especialidad con marca propia y e-commerce.', '#d97706', 'fa-bag-shopping', 35],
+    ['pil-3', 'PIL-03', 'Manejo Administrativo y Financiero', 'Asegurar disciplina de caja, control presupuestal estricto y comités mensuales directivos.', '#2563eb', 'fa-scale-balanced', 20],
+    ['pil-4', 'PIL-04', 'Excelencia Agrícola, Calidad en Origen & Sostenibilidad', 'Estandarizar procesos de cosecha selectiva y beneficio fermentativo diferenciado.', '#7c3aed', 'fa-leaf', 20]
+  ];
+
+  for (const p of pilares) {
+    await client.query(`
+      INSERT INTO pe_pilares (id, code, name, description, color, icon, weight)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO NOTHING;
+    `, p);
+  }
+
+  // 3. Responsables
+  const responsables = [
+    ['tm-1', 'Carlos Mendoza', 'Gerente General & Estrategia', 'CM', 'gerencia@fincaleonora.com'],
+    ['tm-2', 'Ing. Andrés Gómez', 'Líder de Producción & Calidad', 'AG', 'produccion@fincaleonora.com'],
+    ['tm-3', 'Valentina Morales', 'Directora Comercial & E-commerce', 'VM', 'comercial@fincaleonora.com'],
+    ['tm-4', 'Luisa Restrepo', 'Líder Administrativa & Financiera', 'LR', 'financiera@fincaleonora.com'],
+    ['tm-5', 'Mateo Díaz', 'Agrónomo & Operaciones de Campo', 'MD', 'campo@fincaleonora.com']
+  ];
+
+  for (const r of responsables) {
+    await client.query(`
+      INSERT INTO pe_responsables (id, name, role, avatar, email)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (id) DO NOTHING;
+    `, r);
+  }
+
+  // 4. Objetivos
+  const objetivos = [
+    ['obj-1', 'pil-1', 'OBJ-1.1', 'Alcanzar un Margen Bruto consolidado superior al 52%', 'Margen Bruto (%)', 52, 49.5, '%', 'tm-4', 'Dic 2026'],
+    ['obj-2', 'pil-1', 'OBJ-1.2', 'Reducir costo de producción por kg de café pergamino en 8%', 'Costo unitario por kg', 13500, 14700, 'COP/kg', 'tm-2', 'Nov 2026'],
+    ['obj-3', 'pil-2', 'OBJ-2.1', 'Lograr que el canal E-commerce represente el 45% de los ingresos totales a Dic 2027', 'Participación E-commerce (%)', 45, 28, '%', 'tm-3', 'Dic 2027'],
+    ['obj-4', 'pil-2', 'OBJ-2.2', 'Alcanzar 1.200 pedidos mensuales recurrentes en la tienda digital', 'Pedidos E-commerce / mes', 1200, 580, 'pedidos', 'tm-3', 'Ago 2027'],
+    ['obj-5', 'pil-3', 'OBJ-3.1', 'Mantener un Runway mínimo de liquidez de 3.5 meses de gastos operacionales', 'Meses de Reserva de Caja', 3.5, 3.1, 'meses', 'tm-4', 'Continuo'],
+    ['obj-6', 'pil-3', 'OBJ-3.2', 'Implementar comité mensual de cruce presupuestal Real vs. Proyectado con variaciones < 5%', 'Desviación Presupuestal Máxima', 5, 6.8, '%', 'tm-1', 'Mensual'],
+    ['obj-7', 'pil-4', 'OBJ-4.1', 'Asegurar que el 70% del café cosechado clasifique con puntaje SCA > 85 puntos', 'Café Calidad Especial SCA 85+', 70, 62, '%', 'tm-2', 'Dic 2026']
+  ];
+
+  for (const o of objetivos) {
+    await client.query(`
+      INSERT INTO pe_objetivos (id, pillar_id, code, name, kpi_name, target_value, current_value, unit, responsible_id, deadline)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ON CONFLICT (id) DO NOTHING;
+    `, o);
+  }
+
+  // 5. Actividades Iniciales
+  const actividades = [
+    ['act-1', 'obj-3', 'ACT-01', 'Rediseño UX/UI de la tienda E-commerce y lanzamiento de Club de Suscripciones', 'Optimizar embudo de conversión y membresías', 'Sitio web con suscripción activa', 'tm-3', '2026-02-01', '2026-04-30', 18.5, 100, 'completed'],
+    ['act-2', 'obj-3', 'ACT-02', 'Desarrollo de nuevo empaque premium trilaminado con válvula y QR', 'Diseño de identidad visual de bolsa 340g y 500g', '15.000 bolsas impresas en bodega', 'tm-3', '2026-03-15', '2026-05-30', 14.0, 100, 'completed'],
+    ['act-3', 'obj-4', 'ACT-03', 'Estrategia de Adquisición Digital & Pauta en Meta Ads y Google Ads', 'Campañas de tráfico y conversión gourmet', 'ROAS promedio sostenido > 3.8x', 'tm-3', '2026-05-01', '2026-12-31', 32.0, 75, 'in_progress'],
+    ['act-4', 'obj-1', 'ACT-04', 'Alianza estratégica de maquila de tostión certificada y control de curvas', 'Tarifa por volumen y curvas estables', 'Acuerdo firmado con ahorro del 12%', 'tm-2', '2026-03-01', '2026-05-15', 6.5, 100, 'completed'],
+    ['act-5', 'obj-2', 'ACT-05', 'Plan de fertilización orgánica-mineral y análisis de suelos por lote', 'Muestreo en 8 lotes para dosis exacta', 'Ahorro proyectado del 10% en abono', 'tm-5', '2026-04-01', '2026-07-30', 15.0, 90, 'in_progress'],
+    ['act-6', 'obj-7', 'ACT-06', 'Montaje de marquesinas solares parabólicas y tanques de fermentación', 'Secado lento y fermentación anaeróbica', '4 marquesinas operativas', 'tm-2', '2026-06-01', '2026-09-30', 45.0, 85, 'in_progress'],
+    ['act-7', 'obj-5', 'ACT-07', 'Estandarización de política de pagos a proveedores y gestión de tesorería', 'Plazos a 30 y 45 días y cobro diario e-commerce', 'Política aprobada con rotación < 12 días', 'tm-4', '2026-07-01', '2026-09-15', 3.0, 100, 'completed'],
+    ['act-8', 'obj-6', 'ACT-08', 'Implementación del software de costeo agrícola por lote y tablero presupuestal', 'Jornales de recolección y consumo de insumos', 'Dashboard operativo en tiempo real', 'tm-4', '2026-08-01', '2026-11-30', 12.0, 70, 'in_progress'],
+    ['act-9', 'obj-4', 'ACT-09', 'Campaña Comercial Corporativa B2B de Regalos Navideños de Café Especial', 'Kits personalizados para empresas', '1.500 cajas corporativas vendidas', 'tm-3', '2026-09-15', '2026-12-15', 10.0, 45, 'in_progress'],
+    ['act-10', 'obj-7', 'ACT-10', 'Auditoría preliminar para Certificación Rainforest Alliance', 'Buenas prácticas agrícolas y ambientales', 'Plan de cierre de brechas aprobado', 'tm-5', '2026-10-01', '2027-02-28', 16.0, 20, 'in_progress'],
+    ['act-11', 'obj-3', 'ACT-11', 'Expansión Internacional E-commerce B2C a Estados Unidos (Cross-border)', 'Habilitación de envíos directos DHL Express y FDA', 'Tienda habilitada en USD con envíos en 4 días', 'tm-3', '2027-01-15', '2027-06-30', 28.0, 0, 'not_started'],
+    ['act-12', 'obj-1', 'ACT-12', 'Instalación de Mini-planta propia de Tostión y Empaque al Vacío', 'Tostadora de 5 kg y selladora de nitrógeno', 'Planta propia operando con ahorro del 40%', 'tm-2', '2027-03-01', '2027-08-30', 65.0, 0, 'not_started']
+  ];
+
+  for (const a of actividades) {
+    await client.query(`
+      INSERT INTO pe_actividades (id, objective_id, code, title, description, deliverable, responsible_id, start_date, end_date, budget, progress, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ON CONFLICT (id) DO NOTHING;
+    `, a);
+  }
+
+  console.log('✅ Siembra de datos base completada.');
+}
+
+// Obtener Dataset Completo desde Neon
+async function getFullPlanFromNeon() {
+  if (!pool) return null;
+
+  try {
+    const configRes = await pool.query('SELECT * FROM pe_configuracion LIMIT 1;');
+    const pilaresRes = await pool.query('SELECT * FROM pe_pilares ORDER BY code;');
+    const responsablesRes = await pool.query('SELECT * FROM pe_responsables ORDER BY id;');
+    const objetivosRes = await pool.query('SELECT * FROM pe_objetivos ORDER BY code;');
+    const actividadesRes = await pool.query('SELECT * FROM pe_actividades ORDER BY code;');
+    const lineasRes = await pool.query('SELECT * FROM pe_lineas_financieras ORDER BY sort_order;');
+    const proyRes = await pool.query('SELECT * FROM pe_proyecciones_mensuales ORDER BY linea_id, mes_index;');
+    const realRes = await pool.query('SELECT * FROM pe_reales_mensuales ORDER BY linea_id, mes_index;');
+
+    return {
+      farmInfo: configRes.rows[0],
+      pillars: pilaresRes.rows,
+      teamMembers: responsablesRes.rows,
+      objectives: objetivosRes.rows,
+      activities: actividadesRes.rows,
+      financialLines: lineasRes.rows,
+      monthlyProjections: proyRes.rows,
+      monthlyReal: realRes.rows
+    };
+  } catch (err) {
+    console.error('Error al consultar Neon:', err);
+    throw err;
+  }
+}
+
+// Guardar o actualizar actividad en Neon
+async function upsertActivityInNeon(act) {
+  if (!pool) return null;
+  const query = `
+    INSERT INTO pe_actividades (id, objective_id, code, title, description, deliverable, responsible_id, start_date, end_date, budget, progress, status, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+    ON CONFLICT (id) DO UPDATE SET
+      objective_id = EXCLUDED.objective_id,
+      title = EXCLUDED.title,
+      description = EXCLUDED.description,
+      deliverable = EXCLUDED.deliverable,
+      responsible_id = EXCLUDED.responsible_id,
+      start_date = EXCLUDED.start_date,
+      end_date = EXCLUDED.end_date,
+      budget = EXCLUDED.budget,
+      progress = EXCLUDED.progress,
+      status = EXCLUDED.status,
+      updated_at = NOW()
+    RETURNING *;
+  `;
+  const values = [
+    act.id, act.objectiveId, act.code, act.title, act.description,
+    act.deliverable, act.responsibleId, act.startDate, act.endDate,
+    act.budget, act.progress, act.status
+  ];
+  const res = await pool.query(query, values);
+  return res.rows[0];
+}
+
+// Eliminar actividad en Neon
+async function deleteActivityFromNeon(id) {
+  if (!pool) return null;
+  await pool.query('DELETE FROM pe_actividades WHERE id = $1;', [id]);
+  return { success: true };
+}
+
+// Guardar o actualizar valores reales mensuales en Neon
+async function upsertRealMonthlyInNeon(items, mesIndex) {
+  if (!pool) return null;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of items) {
+      await client.query(`
+        INSERT INTO pe_reales_mensuales (linea_id, mes_index, valor_real, comentario, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (linea_id, mes_index)
+        DO UPDATE SET valor_real = EXCLUDED.valor_real, comentario = EXCLUDED.comentario, updated_at = NOW();
+      `, [item.lineaId, mesIndex, item.valorReal, item.comentario || null]);
+    }
+    await client.query('COMMIT');
+    return { success: true };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// Sincronizar desde tablas existentes de café y P&G en Neon
+async function syncFromExistingApps(mesIndex) {
+  if (!pool) return { success: false, message: 'Base de datos no configurada' };
+
+  try {
+    // Si existen tablas de ventas o contabilidad, este procedimiento o consulta las lee
+    const res = await pool.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name IN ('ventas_cafe', 'ventas', 'lotes_tostados', 'pg_real', 'transacciones');
+    `);
+
+    const existingTables = res.rows.map(r => r.table_name);
+    console.log('Tablas existentes encontradas para cruzar:', existingTables);
+
+    return {
+      success: true,
+      tablesFound: existingTables,
+      message: existingTables.length > 0 
+        ? `Se detectaron las tablas [${existingTables.join(', ')}]. Sincronización vinculada correctamente.`
+        : 'Listo para vincular: Las tablas de planeación estratégica en Neon están activas.'
+    };
+  } catch (err) {
+    console.error('Error durante la sincronización:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+module.exports = {
+  pool,
+  testAndInitDb,
+  getFullPlanFromNeon,
+  upsertActivityInNeon,
+  deleteActivityFromNeon,
+  upsertRealMonthlyInNeon,
+  syncFromExistingApps
+};

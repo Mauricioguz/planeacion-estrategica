@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finca La Leonora | Sistema de Planeación Estratégica & Control Financiero</title>
+  <meta name="description" content="Plataforma de seguimiento a planeación estratégica, proyecciones financieras 1-2 años (P&G, Flujo de Caja), control real vs presupuestado y cronograma de actividades para Finca La Leonora.">
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Estilos Maestros -->
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- ==================== ENCABEZADO PRINCIPAL ==================== -->
+  <header class="app-header">
+    <div class="brand-section">
+      <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" class="brand-logo" id="headerLogo" onerror="this.src='https://placehold.co/100x100/111827/f59e0b?text=LEONORA'">
+      <div class="brand-info">
+        <h1>
+          Finca La Leonora
+          <span class="badge-tag"><i class="fa-solid fa-leaf"></i> Café Especial & E-Commerce</span>
+        </h1>
+        <div class="brand-subtitle">Planeación Estratégica 2026 - 2027 • Control Financiero & Operativo</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Indicador de Conexión a Base de Datos Neon -->
+      <div class="db-status-badge offline" id="dbStatusBadge" onclick="openDbConfigModal()" title="Estado de conexión con Neon PostgreSQL">
+        <span class="status-dot"></span>
+        <span id="dbStatusText">Neon DB</span>
+      </div>
+
+      <!-- Sincronizar con Apps de Ventas y P&G -->
+      <button class="btn-header" onclick="triggerExternalSync()" title="Sincronizar cifras reales con las tablas de Ventas de café y P&G en Neon">
+        <i class="fa-solid fa-arrows-rotate" style="color: #3b82f6;"></i> Sincronizar Apps
+      </button>
+
+      <!-- Selector de Horizonte Temporal -->
+      <div class="horizon-toggle" title="Seleccionar horizonte de visualización">
+        <button class="horizon-btn" id="horizon1YearBtn" onclick="setHorizon(12)">1 Año (2026)</button>
+        <button class="horizon-btn active" id="horizon2YearsBtn" onclick="setHorizon(24)">2 Años (2026 - 2027)</button>
+      </div>
+
+      <!-- Exportar a Excel -->
+      <button class="btn-header" onclick="exportToExcel()" title="Descargar modelo financiero y plan en Excel">
+        <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Excel
+      </button>
+
+      <!-- Respaldo / Exportar JSON -->
+      <button class="btn-header" onclick="exportBackupJSON()" title="Guardar respaldo del sistema en archivo JSON">
+        <i class="fa-solid fa-download"></i> Respaldo
+      </button>
+
+      <!-- Importar JSON -->
+      <button class="btn-header" onclick="openImportModal()" title="Cargar respaldo desde archivo JSON">
+        <i class="fa-solid fa-upload"></i> Restaurar
+      </button>
+
+      <!-- Alternar Tema Claro / Oscuro -->
+      <button class="btn-header" onclick="toggleTheme()" id="themeToggleBtn" title="Cambiar tema claro/oscuro">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== BARRA DE PESTAÑAS (TABS) ==================== -->
+  <nav class="tab-navbar">
+    <button class="nav-tab-btn active" onclick="switchTab('dashboard-view')">
+      <i class="fa-solid fa-chart-pie"></i> Dashboard Ejecutivo
+    </button>
+    <button class="nav-tab-btn" onclick="switchTab('strategy-view')">
+      <i class="fa-solid fa-bullseye"></i> Estrategia & Objetivos
+    </button>
+    <button class="nav-tab-btn" onclick="switchTab('activities-view')">
+      <i class="fa-solid fa-calendar-check"></i> Cronograma & Actividades
+    </button>
+    <button class="nav-tab-btn" onclick="switchTab('financials-view')">
+      <i class="fa-solid fa-money-bill-trend-up"></i> Proyecciones Financieras (P&G / Flujo)
+    </button>
+    <button class="nav-tab-btn" onclick="switchTab('control-view')">
+      <i class="fa-solid fa-code-compare"></i> Control Real vs. Proyección
+    </button>
+  </nav>
+
+  <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+  <main class="app-main">
+
+    <!-- ==================== VISTA 1: DASHBOARD EJECUTIVO ==================== -->
+    <section id="dashboard-view" class="view-section active">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Cuadro de Mando Integral</h2>
+          <p>Visión consolidada del avance estratégico, desempeño comercial de valor agregado y liquidez de Finca La Leonora.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="openNewActivityModal()">
+            <i class="fa-solid fa-plus"></i> Nueva Actividad
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de KPIs Clave -->
+      <div class="kpi-grid">
+        <!-- KPI 1: Ingresos Acumulados -->
+        <div class="kpi-card" style="--accent-color: #10b981;">
+          <div class="kpi-top">
+            <span class="kpi-label">Ventas Totales Reales (Año 2026)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-sack-dollar"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiTotalRevenue">$236.8 M</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive" id="kpiRevenueTrend"><i class="fa-solid fa-arrow-trend-up"></i> +4.2%</span>
+            <span class="kpi-context">vs. Proyectado ($227.2 M)</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: Participación E-Commerce -->
+        <div class="kpi-card" style="--accent-color: #f59e0b;">
+          <div class="kpi-top">
+            <span class="kpi-label">Venta con Mayor Valor Agregado</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-bag-shopping"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiEcommerceShare">38.4%</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-bullseye"></i> Meta 45%</span>
+            <span class="kpi-context">E-commerce directo & B2C</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Margen Bruto Real -->
+        <div class="kpi-card" style="--accent-color: #3b82f6;">
+          <div class="kpi-top">
+            <span class="kpi-label">Margen Bruto Real</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-percent"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiGrossMargin">51.2%</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-check"></i> En rango</span>
+            <span class="kpi-context">Meta mínima: 50.0%</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: EBITDA Operacional -->
+        <div class="kpi-card" style="--accent-color: #8b5cf6;">
+          <div class="kpi-top">
+            <span class="kpi-label">EBITDA Acumulado Real</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiEbitda">$62.4 M</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">+26.3% Margen</span>
+            <span class="kpi-context">Sostenibilidad operativa</span>
+          </div>
+        </div>
+
+        <!-- KPI 5: Saldo de Caja & Runway -->
+        <div class="kpi-card" style="--accent-color: #06b6d4;">
+          <div class="kpi-top">
+            <span class="kpi-label">Saldo de Caja Actual</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-vault"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiCashBalance">$54.8 M</div>
+          <div class="kpi-footer">
+            <span class="trend-pill neutral"><i class="fa-solid fa-clock"></i> 3.4 meses</span>
+            <span class="kpi-context">Runway operativo</span>
+          </div>
+        </div>
+
+        <!-- KPI 6: Avance Plan Estratégico -->
+        <div class="kpi-card" style="--accent-color: #f43f5e;">
+          <div class="kpi-top">
+            <span class="kpi-label">Avance Plan Estratégico</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-list-check"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiStrategicProgress">74.2%</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">8/12 Actividades</span>
+            <span class="kpi-context">En tiempo o completadas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficas del Dashboard -->
+      <div class="dashboard-charts-grid">
+        <!-- Gráfica 1: Comparativo Ventas Proyección vs Real -->
+        <div class="chart-card col-8">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Evolución de Ingresos: Real vs. Proyección</h3>
+              <div class="chart-subtitle">Cifras mensuales en Millones COP</div>
+            </div>
+            <span class="badge-tag">24 Meses</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfica 2: Mix de Canales & E-commerce -->
+        <div class="chart-card col-4">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> Mix de Ventas por Canal</h3>
+              <div class="chart-subtitle">Enfoque en Mayor Valor Agregado</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="channelMixChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfica 3: Flujo de Caja y Saldo Disponible -->
+        <div class="chart-card col-6">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-money-bill-transfer" style="color: #3b82f6;"></i> Proyección del Flujo de Caja y Saldo Final</h3>
+              <div class="chart-subtitle">Flujo Neto Operativo y Liquidez Disponible</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="cashFlowChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfica 4: Estado de Actividades por Responsable -->
+        <div class="chart-card col-6">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-users-gear" style="color: #8b5cf6;"></i> Cumplimiento de Actividades por Líder</h3>
+              <div class="chart-subtitle">Monitoreo de tareas por responsable asignado</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="responsibleChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 2: ESTRATEGIA & OBJETIVOS ==================== -->
+    <section id="strategy-view" class="view-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Direccionamiento Estratégico: Finca La Leonora</h2>
+          <p>Pilares estratégicos prioritarios, metas cuantitativas (KPIs) y alineación con líderes responsables.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="openNewObjectiveModal()">
+            <i class="fa-solid fa-plus"></i> Nuevo Objetivo
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de los 4 Pilares -->
+      <div class="pillars-summary-grid" id="pillarsGridContainer">
+        <!-- Renderizado dinámicamente desde JS -->
+      </div>
+
+      <!-- Tabla de Objetivos y KPIs -->
+      <div class="objectives-table-container">
+        <div class="section-subheading">
+          <h3><i class="fa-solid fa-crosshairs"></i> Matriz de Objetivos Estratégicos & KPIs</h3>
+          <span class="badge-tag" id="objectivesCountBadge">7 Objetivos</span>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix" style="white-space: normal;">
+            <thead>
+              <tr>
+                <th style="min-width: 90px;">Código</th>
+                <th style="min-width: 180px;">Pilar Estratégico</th>
+                <th style="min-width: 280px;">Objetivo Estratégico</th>
+                <th style="min-width: 150px;">Indicador (KPI)</th>
+                <th style="min-width: 110px; text-align: right;">Meta</th>
+                <th style="min-width: 110px; text-align: right;">Actual</th>
+                <th style="min-width: 140px;">Responsable</th>
+                <th style="min-width: 100px; text-align: center;">Plazo</th>
+                <th style="min-width: 110px; text-align: center;">Cumplimiento</th>
+              </tr>
+            </thead>
+            <tbody id="objectivesTableBody">
+              <!-- Renderizado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 3: CRONOGRAMA & ACTIVIDADES ==================== -->
+    <section id="activities-view" class="view-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Cronograma y Control de Actividades</h2>
+          <p>Despliegue operativo, fechas de ejecución, presupuesto y asignación de responsables para Finca La Leonora.</p>
+        </div>
+        <div class="view-actions">
+          <!-- Switcher entre vistas Gantt, Kanban y Tabla -->
+          <div class="activities-view-switcher">
+            <button class="view-toggle-btn active" id="ganttViewToggleBtn" onclick="setActivitySubView('gantt')">
+              <i class="fa-solid fa-bars-staggered"></i> Gantt
+            </button>
+            <button class="view-toggle-btn" id="kanbanViewToggleBtn" onclick="setActivitySubView('kanban')">
+              <i class="fa-solid fa-table-columns"></i> Kanban
+            </button>
+            <button class="view-toggle-btn" id="tableViewToggleBtn" onclick="setActivitySubView('table')">
+              <i class="fa-solid fa-list-ul"></i> Lista
+            </button>
+          </div>
+
+          <button class="btn-primary" onclick="openNewActivityModal()">
+            <i class="fa-solid fa-plus"></i> Nueva Actividad
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label><i class="fa-solid fa-user"></i> Responsable:</label>
+          <select id="filterResponsible" class="filter-select" onchange="renderActivities()">
+            <option value="all">Todos los responsables</option>
+            <!-- Opciones dinámicas -->
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label><i class="fa-solid fa-layer-group"></i> Pilar:</label>
+          <select id="filterPillar" class="filter-select" onchange="renderActivities()">
+            <option value="all">Todos los pilares</option>
+            <!-- Opciones dinámicas -->
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label><i class="fa-solid fa-tag"></i> Estado:</label>
+          <select id="filterStatus" class="filter-select" onchange="renderActivities()">
+            <option value="all">Todos los estados</option>
+            <option value="in_progress">En Curso</option>
+            <option value="completed">Completado</option>
+            <option value="at_risk">En Riesgo</option>
+            <option value="not_started">No Iniciado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sub-vista 1: Diagrama de Gantt -->
+      <div id="activitiesGanttContainer" class="gantt-wrapper">
+        <div class="gantt-header-row">
+          <div class="gantt-tasks-col-header">Iniciativa / Responsable</div>
+          <div class="gantt-timeline-header" id="ganttTimelineHeader">
+            <!-- Renderizado dinámico de meses -->
+          </div>
+        </div>
+        <div class="gantt-rows-container" id="ganttRowsContainer">
+          <!-- Filas de Gantt dinámicas -->
+        </div>
+      </div>
+
+      <!-- Sub-vista 2: Tablero Kanban -->
+      <div id="activitiesKanbanContainer" class="kanban-grid" style="display: none;">
+        <!-- Columna 1: No iniciadas -->
+        <div class="kanban-column" style="--col-color: #64748b;">
+          <div class="kanban-column-header">
+            <span class="kanban-col-title"><i class="fa-regular fa-circle"></i> No Iniciadas</span>
+            <span class="kanban-badge-count" id="countNotStarted">0</span>
+          </div>
+          <div class="kanban-cards-stack" id="kanbanColNotStarted"></div>
+        </div>
+
+        <!-- Columna 2: En curso -->
+        <div class="kanban-column" style="--col-color: #3b82f6;">
+          <div class="kanban-column-header">
+            <span class="kanban-col-title"><i class="fa-solid fa-spinner"></i> En Curso</span>
+            <span class="kanban-badge-count" id="countInProgress">0</span>
+          </div>
+          <div class="kanban-cards-stack" id="kanbanColInProgress"></div>
+        </div>
+
+        <!-- Columna 3: En riesgo -->
+        <div class="kanban-column" style="--col-color: #f43f5e;">
+          <div class="kanban-column-header">
+            <span class="kanban-col-title"><i class="fa-solid fa-triangle-exclamation"></i> En Riesgo</span>
+            <span class="kanban-badge-count" id="countAtRisk">0</span>
+          </div>
+          <div class="kanban-cards-stack" id="kanbanColAtRisk"></div>
+        </div>
+
+        <!-- Columna 4: Completadas -->
+        <div class="kanban-column" style="--col-color: #10b981;">
+          <div class="kanban-column-header">
+            <span class="kanban-col-title"><i class="fa-solid fa-circle-check"></i> Completadas</span>
+            <span class="kanban-badge-count" id="countCompleted">0</span>
+          </div>
+          <div class="kanban-cards-stack" id="kanbanColCompleted"></div>
+        </div>
+      </div>
+
+      <!-- Sub-vista 3: Tabla Detallada -->
+      <div id="activitiesTableContainer" class="objectives-table-container" style="display: none;">
+        <div class="table-scroll-container">
+          <table class="financial-matrix" style="white-space: normal;">
+            <thead>
+              <tr>
+                <th style="min-width: 80px;">Código</th>
+                <th style="min-width: 240px;">Actividad / Iniciativa</th>
+                <th style="min-width: 140px;">Responsable</th>
+                <th style="min-width: 180px;">Entregable Verificable</th>
+                <th style="min-width: 100px; text-align: center;">Inicio</th>
+                <th style="min-width: 100px; text-align: center;">Fin</th>
+                <th style="min-width: 90px; text-align: right;">Presupuesto</th>
+                <th style="min-width: 110px; text-align: center;">Avance</th>
+                <th style="min-width: 110px; text-align: center;">Estado</th>
+                <th style="min-width: 80px; text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="activitiesTableListBody">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 4: PROYECCIONES FINANCIERAS ==================== -->
+    <section id="financials-view" class="view-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Proyecciones Financieras: Estado de Resultados & Flujo de Caja</h2>
+          <p>Horizonte mensual a 12 o 24 meses expresado en Millones COP con desglose de E-commerce y costos de origen.</p>
+        </div>
+        <div class="view-actions">
+          <div class="activities-view-switcher">
+            <button class="view-toggle-btn active" id="subTabIncomeStatement" onclick="setFinancialSubTab('income')">
+              <i class="fa-solid fa-file-invoice-dollar"></i> Estado de Resultados (P&G)
+            </button>
+            <button class="view-toggle-btn" id="subTabCashFlow" onclick="setFinancialSubTab('cash')">
+              <i class="fa-solid fa-money-bill-transfer"></i> Flujo de Caja Proyectado
+            </button>
+          </div>
+          <button class="btn-header" onclick="exportToExcel()">
+            <i class="fa-solid fa-download"></i> Descargar P&G
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenedor 1: Estado de Resultados (P&G) -->
+      <div id="incomeStatementTableWrapper" class="financial-table-wrapper">
+        <div class="table-toolbar">
+          <div>
+            <strong>Estado de Resultados Integral (P&G Proyectado)</strong>
+            <span class="badge-tag" style="margin-left: 0.5rem;" id="pgHorizonBadge">24 Meses (2026 - 2027)</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Valores en Millones de Pesos Colombianos (COP)
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix" id="incomeStatementTable">
+            <!-- Generado dinámicamente por app.js -->
+          </table>
+        </div>
+      </div>
+
+      <!-- Contenedor 2: Flujo de Caja Proyectado -->
+      <div id="cashFlowTableWrapper" class="financial-table-wrapper" style="display: none;">
+        <div class="table-toolbar">
+          <div>
+            <strong>Presupuesto de Flujo de Caja y Tesorería Proyectada</strong>
+            <span class="badge-tag" style="margin-left: 0.5rem;" id="cashHorizonBadge">24 Meses (2026 - 2027)</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Monitoreo de liquidez, recaudo de e-commerce y saldo en bancos
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix" id="cashFlowTable">
+            <!-- Generado dinámicamente por app.js -->
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 5: CONTROL REAL VS PROYECCIÓN ==================== -->
+    <section id="control-view" class="view-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Control de Gestión: Cruce Real vs. Proyección</h2>
+          <p>Identificación inmediata de desviaciones presupuestales, semaforización y registro de cifras reales mes a mes.</p>
+        </div>
+        <div class="view-actions">
+          <div class="filter-group">
+            <label><i class="fa-solid fa-calendar-days"></i> Mes de Evaluación:</label>
+            <select id="controlMonthSelect" class="filter-select" onchange="renderControlAnalysis()">
+              <!-- Opciones mensuales generadas en JS -->
+            </select>
+          </div>
+          <button class="btn-primary" onclick="saveRealDataFromInputs()">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Cifras Reales
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Resumen del Mes Seleccionado -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--accent-color: #10b981;">
+          <div class="kpi-top">
+            <span class="kpi-label">Ventas del Mes (Real vs Proy)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-coins"></i></div>
+          </div>
+          <div class="kpi-value" id="controlMonthRevenue">$0.0 M</div>
+          <div class="kpi-footer" id="controlRevenueVariance">
+            <span class="trend-pill neutral">0.0%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #f43f5e;">
+          <div class="kpi-top">
+            <span class="kpi-label">Costos Totales (COGS)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-boxes-packing"></i></div>
+          </div>
+          <div class="kpi-value" id="controlMonthCogs">$0.0 M</div>
+          <div class="kpi-footer" id="controlCogsVariance">
+            <span class="trend-pill neutral">0.0%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #3b82f6;">
+          <div class="kpi-top">
+            <span class="kpi-label">Gastos Operativos (OPEX)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-receipt"></i></div>
+          </div>
+          <div class="kpi-value" id="controlMonthOpex">$0.0 M</div>
+          <div class="kpi-footer" id="controlOpexVariance">
+            <span class="trend-pill neutral">0.0%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #f59e0b;">
+          <div class="kpi-top">
+            <span class="kpi-label">EBITDA Real del Mes</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
+          </div>
+          <div class="kpi-value" id="controlMonthEbitda">$0.0 M</div>
+          <div class="kpi-footer" id="controlEbitdaVariance">
+            <span class="trend-pill neutral">0.0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla Comparativa Detallada de Variaciones -->
+      <div class="financial-table-wrapper">
+        <div class="table-toolbar">
+          <div>
+            <strong>Matriz de Variación Rubro por Rubro</strong>
+            <span class="badge-tag" style="margin-left: 0.5rem;" id="controlCurrentMonthLabel">Octubre 2026</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">
+            <span class="traffic-light green"></span> Favorable &nbsp;&nbsp;
+            <span class="traffic-light yellow"></span> Desviación Leve (&lt;10%) &nbsp;&nbsp;
+            <span class="traffic-light red"></span> Desviación Crítica
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix" id="controlVarianceTable">
+            <thead>
+              <tr>
+                <th style="min-width: 280px;">Línea / Rubro Financiero</th>
+                <th style="min-width: 110px; text-align: right;">Proyectado</th>
+                <th style="min-width: 130px; text-align: right;">Real (Editable)</th>
+                <th style="min-width: 110px; text-align: right;">Variación ($)</th>
+                <th style="min-width: 110px; text-align: right;">Variación (%)</th>
+                <th style="min-width: 120px; text-align: center;">Semáforo</th>
+                <th style="min-width: 200px;">Comentarios & Causas</th>
+              </tr>
+            </thead>
+            <tbody id="controlVarianceTableBody">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL: NUEVA / EDITAR ACTIVIDAD ==================== -->
+  <div class="modal-overlay" id="activityModalOverlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="activityModalTitle">Registrar Nueva Actividad Estratégica</h3>
+        <button class="modal-close-btn" onclick="closeActivityModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modalActivityId">
+
+        <div class="form-group">
+          <label>Título de la Actividad / Iniciativa *</label>
+          <input type="text" id="modalActivityTitle" class="form-input" placeholder="Ej: Rediseño del empaque o Campaña de pauta e-commerce">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Objetivo Estratégico Asociado *</label>
+            <select id="modalActivityObjective" class="form-select">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Líder Responsable *</label>
+            <select id="modalActivityResponsible" class="form-select">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Descripción / Justificación</label>
+          <textarea id="modalActivityDescription" class="form-textarea" rows="2" placeholder="Detalles de la iniciativa..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Entregable Verificable / Hito de Éxito *</label>
+          <input type="text" id="modalActivityDeliverable" class="form-input" placeholder="Ej: 15.000 bolsas impresas o Contrato de maquila firmado">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Inicio *</label>
+            <input type="date" id="modalActivityStartDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Fecha de Finalización *</label>
+            <input type="date" id="modalActivityEndDate" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Presupuesto Estimado (Millones COP)</label>
+            <input type="number" step="0.1" id="modalActivityBudget" class="form-input" placeholder="0.0">
+          </div>
+          <div class="form-group">
+            <label>Porcentaje de Avance (%)</label>
+            <input type="number" min="0" max="100" id="modalActivityProgress" class="form-input" placeholder="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Estado Actual</label>
+          <select id="modalActivityStatus" class="form-select">
+            <option value="not_started">No Iniciado</option>
+            <option value="in_progress">En Curso</option>
+            <option value="completed">Completado</option>
+            <option value="at_risk">En Riesgo / Alerta</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeActivityModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveActivityFromModal()">
+          <i class="fa-solid fa-save"></i> Guardar Actividad
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: NUEVO OBJETIVO ESTRATÉGICO ==================== -->
+  <div class="modal-overlay" id="objectiveModalOverlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Agregar Objetivo Estratégico</h3>
+        <button class="modal-close-btn" onclick="closeObjectiveModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Pilar Estratégico al que pertenece *</label>
+          <select id="modalObjectivePillar" class="form-select">
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Declaración del Objetivo Estratégico *</label>
+          <input type="text" id="modalObjectiveName" class="form-input" placeholder="Ej: Elevar la participación de cafés especiales...">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre del Indicador (KPI) *</label>
+            <input type="text" id="modalObjectiveKpi" class="form-input" placeholder="Ej: % Ventas E-commerce o Margen Bruto">
+          </div>
+          <div class="form-group">
+            <label>Unidad de Medida</label>
+            <input type="text" id="modalObjectiveUnit" class="form-input" placeholder="%, COP, kg, pedidos">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Meta Numérica a Alcanzar *</label>
+            <input type="number" step="0.1" id="modalObjectiveTarget" class="form-input" placeholder="100">
+          </div>
+          <div class="form-group">
+            <label>Valor Actual / Línea Base</label>
+            <input type="number" step="0.1" id="modalObjectiveCurrent" class="form-input" placeholder="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Líder Responsable *</label>
+            <select id="modalObjectiveResponsible" class="form-select">
+              <!-- Dinámico -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Plazo Estimado</label>
+            <input type="text" id="modalObjectiveDeadline" class="form-input" placeholder="Ej: Dic 2026">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeObjectiveModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveObjectiveFromModal()">
+          <i class="fa-solid fa-save"></i> Guardar Objetivo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: RESTAURAR RESPALDO JSON ==================== -->
+  <div class="modal-overlay" id="importModalOverlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Restaurar o Importar Datos</h3>
+        <button class="modal-close-btn" onclick="closeImportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Selecciona un archivo JSON exportado previamente desde la aplicación o restablece los datos originales de Finca La Leonora.
+        </p>
+        <div class="form-group" style="margin-top: 0.5rem;">
+          <label>Seleccionar archivo JSON:</label>
+          <input type="file" id="importFileInput" accept=".json" class="form-input">
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 0.5rem 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.8rem; color: var(--text-dim);">¿Deseas reiniciar al estado de fábrica?</span>
+          <button class="btn-danger" onclick="resetToFactoryDefault()">
+            <i class="fa-solid fa-rotate-left"></i> Restablecer Datos de Ejemplo
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeImportModal()">Cerrar</button>
+        <button class="btn-primary" onclick="processImportFile()">
+          <i class="fa-solid fa-file-import"></i> Cargar Archivo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CONEXIÓN NEON POSTGRESQL & RENDER ==================== -->
+  <div class="modal-overlay" id="dbModalOverlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-database" style="color: #10b981;"></i> Conexión a Neon PostgreSQL & Render</h3>
+        <button class="modal-close-btn" onclick="closeDbConfigModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); padding: 1rem; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong style="color: #fff; font-size: 0.9rem;">Estado del Backend:</strong>
+            <span class="db-status-badge offline" id="modalDbStatusBadge">
+              <span class="status-dot"></span> <span id="modalDbStatusText">Comprobando...</span>
+            </span>
+          </div>
+          <p id="modalDbDetails" style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+            La aplicación cuenta con servidor Node.js/Express listo para desplegar en Render y conectarse a tu base de datos Neon PostgreSQL.
+          </p>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+          <h4 style="color: #fff; margin-bottom: 0.4rem; font-size: 0.88rem;"><i class="fa-solid fa-link" style="color: var(--primary-gold);"></i> ¿Cómo vincular con tus otras aplicaciones en Neon?</h4>
+          <ol style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><strong>Misma Base de Datos o Esquema</strong>: Configura la variable de entorno <code style="color: #34d399; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 3px;">DATABASE_URL</code> en Render o en tu archivo <code style="color: #34d399; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 3px;">.env</code>.</li>
+            <li><strong>Tablas de Ventas de Café</strong>: La aplicación puede leer las tablas de café tostado por lotes y comercial para alimentar las ventas reales de cada mes.</li>
+            <li><strong>Tablas de P&G</strong>: El cruce "Real vs. Proyección" sincroniza costos operativos y gastos administrativos directamente.</li>
+            <li><strong>Persistencia Absoluta</strong>: Todas las estrategias, objetivos, actividades del cronograma y variaciones quedan respaldadas permanentemente en Neon.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeDbConfigModal()">Cerrar</button>
+        <button class="btn-primary" onclick="triggerExternalSync()">
+          <i class="fa-solid fa-arrows-rotate"></i> Probar Sincronización
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

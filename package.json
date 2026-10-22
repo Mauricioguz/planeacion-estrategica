@@ -1,0 +1,25 @@
+{
+  "name": "planeacion-estrategica-finca-la-leonora",
+  "version": "1.0.0",
+  "description": "Sistema de Planeación Estratégica, Proyecciones Financieras y Control Real vs. Proyección para Finca La Leonora con conexión a Neon PostgreSQL y Render.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "planeacion-estrategica",
+    "cafe-especial",
+    "finca-la-leonora",
+    "neon-postgres",
+    "render"
+  ],
+  "author": "Finca La Leonora",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
