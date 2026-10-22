@@ -74,7 +74,7 @@
     </div>
     <div class="erp-suite-pills-container">
       <button class="erp-suite-pill active" onclick="switchErpModule('erp-hub-view')" id="btnModHub">
-        <i class="fa-solid fa-shapes"></i> Centro de Mando ERP
+        <i class="fa-solid fa-shapes"></i> Portal de Aplicaciones
       </button>
       <button class="erp-suite-pill" onclick="switchErpModule('plan-finance-view')" id="btnModPlan">
         <i class="fa-solid fa-chart-line"></i> Planeación & Finanzas
@@ -83,13 +83,13 @@
         <i class="fa-solid fa-seedling"></i> AgriControl BI
       </button>
       <button class="erp-suite-pill" onclick="switchErpModule('erp-harvest-view')" id="btnModHarvest">
-        <i class="fa-solid fa-scale-balanced"></i> Cosecha & Productividad
+        <i class="fa-solid fa-scale-balanced"></i> Control Productividad
       </button>
       <button class="erp-suite-pill" onclick="switchErpModule('erp-ghalocafe-view')" id="btnModGhalo">
-        <i class="fa-solid fa-mug-hot"></i> GhaloCafe Comercial
+        <i class="fa-solid fa-mug-hot"></i> Sistema GhaloCafe
       </button>
-      <button class="erp-suite-pill" onclick="switchErpModule('erp-web-view')" id="btnModWeb">
-        <i class="fa-solid fa-store"></i> Portal Web & E-Commerce
+      <button class="erp-suite-pill" onclick="switchErpModule('erp-inventory-view')" id="btnModInv">
+        <i class="fa-solid fa-boxes-stacked"></i> GhaloInv Inventarios
       </button>
     </div>
   </div>
@@ -167,7 +167,7 @@
               <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <span class="app-launcher-status live">
-              <i class="fa-solid fa-database" style="font-size: 0.45rem;"></i> Neon DB
+              <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
           <div class="app-launcher-badge" style="color: #3b82f6;">Cosecha & Báscula</div>
@@ -180,58 +180,67 @@
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-harvest-view')">
-              <i class="fa-solid fa-scale-balanced"></i> Entrar a Cosecha
+              <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
+            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="btn-secondary" title="Abrir Control de Productividad en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
           </div>
         </div>
 
-        <!-- App 3: GhaloCafe Comercial -->
+        <!-- App 3: Sistema GhaloCafe -->
         <div class="app-launcher-card" style="--card-accent: #f59e0b;">
           <div class="app-launcher-top">
             <div class="app-launcher-icon" style="--icon-bg: rgba(245, 158, 11, 0.15); --icon-color: #f59e0b;">
               <i class="fa-solid fa-mug-hot"></i>
             </div>
             <span class="app-launcher-status live">
-              <i class="fa-solid fa-store" style="font-size: 0.45rem;"></i> 5 Puntos
+              <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
-          <div class="app-launcher-badge" style="color: #f59e0b;">Tueste & Comercialización</div>
-          <h3 class="app-launcher-title">GhaloCafe Comercial</h3>
+          <div class="app-launcher-badge" style="color: #f59e0b;">Comercial & Tiendas</div>
+          <h3 class="app-launcher-title">Sistema GhaloCafe</h3>
           <p class="app-launcher-desc">
-            Trazabilidad de lotes de tostión, stock en presentaciones empacadas (250g, 454g, 2.5kg) y distribución a tiendas en Palestina, Manizales, Pereira y Villamaría.
+            Gestión comercial de café de especialidad, facturación, pedidos, tiendas y puntos de venta en el Eje Cafetero y seguimiento a clientes.
           </p>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-shop"></i> 5 Tiendas • Stock Empacado • Marca Propia
+            <i class="fa-solid fa-shop"></i> Tiendas • Clientes • Comercialización
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-ghalocafe-view')">
-              <i class="fa-solid fa-mug-hot"></i> Entrar a Comercial
+              <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
+            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="btn-secondary" title="Abrir Sistema GhaloCafe en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
           </div>
         </div>
 
-        <!-- App 4: Portal Web & E-Commerce -->
-        <div class="app-launcher-card" style="--card-accent: #f43f5e;">
+        <!-- App 4: GhaloInv Inventarios -->
+        <div class="app-launcher-card" style="--card-accent: #06b6d4;">
           <div class="app-launcher-top">
-            <div class="app-launcher-icon" style="--icon-bg: rgba(244, 63, 94, 0.15); --icon-color: #f43f5e;">
-              <i class="fa-solid fa-store"></i>
+            <div class="app-launcher-icon" style="--icon-bg: rgba(6, 182, 212, 0.15); --icon-color: #06b6d4;">
+              <i class="fa-solid fa-boxes-stacked"></i>
             </div>
             <span class="app-launcher-status live">
-              <i class="fa-solid fa-globe" style="font-size: 0.45rem;"></i> Tienda Online
+              <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
-          <div class="app-launcher-badge" style="color: #f43f5e;">Canal Digital B2C</div>
-          <h3 class="app-launcher-title">Portal Web & E-Commerce</h3>
+          <div class="app-launcher-badge" style="color: #06b6d4;">Inventarios & Bodega</div>
+          <h3 class="app-launcher-title">GhaloInv (Inventarios)</h3>
           <p class="app-launcher-desc">
-            Vitrina digital directa al consumidor, posicionamiento de marca de Finca La Leonora, origen único en Palestina Caldas y catálogo online de café de especialidad.
+            Control de inventarios en bodega, stock de café tostado empacado, insumos agrícolas, bolsas, empaques y kardex de movimientos.
           </p>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-cart-shopping"></i> Venta Directa Consumidor • Valor Agregado
+            <i class="fa-solid fa-warehouse"></i> Stock Tostado • Empaques • Bodegas
           </div>
           <div class="app-launcher-actions">
-            <button class="btn-primary" onclick="switchErpModule('erp-web-view')">
-              <i class="fa-solid fa-store"></i> Ver Tienda Demo
+            <button class="btn-primary" onclick="switchErpModule('erp-inventory-view')">
+              <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
+            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="btn-secondary" title="Abrir GhaloInv en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
           </div>
         </div>
 
@@ -1031,14 +1040,14 @@
           </div>
           <div class="iframe-url-display">
             <i class="fa-solid fa-link" style="color: #3b82f6;"></i>
-            <input type="text" id="harvestAppUrlInput" value="https://control-productividad.onrender.com" placeholder="Ingresa URL de tu app en Render" onchange="updateHarvestIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+            <input type="text" id="harvestAppUrlInput" value="https://control-productividad-app.onrender.com/" placeholder="URL de Control de Productividad" onchange="updateHarvestIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
           </div>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn-secondary" onclick="reloadHarvestIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://control-productividad.onrender.com" id="harvestExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            <a href="https://control-productividad-app.onrender.com/" id="harvestExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
           </div>
         </div>
-        <iframe id="harvestIframe" src="https://control-productividad.onrender.com" class="embedded-iframe" title="Control de Productividad Live"></iframe>
+        <iframe id="harvestIframe" src="https://control-productividad-app.onrender.com/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
@@ -1248,14 +1257,14 @@
           </div>
           <div class="iframe-url-display">
             <i class="fa-solid fa-link" style="color: #f59e0b;"></i>
-            <input type="text" id="ghaloAppUrlInput" value="https://ghalocafe.onrender.com" placeholder="Ingresa URL de GhaloCafe en Render" onchange="updateGhaloIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+            <input type="text" id="ghaloAppUrlInput" value="https://sistema-ghalocafe.onrender.com" placeholder="URL de Sistema GhaloCafe" onchange="updateGhaloIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
           </div>
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn-secondary" onclick="reloadGhaloIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://ghalocafe.onrender.com" id="ghaloExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            <a href="https://sistema-ghalocafe.onrender.com" id="ghaloExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
           </div>
         </div>
-        <iframe id="ghaloIframe" src="https://ghalocafe.onrender.com" class="embedded-iframe" title="GhaloCafe Comercial Live"></iframe>
+        <iframe id="ghaloIframe" src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas de Stock y Catálogo (Colapsable) -->
@@ -1359,8 +1368,8 @@
     </div> <!-- Fin ghaloDataContainer -->
   </div> <!-- Fin erp-ghalocafe-view -->
 
-    <!-- ==================== MÓDULO 5: PORTAL WEB & E-COMMERCE ==================== -->
-    <div id="erp-web-view" class="erp-module-section">
+    <!-- ==================== MÓDULO 5: GHALOINV (INVENTARIOS & BODEGAS) ==================== -->
+    <div id="erp-inventory-view" class="erp-module-section">
       <!-- Barra Superior de Navegación de Módulo -->
       <div class="module-back-bar">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -1368,12 +1377,12 @@
             <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
           </button>
           <div class="module-breadcrumb">
-            <span>Finca La Leonora</span> &bull; <strong style="color: #f43f5e;">Portal Web & E-Commerce (Embebido)</strong>
+            <span>Finca La Leonora</span> &bull; <strong style="color: #06b6d4;">GhaloInv (Inventarios & Bodega Embebido)</strong>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <button class="btn-secondary" onclick="toggleWebSimulator()" id="btnToggleWebSim">
-            <i class="fa-solid fa-cart-shopping"></i> Simulador Tienda B2C
+            <i class="fa-solid fa-cart-shopping"></i> Vitrina de Productos
           </button>
           <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
             <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
@@ -1382,22 +1391,22 @@
       </div>
 
       <!-- Espacio Principal: Aplicativo Completo Embebido -->
-      <div class="embedded-iframe-container" id="webIframeContainer">
+      <div class="embedded-iframe-container" id="invIframeContainer">
         <div class="iframe-toolbar">
           <div style="display: flex; align-items: center; gap: 0.6rem;">
             <span class="status-dot online"></span>
-            <strong style="color: #fb7185; font-size: 0.85rem;">Portal Web & Tienda Online Finca La Leonora</strong>
+            <strong style="color: #22d3ee; font-size: 0.85rem;">GhaloInv (Inventarios, Stock de Café Tostado, Insumos & Bodega)</strong>
           </div>
           <div class="iframe-url-display">
-            <i class="fa-solid fa-link" style="color: #f43f5e;"></i>
-            <input type="text" id="webAppUrlInput" value="https://ghalocafe.com" placeholder="URL de tu sitio web oficial" onchange="updateWebIframeUrl(this.value)" title="Escribe la URL de tu sitio web">
+            <i class="fa-solid fa-link" style="color: #06b6d4;"></i>
+            <input type="text" id="invAppUrlInput" value="https://ghaloinv-app.onrender.com" placeholder="URL de GhaloInv en Render" onchange="updateInvIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
           </div>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary" onclick="reloadWebIframe()" title="Recargar"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://ghalocafe.com" id="webExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            <button class="btn-secondary" onclick="reloadInvIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
+            <a href="https://ghaloinv-app.onrender.com" id="invExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
           </div>
         </div>
-        <iframe id="webIframe" src="https://ghalocafe.com" class="embedded-iframe" title="Portal Web Live"></iframe>
+        <iframe id="invIframe" src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Simulador Interactivo Local (Colapsable) -->

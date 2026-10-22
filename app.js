@@ -1595,6 +1595,8 @@ function showToast(message) {
 // ==================== LÓGICA DE LA SUITE ERP UNIFICADA ====================
 
 function switchErpModule(moduleId) {
+  // Mapear compatibilidad de vista web -> inventario
+  if (moduleId === 'erp-web-view') moduleId = 'erp-inventory-view';
   activeErpModule = moduleId;
 
   // Barra de píldoras ERP: en el Portal de Aplicaciones (erp-hub-view) la ocultamos para mantener la pantalla 100% limpia
@@ -1692,12 +1694,12 @@ function toggleHarvestDetails() {
   }
 }
 
-// 3. GhaloCafe Comercial
+// 3. Sistema GhaloCafe
 function reloadGhaloIframe() {
   const frame = document.getElementById('ghaloIframe');
   if (frame) {
     frame.src = frame.src;
-    showToast('Recargando GhaloCafe Comercial...');
+    showToast('Recargando Sistema GhaloCafe...');
   }
 }
 
@@ -1708,7 +1710,7 @@ function updateGhaloIframeUrl(url) {
   if (frame) frame.src = url;
   if (link) link.href = url;
   localStorage.setItem('FINCA_GHALO_URL', url);
-  showToast('URL de GhaloCafe Comercial actualizada');
+  showToast('URL de Sistema GhaloCafe actualizada');
 }
 
 function toggleGhaloDetails() {
@@ -1723,23 +1725,31 @@ function toggleGhaloDetails() {
   }
 }
 
-// 4. Portal Web & E-Commerce
-function reloadWebIframe() {
-  const frame = document.getElementById('webIframe');
+// 4. GhaloInv (Inventarios & Bodega)
+function reloadInvIframe() {
+  const frame = document.getElementById('invIframe');
   if (frame) {
     frame.src = frame.src;
-    showToast('Recargando Portal Web...');
+    showToast('Recargando GhaloInv Inventarios...');
   }
 }
 
-function updateWebIframeUrl(url) {
+function updateInvIframeUrl(url) {
   if (!url) return;
-  const frame = document.getElementById('webIframe');
-  const link = document.getElementById('webExternalLink');
+  const frame = document.getElementById('invIframe');
+  const link = document.getElementById('invExternalLink');
   if (frame) frame.src = url;
   if (link) link.href = url;
-  localStorage.setItem('FINCA_WEB_URL', url);
-  showToast('URL de Portal Web actualizada');
+  localStorage.setItem('FINCA_INV_URL', url);
+  showToast('URL de GhaloInv actualizada');
+}
+
+function reloadWebIframe() {
+  reloadInvIframe();
+}
+
+function updateWebIframeUrl(url) {
+  updateInvIframeUrl(url);
 }
 
 function toggleWebSimulator() {
@@ -1749,39 +1759,40 @@ function toggleWebSimulator() {
     const isHidden = (container.style.display === 'none' || !container.style.display);
     container.style.display = isHidden ? 'block' : 'none';
     if (btn) {
-      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Simulador' : '<i class="fa-solid fa-cart-shopping"></i> Simulador Tienda B2C';
+      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Vitrina' : '<i class="fa-solid fa-cart-shopping"></i> Vitrina de Productos';
     }
   }
 }
 
 function initSavedIframeUrls() {
-  const harvestUrl = localStorage.getItem('FINCA_HARVEST_URL');
-  if (harvestUrl) {
-    const input = document.getElementById('harvestAppUrlInput');
-    const frame = document.getElementById('harvestIframe');
-    const link = document.getElementById('harvestExternalLink');
-    if (input) input.value = harvestUrl;
-    if (frame) frame.src = harvestUrl;
-    if (link) link.href = harvestUrl;
-  }
-  const ghaloUrl = localStorage.getItem('FINCA_GHALO_URL');
-  if (ghaloUrl) {
-    const input = document.getElementById('ghaloAppUrlInput');
-    const frame = document.getElementById('ghaloIframe');
-    const link = document.getElementById('ghaloExternalLink');
-    if (input) input.value = ghaloUrl;
-    if (frame) frame.src = ghaloUrl;
-    if (link) link.href = ghaloUrl;
-  }
-  const webUrl = localStorage.getItem('FINCA_WEB_URL');
-  if (webUrl) {
-    const input = document.getElementById('webAppUrlInput');
-    const frame = document.getElementById('webIframe');
-    const link = document.getElementById('webExternalLink');
-    if (input) input.value = webUrl;
-    if (frame) frame.src = webUrl;
-    if (link) link.href = webUrl;
-  }
+  // URLs por defecto oficiales
+  const defaultHarvestUrl = 'https://control-productividad-app.onrender.com/';
+  const defaultGhaloUrl = 'https://sistema-ghalocafe.onrender.com';
+  const defaultInvUrl = 'https://ghaloinv-app.onrender.com';
+
+  const harvestUrl = localStorage.getItem('FINCA_HARVEST_URL') || defaultHarvestUrl;
+  const harvestInput = document.getElementById('harvestAppUrlInput');
+  const harvestFrame = document.getElementById('harvestIframe');
+  const harvestLink = document.getElementById('harvestExternalLink');
+  if (harvestInput) harvestInput.value = harvestUrl;
+  if (harvestFrame && harvestFrame.src !== harvestUrl) harvestFrame.src = harvestUrl;
+  if (harvestLink) harvestLink.href = harvestUrl;
+
+  const ghaloUrl = localStorage.getItem('FINCA_GHALO_URL') || defaultGhaloUrl;
+  const ghaloInput = document.getElementById('ghaloAppUrlInput');
+  const ghaloFrame = document.getElementById('ghaloIframe');
+  const ghaloLink = document.getElementById('ghaloExternalLink');
+  if (ghaloInput) ghaloInput.value = ghaloUrl;
+  if (ghaloFrame && ghaloFrame.src !== ghaloUrl) ghaloFrame.src = ghaloUrl;
+  if (ghaloLink) ghaloLink.href = ghaloUrl;
+
+  const invUrl = localStorage.getItem('FINCA_INV_URL') || defaultInvUrl;
+  const invInput = document.getElementById('invAppUrlInput');
+  const invFrame = document.getElementById('invIframe');
+  const invLink = document.getElementById('invExternalLink');
+  if (invInput) invInput.value = invUrl;
+  if (invFrame && invFrame.src !== invUrl) invFrame.src = invUrl;
+  if (invLink) invLink.href = invUrl;
 }
 
 // Cargar datos consolidados para el Hub Central

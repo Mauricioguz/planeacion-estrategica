@@ -163,11 +163,11 @@ app.get('/api/erp/consolidated', async (req, res) => {
       totalAreaHa: 16.4,
       storesCount: 5,
       modulesOnline: [
-        { id: 'mod-agri', name: 'AgriControl BI', status: 'online', url: 'https://agri-control-bi.onrender.com' },
-        { id: 'mod-prod', name: 'Control de Productividad', status: 'connected', db: 'control-productividad-db' },
-        { id: 'mod-ghalo', name: 'GhaloCafe Comercial', status: 'connected', stores: 5 },
-        { id: 'mod-plan', name: 'Planeación & Finanzas', status: 'active', url: 'https://planeacion-estrategica.onrender.com' },
-        { id: 'mod-web', name: 'Portal Web & E-Commerce', status: 'ready', type: 'B2C Storefront' }
+        { id: 'mod-agri', name: 'AgriControl BI', status: 'online', url: 'https://agri-control-bi.onrender.com/' },
+        { id: 'mod-prod', name: 'Control de Productividad', status: 'online', url: 'https://control-productividad-app.onrender.com/', db: 'control-productividad-db' },
+        { id: 'mod-ghalo', name: 'Sistema GhaloCafe', status: 'online', url: 'https://sistema-ghalocafe.onrender.com' },
+        { id: 'mod-inv', name: 'GhaloInv Inventarios', status: 'online', url: 'https://ghaloinv-app.onrender.com' },
+        { id: 'mod-plan', name: 'Planeación & Finanzas', status: 'active', url: 'https://planeacion-estrategica.onrender.com' }
       ]
     });
   } catch (err) {
