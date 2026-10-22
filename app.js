@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   switchErpModule('erp-hub-view');
   loadErpHarvestData();
   loadErpWarehouseAndStoresData();
+  initSavedIframeUrls();
 });
 
 // Cargar datos de LocalStorage o inicializar con los de data.js
@@ -1637,22 +1638,149 @@ function switchErpModule(moduleId) {
   }
 }
 
-function toggleAgriControlView(mode) {
-  const cards = document.getElementById('agriCardsContainer');
-  const iframe = document.getElementById('agriIframeContainer');
-  const btnCards = document.getElementById('agriCardsToggleBtn');
-  const btnIframe = document.getElementById('agriIframeToggleBtn');
+// ==================== GESTIÓN DE APLICACIONES EMBEBIDAS (SUITE ERP) ====================
 
-  if (mode === 'cards') {
-    if (cards) cards.style.display = 'block';
-    if (iframe) iframe.style.display = 'none';
-    if (btnCards) btnCards.classList.add('active');
-    if (btnIframe) btnIframe.classList.remove('active');
-  } else {
-    if (cards) cards.style.display = 'none';
-    if (iframe) iframe.style.display = 'block';
-    if (btnCards) btnCards.classList.remove('active');
-    if (btnIframe) btnIframe.classList.add('active');
+// 1. AgriControl BI
+function reloadAgriIframe() {
+  const frame = document.getElementById('agriIframe');
+  if (frame) {
+    frame.src = frame.src;
+    showToast('Recargando AgriControl BI...');
+  }
+}
+
+function toggleAgriDetails() {
+  const cards = document.getElementById('agriCardsContainer');
+  const btn = document.getElementById('btnToggleAgriDetails');
+  if (cards) {
+    const isHidden = (cards.style.display === 'none' || !cards.style.display);
+    cards.style.display = isHidden ? 'block' : 'none';
+    if (btn) {
+      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Fichas Lotes' : '<i class="fa-solid fa-table-cells"></i> Fichas de Lotes & Suelo';
+    }
+  }
+}
+
+// 2. Control de Productividad
+function reloadHarvestIframe() {
+  const frame = document.getElementById('harvestIframe');
+  if (frame) {
+    frame.src = frame.src;
+    showToast('Recargando Control de Productividad...');
+  }
+}
+
+function updateHarvestIframeUrl(url) {
+  if (!url) return;
+  const frame = document.getElementById('harvestIframe');
+  const link = document.getElementById('harvestExternalLink');
+  if (frame) frame.src = url;
+  if (link) link.href = url;
+  localStorage.setItem('FINCA_HARVEST_URL', url);
+  showToast('URL de Control de Productividad actualizada');
+}
+
+function toggleHarvestDetails() {
+  const container = document.getElementById('harvestDataContainer');
+  const btn = document.getElementById('btnToggleHarvestDetails');
+  if (container) {
+    const isHidden = (container.style.display === 'none' || !container.style.display);
+    container.style.display = isHidden ? 'block' : 'none';
+    if (btn) {
+      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Datos Neon' : '<i class="fa-solid fa-database"></i> Datos de Báscula Neon';
+    }
+  }
+}
+
+// 3. GhaloCafe Comercial
+function reloadGhaloIframe() {
+  const frame = document.getElementById('ghaloIframe');
+  if (frame) {
+    frame.src = frame.src;
+    showToast('Recargando GhaloCafe Comercial...');
+  }
+}
+
+function updateGhaloIframeUrl(url) {
+  if (!url) return;
+  const frame = document.getElementById('ghaloIframe');
+  const link = document.getElementById('ghaloExternalLink');
+  if (frame) frame.src = url;
+  if (link) link.href = url;
+  localStorage.setItem('FINCA_GHALO_URL', url);
+  showToast('URL de GhaloCafe Comercial actualizada');
+}
+
+function toggleGhaloDetails() {
+  const container = document.getElementById('ghaloDataContainer');
+  const btn = document.getElementById('btnToggleGhaloDetails');
+  if (container) {
+    const isHidden = (container.style.display === 'none' || !container.style.display);
+    container.style.display = isHidden ? 'block' : 'none';
+    if (btn) {
+      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Inventario' : '<i class="fa-solid fa-store"></i> Inventario & Bodegas';
+    }
+  }
+}
+
+// 4. Portal Web & E-Commerce
+function reloadWebIframe() {
+  const frame = document.getElementById('webIframe');
+  if (frame) {
+    frame.src = frame.src;
+    showToast('Recargando Portal Web...');
+  }
+}
+
+function updateWebIframeUrl(url) {
+  if (!url) return;
+  const frame = document.getElementById('webIframe');
+  const link = document.getElementById('webExternalLink');
+  if (frame) frame.src = url;
+  if (link) link.href = url;
+  localStorage.setItem('FINCA_WEB_URL', url);
+  showToast('URL de Portal Web actualizada');
+}
+
+function toggleWebSimulator() {
+  const container = document.getElementById('webSimulatorContainer');
+  const btn = document.getElementById('btnToggleWebSim');
+  if (container) {
+    const isHidden = (container.style.display === 'none' || !container.style.display);
+    container.style.display = isHidden ? 'block' : 'none';
+    if (btn) {
+      btn.innerHTML = isHidden ? '<i class="fa-solid fa-window-minimize"></i> Ocultar Simulador' : '<i class="fa-solid fa-cart-shopping"></i> Simulador Tienda B2C';
+    }
+  }
+}
+
+function initSavedIframeUrls() {
+  const harvestUrl = localStorage.getItem('FINCA_HARVEST_URL');
+  if (harvestUrl) {
+    const input = document.getElementById('harvestAppUrlInput');
+    const frame = document.getElementById('harvestIframe');
+    const link = document.getElementById('harvestExternalLink');
+    if (input) input.value = harvestUrl;
+    if (frame) frame.src = harvestUrl;
+    if (link) link.href = harvestUrl;
+  }
+  const ghaloUrl = localStorage.getItem('FINCA_GHALO_URL');
+  if (ghaloUrl) {
+    const input = document.getElementById('ghaloAppUrlInput');
+    const frame = document.getElementById('ghaloIframe');
+    const link = document.getElementById('ghaloExternalLink');
+    if (input) input.value = ghaloUrl;
+    if (frame) frame.src = ghaloUrl;
+    if (link) link.href = ghaloUrl;
+  }
+  const webUrl = localStorage.getItem('FINCA_WEB_URL');
+  if (webUrl) {
+    const input = document.getElementById('webAppUrlInput');
+    const frame = document.getElementById('webIframe');
+    const link = document.getElementById('webExternalLink');
+    if (input) input.value = webUrl;
+    if (frame) frame.src = webUrl;
+    if (link) link.href = webUrl;
   }
 }
 

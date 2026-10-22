@@ -757,38 +757,47 @@
 
     <!-- ==================== MÓDULO 2: AGRICONTROL BI ==================== -->
     <div id="erp-agricontrol-view" class="erp-module-section">
-      <!-- Barra de Retorno al Portal Principal -->
+      <!-- Barra Superior de Navegación de Módulo -->
       <div class="module-back-bar">
-        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-        </button>
-        <div class="module-breadcrumb">
-          <span>Finca La Leonora</span> &bull; <strong style="color: #10b981;">AgriControl BI</strong>
-        </div>
-      </div>
-
-      <div class="view-header">
-        <div class="view-title-block">
-          <h2>Módulo AgriControl BI: Gestión de Campo, Suelos & Clima</h2>
-          <p>Supervisión agronómica de los 6 lotes, estado nutricional por análisis químico de suelo, variables climáticas y agenda de labores.</p>
-        </div>
-        <div class="view-actions">
-          <div class="activities-view-switcher">
-            <button class="view-toggle-btn active" id="agriCardsToggleBtn" onclick="toggleAgriControlView('cards')">
-              <i class="fa-solid fa-table-cells-large"></i> Fichas & Paneles
-            </button>
-            <button class="view-toggle-btn" id="agriIframeToggleBtn" onclick="toggleAgriControlView('iframe')">
-              <i class="fa-solid fa-window-maximize"></i> App en Vivo Embebida
-            </button>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+          </button>
+          <div class="module-breadcrumb">
+            <span>Finca La Leonora</span> &bull; <strong style="color: #10b981;">AgriControl BI (App Embebida)</strong>
           </div>
-          <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-primary" style="text-decoration: none;">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir AgriControl BI
-          </a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button class="btn-secondary" onclick="toggleAgriDetails()" id="btnToggleAgriDetails">
+            <i class="fa-solid fa-table-cells"></i> Fichas de Lotes & Suelo
+          </button>
+          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
+          </button>
         </div>
       </div>
 
-      <!-- Contenedor 1: Fichas y Paneles Integrados -->
-      <div id="agriCardsContainer">
+      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <div class="embedded-iframe-container" id="agriIframeContainer">
+        <div class="iframe-toolbar">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="status-dot online"></span>
+            <strong style="color: #10b981; font-size: 0.85rem;">AgriControl BI (Gestión Agronómica, Lotes, Suelos, Clima & Labores)</strong>
+          </div>
+          <div class="iframe-url-display">
+            <i class="fa-solid fa-lock" style="color: #10b981;"></i>
+            <span>https://agri-control-bi.onrender.com/</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="reloadAgriIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
+            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+        <iframe id="agriIframe" src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
+      </div>
+
+      <!-- Contenedor 2: Fichas y Paneles de Apoyo (Opcionales) -->
+      <div id="agriCardsContainer" style="display: none;">
         <!-- Fichas de los 6 Lotes y Cultivos -->
         <div class="section-subheading" style="margin-bottom: 1rem;">
           <h3><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> Lotes y Cultivos Productivos (16.4 Hectáreas Totales)</h3>
@@ -988,43 +997,52 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Contenedor 2: App en Vivo Embebida (Iframe) -->
-      <div id="agriIframeContainer" style="display: none;">
-        <div class="embedded-iframe-container">
-          <iframe src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
-        </div>
       </div>
     </div>
 
     <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
     <div id="erp-harvest-view" class="erp-module-section">
-      <!-- Barra de Retorno al Portal Principal -->
+      <!-- Barra Superior de Navegación de Módulo -->
       <div class="module-back-bar">
-        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-        </button>
-        <div class="module-breadcrumb">
-          <span>Finca La Leonora</span> &bull; <strong style="color: #3b82f6;">Control de Productividad (Cosecha)</strong>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+          </button>
+          <div class="module-breadcrumb">
+            <span>Finca La Leonora</span> &bull; <strong style="color: #3b82f6;">Control de Productividad (App Embebida)</strong>
+          </div>
         </div>
-      </div>
-
-      <div class="view-header">
-        <div class="view-title-block">
-          <h2>Módulo Control de Productividad: Cosecha, Pesajes & Liquidación</h2>
-          <p>Lectura directa en tiempo real de las tablas operativas <code>Recoleccion</code>, <code>Recolector</code> y <code>Lote</code> en Neon PostgreSQL.</p>
-        </div>
-        <div class="view-actions">
-          <button class="btn-primary" onclick="loadErpHarvestData()">
-            <i class="fa-solid fa-arrows-rotate"></i> Actualizar Pesajes
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button class="btn-secondary" onclick="toggleHarvestDetails()" id="btnToggleHarvestDetails">
+            <i class="fa-solid fa-database"></i> Datos de Báscula Neon
+          </button>
+          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
           </button>
         </div>
       </div>
 
-      <!-- Tarjetas de Métricas en Vivo de Cosecha -->
-      <div class="kpi-grid" style="margin-bottom: 2rem;">
+      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <div class="embedded-iframe-container" id="harvestIframeContainer">
+        <div class="iframe-toolbar">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="status-dot online"></span>
+            <strong style="color: #60a5fa; font-size: 0.85rem;">Control de Productividad (Pesaje, Báscula & Cosecha en Vivo)</strong>
+          </div>
+          <div class="iframe-url-display">
+            <i class="fa-solid fa-link" style="color: #3b82f6;"></i>
+            <input type="text" id="harvestAppUrlInput" value="https://control-productividad.onrender.com" placeholder="Ingresa URL de tu app en Render" onchange="updateHarvestIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="reloadHarvestIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
+            <a href="https://control-productividad.onrender.com" id="harvestExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+        <iframe id="harvestIframe" src="https://control-productividad.onrender.com" class="embedded-iframe" title="Control de Productividad Live"></iframe>
+      </div>
+
+      <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
+      <div id="harvestDataContainer" style="display: none;">
         <div class="kpi-card" style="--accent-color: #10b981;">
           <div class="kpi-top">
             <span class="kpi-label">Total Kilos Cereza Cosechados</span>
@@ -1196,34 +1214,53 @@
           </table>
         </div>
       </div>
-    </div>
+    </div> <!-- Fin harvestDataContainer -->
+  </div> <!-- Fin erp-harvest-view -->
 
     <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (TIENDAS & STOCK) ==================== -->
     <div id="erp-ghalocafe-view" class="erp-module-section">
-      <!-- Barra de Retorno al Portal Principal -->
+      <!-- Barra Superior de Navegación de Módulo -->
       <div class="module-back-bar">
-        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-        </button>
-        <div class="module-breadcrumb">
-          <span>Finca La Leonora</span> &bull; <strong style="color: #f59e0b;">GhaloCafe Comercial</strong>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+          </button>
+          <div class="module-breadcrumb">
+            <span>Finca La Leonora</span> &bull; <strong style="color: #f59e0b;">GhaloCafe Comercial (App Embebida)</strong>
+          </div>
         </div>
-      </div>
-
-      <div class="view-header">
-        <div class="view-title-block">
-          <h2>Módulo GhaloCafe Comercial: Tueste, 5 Tiendas & Inventario</h2>
-          <p>Transformación a mayor valor agregado, trazabilidad de café pergamino a café tostado y stock en puntos de venta.</p>
-        </div>
-        <div class="view-actions">
-          <button class="btn-primary" onclick="loadErpWarehouseAndStoresData()">
-            <i class="fa-solid fa-arrows-rotate"></i> Actualizar Stock
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button class="btn-secondary" onclick="toggleGhaloDetails()" id="btnToggleGhaloDetails">
+            <i class="fa-solid fa-store"></i> Inventario & Bodegas
+          </button>
+          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
           </button>
         </div>
       </div>
 
-      <!-- Tarjetas de Métricas Comerciales -->
-      <div class="kpi-grid" style="margin-bottom: 2rem;">
+      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <div class="embedded-iframe-container" id="ghaloIframeContainer">
+        <div class="iframe-toolbar">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="status-dot online"></span>
+            <strong style="color: #fbbf24; font-size: 0.85rem;">GhaloCafe Comercial (Tueste, Puntos de Venta & Distribución)</strong>
+          </div>
+          <div class="iframe-url-display">
+            <i class="fa-solid fa-link" style="color: #f59e0b;"></i>
+            <input type="text" id="ghaloAppUrlInput" value="https://ghalocafe.onrender.com" placeholder="Ingresa URL de GhaloCafe en Render" onchange="updateGhaloIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="reloadGhaloIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
+            <a href="https://ghalocafe.onrender.com" id="ghaloExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+        <iframe id="ghaloIframe" src="https://ghalocafe.onrender.com" class="embedded-iframe" title="GhaloCafe Comercial Live"></iframe>
+      </div>
+
+      <!-- Contenedor 2: Métricas de Stock y Catálogo (Colapsable) -->
+      <div id="ghaloDataContainer" style="display: none;">
+        <div class="kpi-grid" style="margin-bottom: 2rem;">
         <div class="kpi-card" style="--accent-color: #f59e0b;">
           <div class="kpi-top">
             <span class="kpi-label">Café Enviado a Tostión (Neon DB)</span>
@@ -1319,31 +1356,52 @@
           </table>
         </div>
       </div>
-    </div>
+    </div> <!-- Fin ghaloDataContainer -->
+  </div> <!-- Fin erp-ghalocafe-view -->
 
     <!-- ==================== MÓDULO 5: PORTAL WEB & E-COMMERCE ==================== -->
     <div id="erp-web-view" class="erp-module-section">
-      <!-- Barra de Retorno al Portal Principal -->
+      <!-- Barra Superior de Navegación de Módulo -->
       <div class="module-back-bar">
-        <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-          <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-        </button>
-        <div class="module-breadcrumb">
-          <span>Finca La Leonora</span> &bull; <strong style="color: #f43f5e;">Portal Web & E-Commerce</strong>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
+            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
+          </button>
+          <div class="module-breadcrumb">
+            <span>Finca La Leonora</span> &bull; <strong style="color: #f43f5e;">Portal Web & E-Commerce (Embebido)</strong>
+          </div>
         </div>
-      </div>
-
-      <div class="view-header">
-        <div class="view-title-block">
-          <h2>Portal Web & E-Commerce Finca La Leonora</h2>
-          <p>Vitrina de marca directa al consumidor (B2C), origen certificado en Palestina Caldas y tienda digital interactiva.</p>
-        </div>
-        <div class="view-actions">
-          <button class="btn-primary" onclick="showToast('Abriendo enlace de tienda pública e-commerce...')">
-            <i class="fa-solid fa-globe"></i> Ver Web Pública
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button class="btn-secondary" onclick="toggleWebSimulator()" id="btnToggleWebSim">
+            <i class="fa-solid fa-cart-shopping"></i> Simulador Tienda B2C
+          </button>
+          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
           </button>
         </div>
       </div>
+
+      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <div class="embedded-iframe-container" id="webIframeContainer">
+        <div class="iframe-toolbar">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="status-dot online"></span>
+            <strong style="color: #fb7185; font-size: 0.85rem;">Portal Web & Tienda Online Finca La Leonora</strong>
+          </div>
+          <div class="iframe-url-display">
+            <i class="fa-solid fa-link" style="color: #f43f5e;"></i>
+            <input type="text" id="webAppUrlInput" value="https://ghalocafe.com" placeholder="URL de tu sitio web oficial" onchange="updateWebIframeUrl(this.value)" title="Escribe la URL de tu sitio web">
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" onclick="reloadWebIframe()" title="Recargar"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
+            <a href="https://ghalocafe.com" id="webExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+        <iframe id="webIframe" src="https://ghalocafe.com" class="embedded-iframe" title="Portal Web Live"></iframe>
+      </div>
+
+      <!-- Contenedor 2: Simulador Interactivo Local (Colapsable) -->
+      <div id="webSimulatorContainer" style="display: none;">
 
       <!-- Banner de Origen de Finca La Leonora -->
       <div class="erp-hub-hero" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15));">
@@ -1449,7 +1507,8 @@
           </div>
         </div>
       </div>
-    </div>
+      </div> <!-- Fin webSimulatorContainer -->
+    </div> <!-- Fin erp-web-view -->
 
   <!-- ==================== MODAL: NUEVA / EDITAR ACTIVIDAD ==================== -->
   <div class="modal-overlay" id="activityModalOverlay">
