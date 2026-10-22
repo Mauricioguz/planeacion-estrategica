@@ -274,6 +274,183 @@ async function syncFromExistingApps(mesIndex) {
   }
 }
 
+// ==================== MÓDULOS DE INTEGRACIÓN ERP (SUITE COMPLETA) ====================
+
+// 1. Datos de Cosecha & Recolección (desde control-productividad-db)
+async function getErpHarvestData() {
+  if (!pool) return getFallbackHarvestData();
+
+  try {
+    const tableCheck = await pool.query("SELECT to_regclass('public.\"Recoleccion\"') as exists;");
+    if (!tableCheck.rows[0].exists) return getFallbackHarvestData();
+
+    // Resumen de Kilos Totales y Recolecciones
+    const statsRes = await pool.query(`
+      SELECT 
+        COUNT(*)::int as total_recolecciones,
+        COALESCE(ROUND(SUM("pesoCereza")::numeric, 1), 0) as total_kilos_cereza,
+        COALESCE(ROUND(AVG("pesoCereza")::numeric, 1), 0) as promedio_pase_kilos,
+        MIN(fecha) as fecha_inicio,
+        MAX(fecha) as fecha_fin
+      FROM "Recoleccion";
+    `);
+
+    // Top Recolectores
+    const recolesRes = await pool.query(`
+      SELECT 
+        COALESCE(r.nombre, 'Sin Asignar') as nombre,
+        COUNT(rec.id)::int as pases,
+        COALESCE(ROUND(SUM(rec."pesoCereza")::numeric, 1), 0) as total_kilos,
+        COALESCE(ROUND(AVG(rec."pesoCereza")::numeric, 1), 0) as promedio_kilos
+      FROM "Recoleccion" rec
+      LEFT JOIN "Recolector" r ON rec."recolectorId" = r.id
+      GROUP BY r.nombre
+      ORDER BY total_kilos DESC
+      LIMIT 10;
+    `);
+
+    // Kilos por Lote
+    const lotesRes = await pool.query(`
+      SELECT 
+        COALESCE(l.nombre, 'General') as lote_nombre,
+        COUNT(rec.id)::int as registros,
+        COALESCE(ROUND(SUM(rec."pesoCereza")::numeric, 1), 0) as total_kilos
+      FROM "Recoleccion" rec
+      LEFT JOIN "Lote" l ON rec."loteId" = l.id
+      GROUP BY l.nombre
+      ORDER BY total_kilos DESC;
+    `);
+
+    // Últimos 15 registros de pesaje
+    const ultimosRes = await pool.query(`
+      SELECT 
+        rec.id,
+        TO_CHAR(rec.fecha, 'YYYY-MM-DD') as fecha,
+        ROUND(rec."pesoCereza"::numeric, 1) as kilos,
+        COALESCE(r.nombre, 'Sin asignar') as recolector,
+        COALESCE(l.nombre, 'General') as lote
+      FROM "Recoleccion" rec
+      LEFT JOIN "Recolector" r ON rec."recolectorId" = r.id
+      LEFT JOIN "Lote" l ON rec."loteId" = l.id
+      ORDER BY rec.fecha DESC, rec."createdAt" DESC
+      LIMIT 15;
+    `);
+
+    return {
+      source: 'neon_live',
+      stats: statsRes.rows[0],
+      recolectores: recolesRes.rows,
+      kilosPorLote: lotesRes.rows,
+      ultimosRegistros: ultimosRes.rows
+    };
+  } catch (err) {
+    console.error('Error al obtener datos de cosecha ERP:', err.message);
+    return getFallbackHarvestData();
+  }
+}
+
+// 2. Datos de Bodega y Salidas de Café (control-productividad-db)
+async function getErpWarehouseData() {
+  if (!pool) return getFallbackWarehouseData();
+
+  try {
+    const tableCheck = await pool.query("SELECT to_regclass('public.\"SalidaBodega\"') as exists;");
+    if (!tableCheck.rows[0].exists) return getFallbackWarehouseData();
+
+    const statsRes = await pool.query(`
+      SELECT 
+        COUNT(*)::int as total_salidas,
+        COALESCE(ROUND(SUM(cantidad)::numeric, 1), 0) as total_kilos,
+        COALESCE(ROUND(SUM(CASE WHEN destino = 'TOSTION' THEN cantidad ELSE 0 END)::numeric, 1), 0) as kilos_tostion,
+        COALESCE(ROUND(SUM(CASE WHEN destino = 'VENTA_COOPERATIVA' THEN cantidad ELSE 0 END)::numeric, 1), 0) as kilos_cooperativa
+      FROM "SalidaBodega";
+    `);
+
+    const porDestino = await pool.query(`
+      SELECT 
+        COALESCE(destino, 'Sin Destino') as destino, 
+        COALESCE(tipo, 'PERGAMINO') as tipo, 
+        COALESCE("metodoBeneficio", 'TRADICIONAL') as metodo_beneficio, 
+        COALESCE(ROUND(SUM(cantidad)::numeric, 1), 0) as total_kilos, 
+        COUNT(*)::int as envios
+      FROM "SalidaBodega"
+      GROUP BY destino, tipo, "metodoBeneficio"
+      ORDER BY total_kilos DESC;
+    `);
+
+    const ultimasSalidas = await pool.query(`
+      SELECT 
+        id, 
+        TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, 
+        ROUND(cantidad::numeric, 1) as cantidad, 
+        tipo, 
+        destino, 
+        "metodoBeneficio" as metodo_beneficio
+      FROM "SalidaBodega"
+      ORDER BY fecha DESC, "createdAt" DESC
+      LIMIT 10;
+    `);
+
+    return {
+      source: 'neon_live',
+      stats: statsRes.rows[0],
+      porDestino: porDestino.rows,
+      ultimasSalidas: ultimasSalidas.rows
+    };
+  } catch (err) {
+    console.error('Error al obtener datos de bodega ERP:', err.message);
+    return getFallbackWarehouseData();
+  }
+}
+
+function getFallbackHarvestData() {
+  return {
+    source: 'local_dataset',
+    stats: {
+      total_recolecciones: 310,
+      total_kilos_cereza: 14850.5,
+      promedio_pase_kilos: 47.9
+    },
+    recolectores: [
+      { nombre: 'DIEGO CHAVEZ', pases: 62, total_kilos: 3240, promedio_kilos: 52.2 },
+      { nombre: 'NORBERTO', pases: 58, total_kilos: 2980, promedio_kilos: 51.4 },
+      { nombre: 'SELSO', pases: 54, total_kilos: 2750, promedio_kilos: 50.9 },
+      { nombre: 'JAVIER', pases: 49, total_kilos: 2460, promedio_kilos: 50.2 }
+    ],
+    kilosPorLote: [
+      { lote_nombre: 'Lote Amelia', registros: 110, total_kilos: 5820 },
+      { lote_nombre: 'Lote Manuela', registros: 95, total_kilos: 4610 },
+      { lote_nombre: 'Lote Origen', registros: 75, total_kilos: 3420 }
+    ],
+    ultimosRegistros: [
+      { id: 'rec-1', fecha: '2026-10-06', kilos: 45, recolector: 'DIEGO CHAVEZ', lote: 'Lote Amelia' },
+      { id: 'rec-2', fecha: '2026-10-06', kilos: 34, recolector: 'JAVIER', lote: 'Lote Amelia' },
+      { id: 'rec-3', fecha: '2026-10-06', kilos: 42, recolector: 'NORBERTO', lote: 'Lote Manuela' }
+    ]
+  };
+}
+
+function getFallbackWarehouseData() {
+  return {
+    source: 'local_dataset',
+    stats: {
+      total_salidas: 29,
+      total_kilos: 2840,
+      kilos_tostion: 980,
+      kilos_cooperativa: 1860
+    },
+    porDestino: [
+      { destino: 'VENTA_COOPERATIVA', tipo: 'PERGAMINO_SECO', metodo_beneficio: 'LAVADO', total_kilos: 1860, envios: 18 },
+      { destino: 'TOSTION', tipo: 'PERGAMINO_SECO', metodo_beneficio: 'FERMENTADO', total_kilos: 980, envios: 11 }
+    ],
+    ultimasSalidas: [
+      { id: 'sal-1', fecha: '2026-10-03', cantidad: 72, tipo: 'PASILLA', destino: 'VENTA_COOPERATIVA', metodo_beneficio: 'LAVADO' },
+      { id: 'sal-2', fecha: '2026-10-03', cantidad: 53, tipo: 'PERGAMINO_SECO', destino: 'VENTA_COOPERATIVA', metodo_beneficio: 'LAVADO' },
+      { id: 'sal-3', fecha: '2026-10-02', cantidad: 37, tipo: 'PERGAMINO_SECO', destino: 'TOSTION', metodo_beneficio: 'FERMENTADO' }
+    ]
+  };
+}
+
 module.exports = {
   pool,
   testAndInitDb,
@@ -281,5 +458,7 @@ module.exports = {
   upsertActivityInNeon,
   deleteActivityFromNeon,
   upsertRealMonthlyInNeon,
-  syncFromExistingApps
+  syncFromExistingApps,
+  getErpHarvestData,
+  getErpWarehouseData
 };

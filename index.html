@@ -67,8 +67,35 @@
     </div>
   </header>
 
-  <!-- ==================== BARRA DE PESTAÑAS (TABS) ==================== -->
-  <nav class="tab-navbar">
+  <!-- ==================== SUITE ERP: SELECTOR MAESTRO DE MÓDULOS (APP SWITCHER) ==================== -->
+  <div class="erp-suite-bar">
+    <div class="erp-suite-label">
+      <i class="fa-solid fa-cubes-stacked"></i> <strong>SUITE ERP FINCA LA LEONORA</strong>
+    </div>
+    <div class="erp-suite-pills-container">
+      <button class="erp-suite-pill active" onclick="switchErpModule('erp-hub-view')" id="btnModHub">
+        <i class="fa-solid fa-shapes"></i> Centro de Mando ERP
+      </button>
+      <button class="erp-suite-pill" onclick="switchErpModule('plan-finance-view')" id="btnModPlan">
+        <i class="fa-solid fa-chart-line"></i> Planeación & Finanzas
+      </button>
+      <button class="erp-suite-pill" onclick="switchErpModule('erp-agricontrol-view')" id="btnModAgri">
+        <i class="fa-solid fa-seedling"></i> AgriControl BI
+      </button>
+      <button class="erp-suite-pill" onclick="switchErpModule('erp-harvest-view')" id="btnModHarvest">
+        <i class="fa-solid fa-scale-balanced"></i> Cosecha & Productividad
+      </button>
+      <button class="erp-suite-pill" onclick="switchErpModule('erp-ghalocafe-view')" id="btnModGhalo">
+        <i class="fa-solid fa-mug-hot"></i> GhaloCafe Comercial
+      </button>
+      <button class="erp-suite-pill" onclick="switchErpModule('erp-web-view')" id="btnModWeb">
+        <i class="fa-solid fa-store"></i> Portal Web & E-Commerce
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== BARRA DE PESTAÑAS (TABS SUB-MÓDULO PLANEACIÓN) ==================== -->
+  <nav class="tab-navbar" id="planSubNav" style="display: none;">
     <button class="nav-tab-btn active" onclick="switchTab('dashboard-view')">
       <i class="fa-solid fa-chart-pie"></i> Dashboard Ejecutivo
     </button>
@@ -88,6 +115,237 @@
 
   <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
   <main class="app-main">
+
+    <!-- ==================== MÓDULO 0: CENTRO DE MANDO ERP CONSOLIDADO ==================== -->
+    <div id="erp-hub-view" class="erp-module-section active">
+      <!-- Hero Banner Suite ERP -->
+      <div class="erp-hub-hero">
+        <div>
+          <div class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); margin-bottom: 0.5rem; display: inline-flex;">
+            <i class="fa-solid fa-network-wired"></i> Suite Empresarial Integrada en Tiempo Real
+          </div>
+          <h2 class="erp-hub-title">Centro de Mando ERP: Finca La Leonora & GhaloCafe</h2>
+          <p class="erp-hub-subtitle">
+            Ambiente único que consolida las 4 aplicaciones y el portal web de la finca sin alterar sus bases de datos independientes. Control total de Campo, Cosecha, Tueste, Tiendas y Finanzas bajo una sola URL.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-primary" onclick="triggerExternalSync()">
+            <i class="fa-solid fa-arrows-rotate"></i> Consolidar Datos Ahora
+          </button>
+          <button class="btn-secondary" onclick="exportToExcel()">
+            <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Reporte ERP
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Tarjetas de Cruce Maestro -->
+      <div class="kpi-grid" style="margin-bottom: 2rem;">
+        <!-- KPI 1: Cosecha Real en Bodega -->
+        <div class="kpi-card" style="--accent-color: #10b981; cursor: pointer;" onclick="switchErpModule('erp-harvest-view')">
+          <div class="kpi-top">
+            <span class="kpi-label">Cosecha Total en Bodega (Neon DB)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-scale-balanced"></i></div>
+          </div>
+          <div class="kpi-value" id="hubKpiHarvestKg">13.296 kg</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-check-circle"></i> 310 Pases</span>
+            <span class="kpi-context">Café cereza pesado en báscula</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: Café a Tueste & Ventas GhaloCafe -->
+        <div class="kpi-card" style="--accent-color: #f59e0b; cursor: pointer;" onclick="switchErpModule('erp-ghalocafe-view')">
+          <div class="kpi-top">
+            <span class="kpi-label">Red Comercial GhaloCafe</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-mug-hot"></i></div>
+          </div>
+          <div class="kpi-value" id="hubKpiStores">5 Tiendas / Bodegas</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-fire-burner"></i> 380 kg Tueste</span>
+            <span class="kpi-context">Palestina, Manizales, Villamaría, Pereira</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Lotes & Agronomía (AgriControl BI) -->
+        <div class="kpi-card" style="--accent-color: #06b6d4; cursor: pointer;" onclick="switchErpModule('erp-agricontrol-view')">
+          <div class="kpi-top">
+            <span class="kpi-label">Agronomía & Lotes (AgriControl BI)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-seedling"></i></div>
+          </div>
+          <div class="kpi-value">6 Lotes (16.4 Ha)</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-flask"></i> 100% Suelos</span>
+            <span class="kpi-context">Café + Aguacate Hass + Plátano</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: Rentabilidad & EBITDA -->
+        <div class="kpi-card" style="--accent-color: #8b5cf6; cursor: pointer;" onclick="switchErpModule('plan-finance-view')">
+          <div class="kpi-top">
+            <span class="kpi-label">EBITDA & Runway Financiero</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-vault"></i></div>
+          </div>
+          <div class="kpi-value">$62.4 M</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">+26.3% Margen</span>
+            <span class="kpi-context">3.4 meses de reserva de caja</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matriz de las 5 Aplicaciones del Ecosistema -->
+      <div class="section-subheading" style="margin-bottom: 1rem;">
+        <h3><i class="fa-solid fa-cubes"></i> Módulos y Aplicaciones Integradas en la Suite ERP</h3>
+        <span class="badge-tag">5 Módulos Conectados</span>
+      </div>
+
+      <div class="erp-apps-grid">
+        <!-- App 1: AgriControl BI -->
+        <div class="erp-app-card" onclick="switchErpModule('erp-agricontrol-view')">
+          <div class="erp-app-header">
+            <div class="erp-app-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              <i class="fa-solid fa-seedling"></i>
+            </div>
+            <span class="badge-status in_progress"><i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea</span>
+          </div>
+          <div class="erp-app-title">AgriControl BI</div>
+          <p class="erp-app-desc">Control técnico agronómico, lotes en policultivo, análisis químicos de suelo, curvas de clima y agenda de labores de campo.</p>
+          <div class="erp-app-footer">
+            <span style="color: var(--emerald-finca); font-weight: 600;">6 Lotes • 16.4 Ha</span>
+            <span style="color: var(--primary-gold);">Entrar al Módulo &rarr;</span>
+          </div>
+        </div>
+
+        <!-- App 2: Control de Productividad & Cosecha -->
+        <div class="erp-app-card" onclick="switchErpModule('erp-harvest-view')">
+          <div class="erp-app-header">
+            <div class="erp-app-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <span class="badge-status in_progress"><i class="fa-solid fa-database" style="font-size: 0.5rem;"></i> Neon DB</span>
+          </div>
+          <div class="erp-app-title">Control de Productividad</div>
+          <p class="erp-app-desc">Pesaje en báscula de café cereza, rendimiento individual por recolector, liquidación de jornales a destajo y salidas de bodega.</p>
+          <div class="erp-app-footer">
+            <span style="color: #60a5fa; font-weight: 600;">13.296 kg • 310 Pases</span>
+            <span style="color: var(--primary-gold);">Ver Cosecha &rarr;</span>
+          </div>
+        </div>
+
+        <!-- App 3: GhaloCafe Comercial & Tiendas -->
+        <div class="erp-app-card" onclick="switchErpModule('erp-ghalocafe-view')">
+          <div class="erp-app-header">
+            <div class="erp-app-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+              <i class="fa-solid fa-mug-hot"></i>
+            </div>
+            <span class="badge-status in_progress"><i class="fa-solid fa-store" style="font-size: 0.5rem;"></i> 5 Puntos</span>
+          </div>
+          <div class="erp-app-title">GhaloCafe Comercial</div>
+          <p class="erp-app-desc">Gestión de lotes de tueste, stock de presentaciones (250g, 454g, 2.5kg) y distribución en las 5 tiendas y bodegas de la marca.</p>
+          <div class="erp-app-footer">
+            <span style="color: #fbbf24; font-weight: 600;">380 kg Tueste • 5 Tiendas</span>
+            <span style="color: var(--primary-gold);">Ver Inventario &rarr;</span>
+          </div>
+        </div>
+
+        <!-- App 4: Planeación Estratégica & Finanzas -->
+        <div class="erp-app-card" onclick="switchErpModule('plan-finance-view')">
+          <div class="erp-app-header">
+            <div class="erp-app-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <span class="badge-status in_progress"><i class="fa-solid fa-shield-check" style="font-size: 0.5rem;"></i> Activo</span>
+          </div>
+          <div class="erp-app-title">Planeación & Finanzas</div>
+          <p class="erp-app-desc">P&G proyectado a 24 meses, Flujo de Caja y Runway, Diagrama de Gantt por lotes y Control de variaciones Real vs. Presupuestado.</p>
+          <div class="erp-app-footer">
+            <span style="color: #a78bfa; font-weight: 600;">P&G 24 Meses • Gantt Lotes</span>
+            <span style="color: var(--primary-gold);">Abrir Finanzas &rarr;</span>
+          </div>
+        </div>
+
+        <!-- App 5: Portal Web & E-Commerce -->
+        <div class="erp-app-card" onclick="switchErpModule('erp-web-view')">
+          <div class="erp-app-header">
+            <div class="erp-app-icon" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+              <i class="fa-solid fa-store"></i>
+            </div>
+            <span class="badge-status in_progress"><i class="fa-solid fa-globe" style="font-size: 0.5rem;"></i> B2C Online</span>
+          </div>
+          <div class="erp-app-title">Portal Web & E-Commerce</div>
+          <p class="erp-app-desc">Vitrina digital interactiva, historia de origen en Palestina Caldas y tienda online directa al consumidor para café de especialidad.</p>
+          <div class="erp-app-footer">
+            <span style="color: #fb7185; font-weight: 600;">Meta 45% E-commerce</span>
+            <span style="color: var(--primary-gold);">Ver Tienda &rarr;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flujo Integral De la Finca a la Taza (Value Stream Pipeline) -->
+      <div class="pipeline-flow-wrapper">
+        <div class="section-subheading">
+          <h3><i class="fa-solid fa-timeline"></i> Flujo Operativo Integral: De la Finca a la Taza</h3>
+          <span class="badge-tag">Trazabilidad Total</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Cómo viaja la información entre los módulos sin duplicar digitación y garantizando el control de costos y rentabilidad en cada etapa:
+        </p>
+
+        <div class="pipeline-steps-grid">
+          <div class="pipeline-step-card">
+            <div class="pipeline-step-num">1</div>
+            <div class="pipeline-step-title">Campo & Suelos</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">AgriControl BI</div>
+            <div class="pipeline-step-metric">6 Lotes (16.4 Ha)</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Enmiendas químicas y podas</div>
+          </div>
+
+          <div class="pipeline-step-card">
+            <div class="pipeline-step-num">2</div>
+            <div class="pipeline-step-title">Cosecha & Pesaje</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Control Productividad</div>
+            <div class="pipeline-step-metric">13.296 kg Cereza</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Pago destajo por recolector</div>
+          </div>
+
+          <div class="pipeline-step-card">
+            <div class="pipeline-step-num">3</div>
+            <div class="pipeline-step-title">Beneficio & Bodega</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">SalidaBodega Neon</div>
+            <div class="pipeline-step-metric">2.611 kg Pergamino</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Lavado y Fermentado</div>
+          </div>
+
+          <div class="pipeline-step-card">
+            <div class="pipeline-step-num">4</div>
+            <div class="pipeline-step-title">Tueste GhaloCafe</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">GhaloCafe Comercial</div>
+            <div class="pipeline-step-metric">380 kg a Tostión</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">5 Presentaciones empacadas</div>
+          </div>
+
+          <div class="pipeline-step-card">
+            <div class="pipeline-step-num">5</div>
+            <div class="pipeline-step-title">Tiendas & E-Commerce</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Web & 5 Tiendas</div>
+            <div class="pipeline-step-metric">B2C + B2B</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Valor agregado directo</div>
+          </div>
+
+          <div class="pipeline-step-card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05);">
+            <div class="pipeline-step-num" style="background: #10b981; color: #fff;"><i class="fa-solid fa-check"></i></div>
+            <div class="pipeline-step-title" style="color: #fbbf24;">Control Financiero</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.4rem;">Planeación Estratégica</div>
+            <div class="pipeline-step-metric" style="color: #fbbf24;">P&G + EBITDA</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Consolidación automática</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MÓDULO 1: PLANEACIÓN ESTRATÉGICA & FINANZAS ==================== -->
+    <div id="plan-finance-view" class="erp-module-section">
 
     <!-- ==================== VISTA 1: DASHBOARD EJECUTIVO ==================== -->
     <section id="dashboard-view" class="view-section active">
@@ -592,7 +850,663 @@
       </div>
     </section>
 
-  </main>
+    </div> <!-- ==================== FIN MÓDULO 1: PLANEACIÓN & FINANZAS ==================== -->
+
+    <!-- ==================== MÓDULO 2: AGRICONTROL BI ==================== -->
+    <div id="erp-agricontrol-view" class="erp-module-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Módulo AgriControl BI: Gestión de Campo, Suelos & Clima</h2>
+          <p>Supervisión agronómica de los 6 lotes, estado nutricional por análisis químico de suelo, variables climáticas y agenda de labores.</p>
+        </div>
+        <div class="view-actions">
+          <div class="activities-view-switcher">
+            <button class="view-toggle-btn active" id="agriCardsToggleBtn" onclick="toggleAgriControlView('cards')">
+              <i class="fa-solid fa-table-cells-large"></i> Fichas & Paneles
+            </button>
+            <button class="view-toggle-btn" id="agriIframeToggleBtn" onclick="toggleAgriControlView('iframe')">
+              <i class="fa-solid fa-window-maximize"></i> App en Vivo Embebida
+            </button>
+          </div>
+          <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-primary" style="text-decoration: none;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir AgriControl BI
+          </a>
+        </div>
+      </div>
+
+      <!-- Contenedor 1: Fichas y Paneles Integrados -->
+      <div id="agriCardsContainer">
+        <!-- Fichas de los 6 Lotes y Cultivos -->
+        <div class="section-subheading" style="margin-bottom: 1rem;">
+          <h3><i class="fa-solid fa-map-location-dot" style="color: #10b981;"></i> Lotes y Cultivos Productivos (16.4 Hectáreas Totales)</h3>
+          <span class="badge-tag">Policultivos & Monocultivos</span>
+        </div>
+
+        <div class="erp-apps-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-bottom: 2rem;">
+          <!-- Lote 1: Manuela -->
+          <div class="store-card" style="border-left: 4px solid #10b981;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Policultivo • 2.8 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">LOTE-01</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Manuela</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café (Variedad Castillo) + Aguacate Hass intercalado.<br>
+              <strong>Densidad:</strong> 4.800 árboles/ha café + 180 árboles/ha aguacate.<br>
+              <strong>Labor Prioritaria:</strong> Fertilización edáfica fraccionada y poda de formación en aguacate.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Norberto</strong></span>
+              <span style="color: #10b981; font-weight: 600;">Estado: Óptimo</span>
+            </div>
+          </div>
+
+          <!-- Lote 2: Origen -->
+          <div class="store-card" style="border-left: 4px solid #059669;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Policultivo • 3.2 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(5, 150, 105, 0.15); color: #059669;">LOTE-02</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Origen</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café Especial (Geisha / Bourbon Rosado) + Aguacate.<br>
+              <strong>Densidad:</strong> 4.500 árboles/ha café + 200 árboles/ha aguacate.<br>
+              <strong>Labor Prioritaria:</strong> Bioestimulación foliar para amarre de fruto y cosecha selectiva.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Norberto</strong></span>
+              <span style="color: #059669; font-weight: 600;">Estado: En Cosecha</span>
+            </div>
+          </div>
+
+          <!-- Lote 3: Amelia -->
+          <div class="store-card" style="border-left: 4px solid #d97706;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Monocultivo • 3.5 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(217, 119, 6, 0.15); color: #d97706;">LOTE-03</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Amelia</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café Castillo (18.000 árboles sembrados).<br>
+              <strong>Densidad:</strong> 5.140 árboles/ha.<br>
+              <strong>Labor Prioritaria:</strong> Cosecha pico principal con fermentación anaeróbica en tanques.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Selso</strong></span>
+              <span style="color: #d97706; font-weight: 600;">Mayor Volumen Finca</span>
+            </div>
+          </div>
+
+          <!-- Lote 4: Anhelo -->
+          <div class="store-card" style="border-left: 4px solid #b45309;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Monocultivo • 2.2 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(180, 83, 9, 0.15); color: #b45309;">LOTE-04</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Anhelo</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café (11.000 árboles sembrados).<br>
+              <strong>Densidad:</strong> 5.000 árboles/ha.<br>
+              <strong>Labor Prioritaria:</strong> Control integrado de arvenses con guadaña y plateo manual.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Selso</strong></span>
+              <span style="color: #b45309; font-weight: 600;">Estado: Estable</span>
+            </div>
+          </div>
+
+          <!-- Lote 5: Encanto -->
+          <div class="store-card" style="border-left: 4px solid #3b82f6;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Asociado • 2.0 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">LOTE-05</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Encanto</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café + Plátano Dominico Hartón (2.500 matas).<br>
+              <strong>Régimen:</strong> Cosecha continua quincenal de plátano.<br>
+              <strong>Labor Prioritaria:</strong> Deshoje fitosanitario (sigatoka) y embolse de racimos.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Javier</strong></span>
+              <span style="color: #3b82f6; font-weight: 600;">Flujo de Caja Continuo</span>
+            </div>
+          </div>
+
+          <!-- Lote 6: Alejandra -->
+          <div class="store-card" style="border-left: 4px solid #8b5cf6;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="store-card-city">Monocultivo • 2.7 Hectáreas</span>
+              <span class="badge-tag" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">LOTE-06</span>
+            </div>
+            <h4 class="store-card-name" style="font-size: 1.1rem; color: #fff;">Lote Alejandra</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              <strong>Cultivo:</strong> Café (14.000 árboles sembrados).<br>
+              <strong>Densidad:</strong> 5.185 árboles/ha.<br>
+              <strong>Labor Prioritaria:</strong> Plan de renovación por soca/recepo y fertilización de rebrote.
+            </p>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <span>Responsable: <strong>Javier</strong></span>
+              <span style="color: #8b5cf6; font-weight: 600;">Ciclo de Renovación</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paneles de Suelos y Clima -->
+        <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+          <!-- Panel Química de Suelos -->
+          <div class="chart-card col-8">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-flask" style="color: #10b981;"></i> Estudio de Suelos & Nutrición Química (Laboratorio)</h3>
+                <div class="chart-subtitle">Análisis edáfico consolidado y plan de fertilización de Finca La Leonora</div>
+              </div>
+              <span class="badge-tag">Plan Nutricional 2026</span>
+            </div>
+            <div style="padding: 1rem 0;">
+              <table class="financial-matrix">
+                <thead>
+                  <tr>
+                    <th>Elemento / Variable</th>
+                    <th style="text-align: right;">Valor Hallado</th>
+                    <th style="text-align: center;">Nivel Agronómico</th>
+                    <th>Diagnóstico & Acción Recomendada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>pH del Suelo</strong></td>
+                    <td style="text-align: right; font-weight: 700;">5.4</td>
+                    <td style="text-align: center;"><span class="traffic-light yellow"></span> Moderado</td>
+                    <td>Suelo moderadamente ácido. Aplicación de 1.2 ton/ha de Cal Dolomita para fijación de fósforo.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Materia Orgánica (MO)</strong></td>
+                    <td style="text-align: right; font-weight: 700;">6.2%</td>
+                    <td style="text-align: center;"><span class="traffic-light green"></span> Alto / Excelente</td>
+                    <td>Excelente retención biológica de humedad. Mantener coberturas nobles con guadaña.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fósforo Disponible (P)</strong></td>
+                    <td style="text-align: right; font-weight: 700;">14 ppm</td>
+                    <td style="text-align: center;"><span class="traffic-light yellow"></span> Medio</td>
+                    <td>Requerimiento de fuentes fosfatadas (DAP o Roca Fosfórica) en la primera fertilización.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Potasio Intercambiable (K)</strong></td>
+                    <td style="text-align: right; font-weight: 700;">0.38 meq/100g</td>
+                    <td style="text-align: center;"><span class="traffic-light green"></span> Adecuado</td>
+                    <td>Clave para el llenado y peso de la cereza de café y el calibre del aguacate.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Relación Calcio / Magnesio</strong></td>
+                    <td style="text-align: right; font-weight: 700;">3.8 : 1</td>
+                    <td style="text-align: center;"><span class="traffic-light green"></span> Balanceado</td>
+                    <td>Permite una absorción radicular equilibrada en los 6 lotes.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Panel Clima y Precipitaciones -->
+          <div class="chart-card col-4">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-cloud-sun-rain" style="color: #06b6d4;"></i> Estación Climática</h3>
+                <div class="chart-subtitle">Palestina, Caldas - 1.750 msnm</div>
+              </div>
+            </div>
+            <div style="padding: 1.25rem 0.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.75rem;">
+                <span style="color: var(--text-muted);"><i class="fa-solid fa-droplet" style="color: #06b6d4;"></i> Lluvia Acumulada</span>
+                <strong style="font-size: 1.15rem; color: #fff;">185 mm</strong>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.75rem;">
+                <span style="color: var(--text-muted);"><i class="fa-solid fa-temperature-half" style="color: #f59e0b;"></i> Temperatura Promedio</span>
+                <strong style="font-size: 1.15rem; color: #fff;">20.5 °C</strong>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.75rem;">
+                <span style="color: var(--text-muted);"><i class="fa-solid fa-wind" style="color: #8b5cf6;"></i> Humedad Relativa</span>
+                <strong style="font-size: 1.15rem; color: #fff;">78%</strong>
+              </div>
+              <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.76rem; color: var(--emerald-finca);">
+                <i class="fa-solid fa-check-circle"></i> <strong>Condición Actual:</strong> Óptima para floración y cuajado del grano de café y maduración de aguacate.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenedor 2: App en Vivo Embebida (Iframe) -->
+      <div id="agriIframeContainer" style="display: none;">
+        <div class="embedded-iframe-container">
+          <iframe src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
+    <div id="erp-harvest-view" class="erp-module-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Módulo Control de Productividad: Cosecha, Pesajes & Liquidación</h2>
+          <p>Lectura directa en tiempo real de las tablas operativas <code>Recoleccion</code>, <code>Recolector</code> y <code>Lote</code> en Neon PostgreSQL.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="loadErpHarvestData()">
+            <i class="fa-solid fa-arrows-rotate"></i> Actualizar Pesajes
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Métricas en Vivo de Cosecha -->
+      <div class="kpi-grid" style="margin-bottom: 2rem;">
+        <div class="kpi-card" style="--accent-color: #10b981;">
+          <div class="kpi-top">
+            <span class="kpi-label">Total Kilos Cereza Cosechados</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-weight-hanging"></i></div>
+          </div>
+          <div class="kpi-value" id="harvestTotalKg">13.296 kg</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive"><i class="fa-solid fa-check"></i> En Neon DB</span>
+            <span class="kpi-context">Cosecha registrada en báscula</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #3b82f6;">
+          <div class="kpi-top">
+            <span class="kpi-label">Total Registros de Pesaje</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-list-ol"></i></div>
+          </div>
+          <div class="kpi-value" id="harvestTotalEntries">310 Pases</div>
+          <div class="kpi-footer">
+            <span class="trend-pill neutral">Continuo</span>
+            <span class="kpi-context">Entregas de recolectores</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #f59e0b;">
+          <div class="kpi-top">
+            <span class="kpi-label">Promedio Kilos por Pase</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-calculator"></i></div>
+          </div>
+          <div class="kpi-value" id="harvestAvgKg">42.9 kg</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">+8.2% Eficiencia</span>
+            <span class="kpi-context">Rendimiento por jornada</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #8b5cf6;">
+          <div class="kpi-top">
+            <span class="kpi-label">Recolectores Activos</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-users"></i></div>
+          </div>
+          <div class="kpi-value">8 Operarios</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">Destajo al día</span>
+            <span class="kpi-context">Liquidación semanal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tablas de Cosecha: Top Recolectores y Distribución por Lote -->
+      <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+        <!-- Top Recolectores -->
+        <div class="chart-card col-7">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-medal" style="color: #f59e0b;"></i> Rendimiento Acumulado por Recolector</h3>
+              <div class="chart-subtitle">Pases de báscula y kilos recolectados registrados en Neon</div>
+            </div>
+          </div>
+          <div style="padding: 0.5rem 0;">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th>Recolector</th>
+                  <th style="text-align: center;">Pases Registrados</th>
+                  <th style="text-align: right;">Total Kilos Cereza</th>
+                  <th style="text-align: right;">Promedio / Pase</th>
+                  <th style="text-align: center;">Liquidación Est.</th>
+                </tr>
+              </thead>
+              <tbody id="harvestCollectorsTableBody">
+                <!-- Dinámico -->
+                <tr>
+                  <td><strong>DIEGO CHAVEZ</strong></td>
+                  <td style="text-align: center;">62</td>
+                  <td style="text-align: right; font-weight: 700; color: #10b981;">3.240 kg</td>
+                  <td style="text-align: right;">52.2 kg</td>
+                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+                </tr>
+                <tr>
+                  <td><strong>NORBERTO</strong></td>
+                  <td style="text-align: center;">58</td>
+                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.980 kg</td>
+                  <td style="text-align: right;">51.4 kg</td>
+                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+                </tr>
+                <tr>
+                  <td><strong>SELSO</strong></td>
+                  <td style="text-align: center;">54</td>
+                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.750 kg</td>
+                  <td style="text-align: right;">50.9 kg</td>
+                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+                </tr>
+                <tr>
+                  <td><strong>JAVIER</strong></td>
+                  <td style="text-align: center;">49</td>
+                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.460 kg</td>
+                  <td style="text-align: right;">50.2 kg</td>
+                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Kilos por Lote -->
+        <div class="chart-card col-5">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Cosecha por Lote</h3>
+              <div class="chart-subtitle">Volumen de café recolectado</div>
+            </div>
+          </div>
+          <div style="padding: 1rem 0;">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
+                  <span><strong>🌱 Lote Amelia</strong> (Café Castillo)</span>
+                  <strong style="color: #10b981;">5.820 kg (43.8%)</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 43.8%; background: #10b981;"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
+                  <span><strong>🌱 Lote Manuela</strong> (Café + Aguacate)</span>
+                  <strong style="color: #059669;">4.610 kg (34.7%)</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 34.7%; background: #059669;"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
+                  <span><strong>🌱 Lote Origen</strong> (Café Especial)</span>
+                  <strong style="color: #d97706;">2.866 kg (21.5%)</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21.5%; background: #d97706;"></div></div>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.75rem; color: var(--text-muted);">
+              <i class="fa-solid fa-link" style="color: #3b82f6;"></i> <strong>Integración Automática con Finanzas:</strong> El costo de recolección acumulado calculado en esta báscula ($13.296 kg &times; $600 COP/kg destajo = $7.98 M) viaja de manera directa al Estado de Resultados proyectado.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimos 15 Pesajes Registrados en Báscula -->
+      <div class="financial-table-wrapper">
+        <div class="table-toolbar">
+          <div>
+            <strong>Registro de Últimos Pesajes en Báscula</strong>
+            <span class="badge-tag" style="margin-left: 0.5rem;">Neon Live Feed</span>
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix">
+            <thead>
+              <tr>
+                <th>ID Pesaje</th>
+                <th>Fecha de Registro</th>
+                <th>Recolector Asignado</th>
+                <th>Lote de Origen</th>
+                <th style="text-align: right;">Kilos Cereza Pesados</th>
+                <th style="text-align: center;">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="harvestRecentEntriesBody">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (TIENDAS & STOCK) ==================== -->
+    <div id="erp-ghalocafe-view" class="erp-module-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Módulo GhaloCafe Comercial: Tueste, 5 Tiendas & Inventario</h2>
+          <p>Transformación a mayor valor agregado, trazabilidad de café pergamino a café tostado y stock en puntos de venta.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="loadErpWarehouseAndStoresData()">
+            <i class="fa-solid fa-arrows-rotate"></i> Actualizar Stock
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Métricas Comerciales -->
+      <div class="kpi-grid" style="margin-bottom: 2rem;">
+        <div class="kpi-card" style="--accent-color: #f59e0b;">
+          <div class="kpi-top">
+            <span class="kpi-label">Café Enviado a Tostión (Neon DB)</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-fire-burner"></i></div>
+          </div>
+          <div class="kpi-value" id="ghaloTostionKg">380 kg</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">Café Especial</span>
+            <span class="kpi-context">Destino: Marca Propia GhaloCafe</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #10b981;">
+          <div class="kpi-top">
+            <span class="kpi-label">Café Pergamino a Cooperativa</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-truck-moving"></i></div>
+          </div>
+          <div class="kpi-value" id="ghaloCoopKg">2.231 kg</div>
+          <div class="kpi-footer">
+            <span class="trend-pill neutral">Trilla Tradicional</span>
+            <span class="kpi-context">Salidas registradas en bodega</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #06b6d4;">
+          <div class="kpi-top">
+            <span class="kpi-label">Puntos de Venta & Bodegas</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-store"></i></div>
+          </div>
+          <div class="kpi-value">5 Tiendas Activas</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">Eje Cafetero</span>
+            <span class="kpi-context">Palestina, Manizales, Villamaría, Pereira</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="--accent-color: #8b5cf6;">
+          <div class="kpi-top">
+            <span class="kpi-label">Stock Empacado Consolidado</span>
+            <div class="kpi-icon-badge"><i class="fa-solid fa-boxes-stacked"></i></div>
+          </div>
+          <div class="kpi-value">920 kg Empacados</div>
+          <div class="kpi-footer">
+            <span class="trend-pill positive">5 SKUs</span>
+            <span class="kpi-context">Molido y Grano en inventario</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de las 5 Tiendas / Bodegas -->
+      <div class="section-subheading" style="margin-bottom: 1rem;">
+        <h3><i class="fa-solid fa-shop"></i> Inventario de Café en Puntos de Venta & Bodegas</h3>
+        <span class="badge-tag">Red de Distribución GhaloCafe</span>
+      </div>
+
+      <div class="stores-grid" id="storesGridContainer">
+        <!-- Generado dinámicamente -->
+      </div>
+
+      <!-- Catálogo Oficial de Productos GhaloCafe Real -->
+      <div class="section-subheading" style="margin-bottom: 1rem; margin-top: 2rem;">
+        <h3><i class="fa-solid fa-box-open"></i> Catálogo de Presentaciones & Precios de Venta</h3>
+        <span class="badge-tag">Marca Propia de Especialidad</span>
+      </div>
+
+      <div class="products-grid" id="productsCatalogContainer">
+        <!-- Generado dinámicamente -->
+      </div>
+
+      <!-- Tabla de Salidas de Bodega en Neon -->
+      <div class="financial-table-wrapper" style="margin-top: 2rem;">
+        <div class="table-toolbar">
+          <div>
+            <strong>Registro de Salidas de Bodega de Café (Neon DB)</strong>
+            <span class="badge-tag" style="margin-left: 0.5rem;">Tabla SalidaBodega</span>
+          </div>
+        </div>
+        <div class="table-scroll-container">
+          <table class="financial-matrix">
+            <thead>
+              <tr>
+                <th>ID Envío</th>
+                <th>Fecha</th>
+                <th>Tipo de Café</th>
+                <th>Destino Operativo</th>
+                <th>Método de Beneficio</th>
+                <th style="text-align: right;">Cantidad (Kilos)</th>
+              </tr>
+            </thead>
+            <tbody id="warehouseShipmentsBody">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MÓDULO 5: PORTAL WEB & E-COMMERCE ==================== -->
+    <div id="erp-web-view" class="erp-module-section">
+      <div class="view-header">
+        <div class="view-title-block">
+          <h2>Portal Web & E-Commerce Finca La Leonora</h2>
+          <p>Vitrina de marca directa al consumidor (B2C), origen certificado en Palestina Caldas y tienda digital interactiva.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="showToast('Abriendo enlace de tienda pública e-commerce...')">
+            <i class="fa-solid fa-globe"></i> Ver Web Pública
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner de Origen de Finca La Leonora -->
+      <div class="erp-hub-hero" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15));">
+        <div>
+          <span class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); margin-bottom: 0.5rem; display: inline-flex;">
+            <i class="fa-solid fa-award"></i> Café de Origen Único • Cordillera Central
+          </span>
+          <h2 class="erp-hub-title">Finca La Leonora • Palestina, Caldas (1.750 msnm)</h2>
+          <p class="erp-hub-subtitle">
+            Café de especialidad cultivado bajo sombra y policultivo sostenible. Cosechado a mano grano a grano, beneficiado con procesos artesanales y tostado con perfiles que destacan notas a panela, frutos cítricos y chocolate fino.
+          </p>
+        </div>
+        <div>
+          <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" style="width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--primary-gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);">
+        </div>
+      </div>
+
+      <!-- Vitrina E-Commerce Interactiva -->
+      <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+        <!-- Catálogo de Compra -->
+        <div class="chart-card col-8">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-bag-shopping" style="color: #f59e0b;"></i> Tienda en Línea GhaloCafe Real (Simulador de Compra B2C)</h3>
+              <div class="chart-subtitle">Directo al consumidor sin intermediarios</div>
+            </div>
+            <span class="badge-tag" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">Canal E-Commerce Activo</span>
+          </div>
+
+          <div style="padding: 1rem 0;">
+            <div class="products-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+              <!-- Producto 1 -->
+              <div class="product-card-erp">
+                <span class="product-sku">SKU: GH-M454</span>
+                <h4 class="product-name">GhaloCafe Molido 454g (Libra)</h4>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Tueste medio, molienda fresca para cafetera tradicional o filtro.</p>
+                <div class="product-price">$32.000 COP</div>
+                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-M454', 'GhaloCafe Molido 454g', 32000)">
+                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+                </button>
+              </div>
+
+              <!-- Producto 2 -->
+              <div class="product-card-erp">
+                <span class="product-sku">SKU: GH-G454</span>
+                <h4 class="product-name">GhaloCafe Grano 454g (Libra)</h4>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Grano entero para conservar aromas y moler en casa al instante.</p>
+                <div class="product-price">$32.000 COP</div>
+                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-G454', 'GhaloCafe Grano 454g', 32000)">
+                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+                </button>
+              </div>
+
+              <!-- Producto 3 -->
+              <div class="product-card-erp">
+                <span class="product-sku">SKU: GH-M250</span>
+                <h4 class="product-name">GhaloCafe Molido 250g</h4>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Presentación personal compacta con válvula desgasificadora.</p>
+                <div class="product-price">$18.500 COP</div>
+                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-M250', 'GhaloCafe Molido 250g', 18500)">
+                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carrito de Compras en Vivo -->
+        <div class="chart-card col-4">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-cart-shopping" style="color: #10b981;"></i> Carrito de Compras</h3>
+              <div class="chart-subtitle">Resumen del pedido digital</div>
+            </div>
+            <span class="badge-tag" id="cartCountBadge">0 Items</span>
+          </div>
+
+          <div style="padding: 1rem 0.5rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 280px;">
+            <div id="cartItemsContainer" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 200px; overflow-y: auto;">
+              <div style="text-align: center; color: var(--text-dim); font-size: 0.82rem; padding: 2rem 0;">
+                <i class="fa-solid fa-basket-shopping" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4;"></i><br>
+                El carrito está vacío.<br>Agrega presentaciones de GhaloCafe.
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1rem; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                <span>Subtotal:</span>
+                <strong id="cartSubtotal">$0 COP</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.75rem;">
+                <span>Envío Nacional:</span>
+                <strong style="color: var(--emerald-finca);">Gratis (> $50.000)</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">
+                <span>Total:</span>
+                <span id="cartTotal" style="color: var(--primary-gold);">$0 COP</span>
+              </div>
+              <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="simulateCheckout()">
+                <i class="fa-solid fa-lock"></i> Finalizar Pedido Simulado
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   <!-- ==================== MODAL: NUEVA / EDITAR ACTIVIDAD ==================== -->
   <div class="modal-overlay" id="activityModalOverlay">

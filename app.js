@@ -4,10 +4,12 @@
 // ==================== ESTADO GLOBAL DE LA APLICACIÓN ====================
 let appData = null;
 let currentHorizon = 24; // 12 o 24 meses
+let activeErpModule = 'erp-hub-view'; // 'erp-hub-view', 'plan-finance-view', 'erp-agricontrol-view', 'erp-harvest-view', 'erp-ghalocafe-view', 'erp-web-view'
 let activeView = 'dashboard-view';
 let activeActivitySubView = 'gantt'; // 'gantt', 'kanban', 'table'
 let activeFinancialSubTab = 'income'; // 'income', 'cash'
 let activeControlMonthIndex = 9; // Por defecto Octubre 2026 (mes actual)
+let cartItems = []; // Items en el carrito del simulador e-commerce
 
 // Instancias de Chart.js
 let chartInstances = {};
@@ -22,6 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
   populateDropdowns();
   renderAll();
   checkBackendStatus();
+  loadErpConsolidatedData();
+  loadErpHarvestData();
+  loadErpWarehouseAndStoresData();
 });
 
 // Cargar datos de LocalStorage o inicializar con los de data.js
@@ -1584,4 +1589,280 @@ function showToast(message) {
     toast.style.transition = "all 0.3s ease";
     setTimeout(() => toast.remove(), 300);
   }, 3200);
+}
+
+// ==================== LÓGICA DE LA SUITE ERP UNIFICADA ====================
+
+function switchErpModule(moduleId) {
+  activeErpModule = moduleId;
+
+  // Actualizar píldoras del selector
+  document.querySelectorAll('.erp-suite-pill').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.erp-suite-pill[onclick*="${moduleId}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // Ocultar todas las secciones de módulos
+  document.querySelectorAll('.erp-module-section').forEach(sec => sec.style.display = 'none');
+
+  // Mostrar el módulo seleccionado
+  const target = document.getElementById(moduleId);
+  if (target) {
+    target.style.display = 'block';
+  }
+
+  // Sub-navbar de Planeación (Dashboard, Estrategia, Gantt, P&G, Control) solo visible en su módulo
+  const planSubNav = document.getElementById('planSubNav');
+  if (planSubNav) {
+    planSubNav.style.display = (moduleId === 'plan-finance-view') ? 'flex' : 'none';
+  }
+
+  // Acciones al cambiar de módulo
+  if (moduleId === 'plan-finance-view') {
+    switchTab(activeView);
+  } else if (moduleId === 'erp-hub-view') {
+    loadErpConsolidatedData();
+  } else if (moduleId === 'erp-harvest-view') {
+    loadErpHarvestData();
+  } else if (moduleId === 'erp-ghalocafe-view') {
+    loadErpWarehouseAndStoresData();
+  }
+}
+
+function toggleAgriControlView(mode) {
+  const cards = document.getElementById('agriCardsContainer');
+  const iframe = document.getElementById('agriIframeContainer');
+  const btnCards = document.getElementById('agriCardsToggleBtn');
+  const btnIframe = document.getElementById('agriIframeToggleBtn');
+
+  if (mode === 'cards') {
+    if (cards) cards.style.display = 'block';
+    if (iframe) iframe.style.display = 'none';
+    if (btnCards) btnCards.classList.add('active');
+    if (btnIframe) btnIframe.classList.remove('active');
+  } else {
+    if (cards) cards.style.display = 'none';
+    if (iframe) iframe.style.display = 'block';
+    if (btnCards) btnCards.classList.remove('active');
+    if (btnIframe) btnIframe.classList.add('active');
+  }
+}
+
+// Cargar datos consolidados para el Hub Central
+async function loadErpConsolidatedData() {
+  try {
+    const res = await fetch('/api/erp/consolidated');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.harvestStats) {
+      const kgEl = document.getElementById('hubKpiHarvestKg');
+      if (kgEl && data.harvestStats.total_kilos_cereza) {
+        kgEl.textContent = `${Number(data.harvestStats.total_kilos_cereza).toLocaleString()} kg`;
+      }
+    }
+  } catch (e) {
+    console.log('Modo local en Hub ERP');
+  }
+}
+
+// Cargar datos de Cosecha & Recolección (Neon DB)
+async function loadErpHarvestData() {
+  try {
+    const res = await fetch('/api/erp/harvest');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data.stats) {
+      const kgEl = document.getElementById('harvestTotalKg');
+      const entriesEl = document.getElementById('harvestTotalEntries');
+      const avgEl = document.getElementById('harvestAvgKg');
+      if (kgEl) kgEl.textContent = `${Number(data.stats.total_kilos_cereza).toLocaleString()} kg`;
+      if (entriesEl) entriesEl.textContent = `${data.stats.total_recolecciones} Pases`;
+      if (avgEl) avgEl.textContent = `${data.stats.promedio_pase_kilos} kg`;
+    }
+
+    // Tabla de Recolectores
+    if (data.recolectores && data.recolectores.length > 0) {
+      const tbody = document.getElementById('harvestCollectorsTableBody');
+      if (tbody) {
+        tbody.innerHTML = data.recolectores.map(r => `
+          <tr>
+            <td><strong>${r.nombre}</strong></td>
+            <td style="text-align: center;">${r.pases}</td>
+            <td style="text-align: right; font-weight: 700; color: #10b981;">${Number(r.total_kilos).toLocaleString()} kg</td>
+            <td style="text-align: right;">${Number(r.promedio_kilos).toFixed(1)} kg</td>
+            <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Últimos pesajes
+    if (data.ultimosRegistros && data.ultimosRegistros.length > 0) {
+      const tbody = document.getElementById('harvestRecentEntriesBody');
+      if (tbody) {
+        tbody.innerHTML = data.ultimosRegistros.map(rec => `
+          <tr>
+            <td><code style="font-size: 0.75rem; color: #94a3b8;">${rec.id.slice(0, 10)}...</code></td>
+            <td>${rec.fecha}</td>
+            <td><strong>${rec.recolector}</strong></td>
+            <td><span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">${rec.lote}</span></td>
+            <td style="text-align: right; font-weight: 700; color: #fff;">${rec.kilos} kg</td>
+            <td style="text-align: center;"><span class="badge-status completed">Pesado</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    console.log('Error o modo local al cargar cosecha');
+  }
+}
+
+// Cargar datos de Bodega y Tiendas GhaloCafe
+async function loadErpWarehouseAndStoresData() {
+  try {
+    // 1. Bodega
+    const whRes = await fetch('/api/erp/warehouse');
+    if (whRes.ok) {
+      const whData = await whRes.json();
+      if (whData.stats) {
+        const tostionEl = document.getElementById('ghaloTostionKg');
+        const coopEl = document.getElementById('ghaloCoopKg');
+        if (tostionEl) tostionEl.textContent = `${Number(whData.stats.kilos_tostion).toLocaleString()} kg`;
+        if (coopEl) coopEl.textContent = `${Number(whData.stats.kilos_cooperativa).toLocaleString()} kg`;
+      }
+      if (whData.ultimasSalidas && whData.ultimasSalidas.length > 0) {
+        const tbody = document.getElementById('warehouseShipmentsBody');
+        if (tbody) {
+          tbody.innerHTML = whData.ultimasSalidas.map(sal => `
+            <tr>
+              <td><code style="font-size: 0.75rem; color: #94a3b8;">${sal.id.slice(0, 10)}...</code></td>
+              <td>${sal.fecha}</td>
+              <td><strong>${sal.tipo}</strong></td>
+              <td><span class="badge-tag" style="background: ${sal.destino === 'TOSTION' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${sal.destino === 'TOSTION' ? '#fbbf24' : '#10b981'};">${sal.destino}</span></td>
+              <td>${sal.metodo_beneficio || 'TRADICIONAL'}</td>
+              <td style="text-align: right; font-weight: 700; color: #fff;">${sal.cantidad} kg</td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+
+    // 2. Tiendas
+    const storesRes = await fetch('/api/erp/stores');
+    if (storesRes.ok) {
+      const storesData = await storesRes.json();
+      const storesContainer = document.getElementById('storesGridContainer');
+      if (storesContainer && storesData.stores) {
+        storesContainer.innerHTML = storesData.stores.map(st => `
+          <div class="store-card">
+            <span class="store-card-city"><i class="fa-solid fa-location-dot"></i> ${st.city}</span>
+            <h4 class="store-card-name">${st.name}</h4>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.5rem;">${st.type} • Encargado: ${st.manager}</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Stock Disponible</div>
+                <div class="store-card-stock">${st.stockKilos} kg</div>
+              </div>
+              <span class="trend-pill positive"><i class="fa-solid fa-check"></i> Activo</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Catálogo de Productos
+      const catalogContainer = document.getElementById('productsCatalogContainer');
+      if (catalogContainer && storesData.products) {
+        catalogContainer.innerHTML = storesData.products.map(prod => `
+          <div class="product-card-erp">
+            <div>
+              <span class="product-sku">SKU: ${prod.sku}</span>
+              <h4 class="product-name">${prod.name}</h4>
+              <span class="badge-tag" style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">${prod.category}</span>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.75rem;">
+              <span class="product-price">$${prod.price.toLocaleString()} COP</span>
+              <button class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;" onclick="addToCart('${prod.sku}', '${prod.name}', ${prod.price})">
+                <i class="fa-solid fa-cart-plus"></i> Pedir
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    console.log('Error o modo local al cargar tiendas y bodega');
+  }
+}
+
+// ==================== CARRITO & TIENDA E-COMMERCE B2C ====================
+
+function addToCart(sku, name, price) {
+  const existing = cartItems.find(i => i.sku === sku);
+  if (existing) {
+    existing.quantity++;
+  } else {
+    cartItems.push({ sku, name, price, quantity: 1 });
+  }
+  renderCart();
+  showToast(`¡Agregado ${name} al carrito!`);
+}
+
+function removeFromCart(sku) {
+  cartItems = cartItems.filter(i => i.sku !== sku);
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('cartItemsContainer');
+  const countBadge = document.getElementById('cartCountBadge');
+  const subtotalEl = document.getElementById('cartSubtotal');
+  const totalEl = document.getElementById('cartTotal');
+
+  if (!container) return;
+
+  const totalCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
+  const totalAmount = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+
+  if (countBadge) countBadge.textContent = `${totalCount} Presentaciones`;
+  if (subtotalEl) subtotalEl.textContent = `$${totalAmount.toLocaleString()} COP`;
+  if (totalEl) totalEl.textContent = `$${totalAmount.toLocaleString()} COP`;
+
+  if (cartItems.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-dim); font-size: 0.82rem; padding: 2rem 0;">
+        <i class="fa-solid fa-basket-shopping" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4;"></i><br>
+        El carrito está vacío.<br>Agrega presentaciones de GhaloCafe.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = cartItems.map(item => `
+    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem;">
+      <div>
+        <div style="font-weight: 600; font-size: 0.8rem; color: #fff;">${item.name}</div>
+        <div style="font-size: 0.7rem; color: var(--text-dim);">$${item.price.toLocaleString()} COP &times; ${item.quantity} un.</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-weight: 700; color: var(--primary-gold); font-size: 0.85rem;">$${(item.price * item.quantity).toLocaleString()}</span>
+        <button style="background: none; border: none; color: #fb7185; cursor: pointer; font-size: 0.8rem;" onclick="removeFromCart('${item.sku}')">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function simulateCheckout() {
+  if (cartItems.length === 0) {
+    alert('Tu carrito de compras está vacío. Agrega productos de GhaloCafe antes de finalizar el pedido.');
+    return;
+  }
+
+  const totalAmount = cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+  alert(`¡Pedido simulado con éxito por valor de $${totalAmount.toLocaleString()} COP!\n\nEste pedido se registra como venta del canal E-Commerce B2C y suma directamente a la meta del 45% del Plan Estratégico de Finca La Leonora.`);
+
+  cartItems = [];
+  renderCart();
+  showToast('¡Orden e-commerce registrada con éxito!');
 }
