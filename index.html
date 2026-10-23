@@ -6,7 +6,10 @@
   <title>Finca La Leonora | Sistema de Planeación Estratégica & Control Financiero</title>
   <meta name="description" content="Plataforma de seguimiento a planeación estratégica, proyecciones financieras 1-2 años (P&G, Flujo de Caja), control real vs presupuestado y cronograma de actividades para Finca La Leonora.">
   
-  <!-- FontAwesome & Google Fonts -->
+  <!-- Google Fonts: Outfit & Playfair Display (Tipografía Oficial www.ghalocafe.com) & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,500;1,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <!-- Estilos Maestros -->
@@ -17,13 +20,15 @@
   <!-- ==================== ENCABEZADO PRINCIPAL ==================== -->
   <header class="app-header">
     <div class="brand-section">
-      <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" class="brand-logo" id="headerLogo" onerror="this.src='https://placehold.co/100x100/111827/f59e0b?text=LEONORA'">
+      <img src="./assets/logo.svg" alt="Logo Finca La Leonora & GhaloCafe" class="brand-logo" id="headerLogo" onerror="this.src='./assets/logo.jpg'">
       <div class="brand-info">
         <h1>
           Finca La Leonora
+          <span class="brand-sep">•</span>
+          <span class="brand-ghalo-title">Ghalocafe<span class="gold-dot">.</span></span>
           <span class="badge-tag"><i class="fa-solid fa-leaf"></i> Café Especial & E-Commerce</span>
         </h1>
-        <div class="brand-subtitle">Planeación Estratégica 2026 - 2027 • Control Financiero & Operativo</div>
+        <div class="brand-subtitle">Planeación Estratégica 2026 - 2027 • Control Financiero & Operativo • www.ghalocafe.com</div>
       </div>
     </div>
 
@@ -142,18 +147,18 @@
 
     <!-- ==================== MÓDULO 0: PORTAL PRINCIPAL DE APLICACIONES (APP LAUNCHER) ==================== -->
     <div id="erp-hub-view" class="erp-module-section active">
-      <!-- Hero de Bienvenida al Ecosistema -->
+      <!-- Hero Compacto de Bienvenida al Ecosistema -->
       <div class="app-launcher-hero">
-        <div class="app-launcher-badge">
-          <i class="fa-solid fa-layer-group"></i> Ecosistema Digital Unificado
+        <div class="app-launcher-badge-top">
+          <i class="fa-solid fa-layer-group"></i> Ecosistema Digital Unificado • Finca La Leonora & GhaloCafe
         </div>
-        <h2>Portal de Aplicaciones Finca La Leonora</h2>
+        <h2>Portal Central de Aplicaciones</h2>
         <p>
-          Selecciona la aplicación o módulo al que deseas ingresar. Cada plataforma opera de forma independiente para sus labores operativas, mientras este centro unifica el control para la planeación financiera y estratégica.
+          Selecciona el módulo operativo o de control al que deseas ingresar.
         </p>
       </div>
 
-      <!-- Cuadrícula Principal de Aplicaciones (App Launcher Grid) -->
+      <!-- Cuadrícula Compacta de Aplicaciones (App Launcher Grid) -->
       <div class="app-launcher-grid">
 
         <!-- App 1: AgriControl BI -->
@@ -166,19 +171,16 @@
               <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
-          <div class="app-launcher-badge" style="color: #10b981;">Agronomía & Labores de Campo</div>
+          <div class="app-launcher-badge" style="color: #10b981;">Agronomía & Campo</div>
           <h3 class="app-launcher-title">AgriControl BI</h3>
-          <p class="app-launcher-desc">
-            Supervisión técnica de los 6 lotes (16.4 Ha) en policultivo (café, aguacate hass, plátano), análisis químico de suelos, monitoreo de clima y programación de labores agrícolas.
-          </p>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-map-pin"></i> 6 Lotes • 16.4 Hectáreas • Suelos & Clima
+            <i class="fa-solid fa-map-pin"></i> 6 Lotes • 16.4 Ha • Suelos
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-agricontrol-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir AgriControl BI en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir AgriControl BI en pestaña externa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -195,18 +197,15 @@
             </span>
           </div>
           <div class="app-launcher-badge" style="color: #3b82f6;">Cosecha & Báscula</div>
-          <h3 class="app-launcher-title">Control de Productividad</h3>
-          <p class="app-launcher-desc">
-            Pesajes diarios en báscula de café cereza, rendimiento individual por recolector, liquidación de nómina a destajo y control de salidas de bodega hacia tostión o venta.
-          </p>
+          <h3 class="app-launcher-title">Control Productividad</h3>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-weight-hanging"></i> Pesajes Báscula • Nómina Recolectores
+            <i class="fa-solid fa-weight-hanging"></i> Pesajes Báscula • Nómina
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-harvest-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="btn-secondary" title="Abrir Control de Productividad en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="btn-secondary" title="Abrir Control de Productividad en pestaña externa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -224,17 +223,14 @@
           </div>
           <div class="app-launcher-badge" style="color: #f59e0b;">Comercial & Tiendas</div>
           <h3 class="app-launcher-title">Sistema GhaloCafe</h3>
-          <p class="app-launcher-desc">
-            Gestión comercial de café de especialidad, facturación, pedidos, tiendas y puntos de venta en el Eje Cafetero y seguimiento a clientes.
-          </p>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-shop"></i> Tiendas • Clientes • Comercialización
+            <i class="fa-solid fa-shop"></i> Tiendas • Clientes • Pedidos
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-ghalocafe-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="btn-secondary" title="Abrir Sistema GhaloCafe en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="btn-secondary" title="Abrir Sistema GhaloCafe en pestaña externa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -252,24 +248,21 @@
           </div>
           <div class="app-launcher-badge" style="color: #06b6d4;">Inventarios & Bodega</div>
           <h3 class="app-launcher-title">GhaloInv (Inventarios)</h3>
-          <p class="app-launcher-desc">
-            Control de inventarios en bodega, stock de café tostado empacado, insumos agrícolas, bolsas, empaques y kardex de movimientos.
-          </p>
           <div class="app-launcher-meta">
-            <i class="fa-solid fa-warehouse"></i> Stock Tostado • Empaques • Bodegas
+            <i class="fa-solid fa-warehouse"></i> Stock Tostado • Empaques
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" onclick="switchErpModule('erp-inventory-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="btn-secondary" title="Abrir GhaloInv en pestaña externa" style="display: inline-flex; align-items: center; justify-content: center; width: 42px; padding: 0.65rem 0;">
+            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="btn-secondary" title="Abrir GhaloInv en pestaña externa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
         </div>
 
         <!-- App 5: Módulo Central: Planeación Estratégica & Finanzas -->
-        <div class="app-launcher-card" style="--card-accent: #eab308; border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));">
+        <div class="app-launcher-card" style="--card-accent: #eab308; border-color: rgba(245, 158, 11, 0.45); background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));">
           <div class="app-launcher-top">
             <div class="app-launcher-icon" style="--icon-bg: rgba(245, 158, 11, 0.2); --icon-color: #f59e0b;">
               <i class="fa-solid fa-chart-line"></i>
@@ -278,17 +271,14 @@
               <i class="fa-solid fa-crown" style="font-size: 0.45rem;"></i> Módulo Central
             </span>
           </div>
-          <div class="app-launcher-badge" style="color: #fbbf24;">Consolidador Financiero & Dirección</div>
-          <h3 class="app-launcher-title">Planeación Estratégica & Finanzas</h3>
-          <p class="app-launcher-desc">
-            P&G Proyectado a 24 meses, Flujo de Caja y Runway, Cronograma Gantt por lotes y Control mensual Real vs. Presupuestado. Aquí se consolida toda la información.
-          </p>
+          <div class="app-launcher-badge" style="color: #fbbf24;">Consolidador Dirección</div>
+          <h3 class="app-launcher-title">Planeación & Finanzas</h3>
           <div class="app-launcher-meta" style="color: #fbbf24; background: rgba(245, 158, 11, 0.08);">
-            <i class="fa-solid fa-vault"></i> P&G 24 Meses • Flujo Caja • Gantt Lotes • Control Real
+            <i class="fa-solid fa-vault"></i> P&G 24M • Flujo • Gantt Lotes
           </div>
           <div class="app-launcher-actions">
             <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700; width: 100%; justify-content: center;" onclick="switchErpModule('plan-finance-view')">
-              <i class="fa-solid fa-chart-line"></i> Ingresar a Planeación &rarr;
+              <i class="fa-solid fa-chart-line"></i> Ingresar &rarr;
             </button>
           </div>
         </div>
@@ -1771,8 +1761,8 @@
   <div id="erp-login-modal" class="erp-login-backdrop" style="display: flex;">
     <div class="erp-login-card">
       <div class="erp-login-brand">
-        <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" class="erp-login-logo" onerror="this.src='https://placehold.co/100x100/111827/f59e0b?text=LEONORA'">
-        <h2>Finca La Leonora</h2>
+        <img src="./assets/logo.svg" alt="Logo Finca La Leonora & GhaloCafe" class="erp-login-logo" onerror="this.src='./assets/logo.jpg'">
+        <h2>Finca La Leonora <span style="font-family: 'Playfair Display', serif; color: var(--primary-gold);">• Ghalocafe<span style="color: #d4a373;">.</span></span></h2>
         <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; margin-top: 0.4rem; display: inline-block;">
           <i class="fa-solid fa-shield-halved"></i> SUITE ERP & PLANEACIÓN ESTRATÉGICA
         </span>
