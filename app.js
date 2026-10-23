@@ -2215,13 +2215,6 @@ function toggleLoginPasswordVisibility() {
   }
 }
 
-function fillDefaultCredentials() {
-  const usernameInput = document.getElementById('loginUsername');
-  const passwordInput = document.getElementById('loginPassword');
-  if (usernameInput) usernameInput.value = 'admin';
-  if (passwordInput) passwordInput.value = 'Leonora2026*';
-}
-
 function toggleUserMenu() {
   const menu = document.getElementById('userDropdownMenu');
   if (!menu) return;

@@ -491,7 +491,8 @@ function verifyPassword(password, hash, salt) {
 }
 
 // Usuario en memoria de respaldo para modo offline
-const initialAdminSec = hashPassword('Leonora2026*');
+const defaultAdminPass = process.env.DEFAULT_ADMIN_PASSWORD || 'Leonora2026*';
+const initialAdminSec = hashPassword(defaultAdminPass);
 let fallbackUsers = [
   {
     id: 1,
@@ -510,7 +511,8 @@ async function seedDefaultUsers(client) {
   try {
     const check = await client.query('SELECT count(*) as count FROM pe_usuarios WHERE username = $1;', ['admin']);
     if (parseInt(check.rows[0].count) === 0) {
-      const { hash, salt } = hashPassword('Leonora2026*');
+      const defaultPass = process.env.DEFAULT_ADMIN_PASSWORD || 'Leonora2026*';
+      const { hash, salt } = hashPassword(defaultPass);
       await client.query(`
         INSERT INTO pe_usuarios (username, password_hash, salt, nombre_completo, rol, email, activo)
         VALUES ($1, $2, $3, $4, $5, $6, $7);

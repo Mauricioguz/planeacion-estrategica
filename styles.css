@@ -2059,14 +2059,6 @@ input.editable-real-input:focus {
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
 }
 
-.login-initial-credentials-pill {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
-  margin-top: 0.25rem;
-}
-
 .erp-login-footer {
   text-align: center;
   font-size: 0.72rem;
