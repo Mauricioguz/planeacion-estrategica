@@ -153,3 +153,18 @@ BEGIN
     RAISE NOTICE 'Sincronización completada para mes index %', p_mes_index;
 END;
 $$;
+
+-- 8. TABLA DE USUARIOS Y CONTROL DE ACCESO
+CREATE TABLE IF NOT EXISTS pe_usuarios (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    nombre_completo VARCHAR(120) NOT NULL,
+    rol VARCHAR(30) DEFAULT 'admin',
+    email VARCHAR(120),
+    activo BOOLEAN DEFAULT TRUE,
+    ultimo_ingreso TIMESTAMP WITH TIME ZONE,
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+

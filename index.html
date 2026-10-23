@@ -64,6 +64,30 @@
       <button class="btn-header" onclick="toggleTheme()" id="themeToggleBtn" title="Cambiar tema claro/oscuro">
         <i class="fa-solid fa-moon"></i>
       </button>
+
+      <!-- Perfil de Usuario y Sesión ERP -->
+      <div class="user-session-wrapper" id="erpUserSessionWrapper" style="display: none; position: relative;">
+        <button class="btn-user-profile" onclick="toggleUserMenu()" id="btnUserProfile" title="Perfil y Sesión de Usuario">
+          <span class="user-avatar-circle" id="userAvatarText">MG</span>
+          <span class="user-name-label" id="userNameLabel">Mauricio G.</span>
+          <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.7;"></i>
+        </button>
+        <div class="user-dropdown-menu" id="userDropdownMenu" style="display: none;">
+          <div class="user-dropdown-header">
+            <strong id="userDropdownFullName">Mauricio Guzmán</strong>
+            <span class="user-role-badge" id="userDropdownRole">Gerencia General</span>
+            <small id="userDropdownUsername" style="color: var(--text-muted); font-size: 0.72rem;">admin</small>
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <button class="user-dropdown-item" onclick="openChangePasswordModal()">
+            <i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cambiar Contraseña
+          </button>
+          <div class="user-dropdown-divider"></div>
+          <button class="user-dropdown-item danger" onclick="logoutErp()">
+            <i class="fa-solid fa-arrow-right-from-bracket" style="color: #ef4444;"></i> Cerrar Sesión
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -1740,6 +1764,105 @@
           <i class="fa-solid fa-arrows-rotate"></i> Probar Sincronización
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANTALLA DE ACCESO / LOGIN SEGURO ==================== -->
+  <div id="erp-login-modal" class="erp-login-backdrop" style="display: flex;">
+    <div class="erp-login-card">
+      <div class="erp-login-brand">
+        <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" class="erp-login-logo" onerror="this.src='https://placehold.co/100x100/111827/f59e0b?text=LEONORA'">
+        <h2>Finca La Leonora</h2>
+        <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; margin-top: 0.4rem; display: inline-block;">
+          <i class="fa-solid fa-shield-halved"></i> SUITE ERP & PLANEACIÓN ESTRATÉGICA
+        </span>
+        <p class="erp-login-subtitle">Ingresa tus credenciales para acceder a la plataforma unificada</p>
+      </div>
+
+      <form id="erpLoginForm" onsubmit="handleErpLogin(event)" class="erp-login-form">
+        <div id="loginAlertBox" class="login-alert" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="loginAlertText">Usuario o contraseña incorrectos</span>
+        </div>
+
+        <div class="login-input-group">
+          <label for="loginUsername"><i class="fa-solid fa-user"></i> Usuario</label>
+          <div class="input-with-icon">
+            <input type="text" id="loginUsername" placeholder="Ingresa tu usuario (ej. admin)" required autocomplete="username" autofocus>
+          </div>
+        </div>
+
+        <div class="login-input-group">
+          <label for="loginPassword"><i class="fa-solid fa-lock"></i> Contraseña</label>
+          <div class="input-with-icon">
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-password" onclick="toggleLoginPasswordVisibility()" title="Mostrar u ocultar contraseña">
+              <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 0.25rem 0 1rem 0; font-size: 0.82rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" id="rememberSessionCheck" checked style="accent-color: #f59e0b; width: 16px; height: 16px;">
+            Recordar sesión activa
+          </label>
+        </div>
+
+        <button type="submit" class="btn-login-submit" id="btnLoginSubmit">
+          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión en la Suite
+        </button>
+
+        <div class="login-initial-credentials-pill">
+          <div style="font-size: 0.74rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Credenciales Iniciales Gerencia</span>
+            <button type="button" onclick="fillDefaultCredentials()" style="background: none; border: none; color: #f59e0b; font-size: 0.74rem; font-weight: 600; cursor: pointer; text-decoration: underline;">
+              Autocompletar
+            </button>
+          </div>
+          <div style="font-size: 0.76rem; font-family: monospace; color: #e2e8f0; margin-top: 0.25rem;">
+            Usuario: <strong>admin</strong> | Clave: <strong>Leonora2026*</strong>
+          </div>
+        </div>
+      </form>
+
+      <div class="erp-login-footer">
+        <i class="fa-solid fa-lock" style="color: #10b981;"></i> Conexión Cifrada • PostgreSQL Neon • Finca La Leonora
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cambiar Contraseña -->
+  <div id="modalChangePassword" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="modal-card" style="max-width: 440px; background: #111827; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 90%;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.75rem;">
+        <h3 style="font-size: 1.15rem; color: #fff; margin: 0;"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cambiar Contraseña</h3>
+        <button class="modal-close-btn" onclick="closeChangePasswordModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <form id="formChangePassword" onsubmit="handleChangePasswordSubmit(event)">
+        <div id="changePasswordAlert" class="login-alert" style="display: none; margin-bottom: 1rem;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="changePasswordAlertText"></span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--text-muted);">Contraseña Actual</label>
+            <input type="password" id="inputOldPassword" required placeholder="Ingresa contraseña actual" style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--text-muted);">Nueva Contraseña (mínimo 6 caracteres)</label>
+            <input type="password" id="inputNewPassword" required minlength="6" placeholder="Nueva contraseña segura" style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 0.4rem; color: var(--text-muted);">Confirmar Nueva Contraseña</label>
+            <input type="password" id="inputConfirmPassword" required minlength="6" placeholder="Repite la nueva contraseña" style="width: 100%; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff;">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn-secondary" onclick="closeChangePasswordModal()" style="padding: 0.6rem 1rem;">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btnSubmitChangePassword" style="padding: 0.6rem 1.25rem;">Guardar Nueva Contraseña</button>
+        </div>
+      </form>
     </div>
   </div>
 

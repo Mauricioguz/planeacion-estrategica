@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadErpHarvestData();
   loadErpWarehouseAndStoresData();
   initSavedIframeUrls();
+  checkAuthSession();
 });
 
 // Cargar datos de LocalStorage o inicializar con los de data.js
@@ -2048,3 +2049,291 @@ function simulateCheckout() {
   renderCart();
   showToast('¡Orden e-commerce registrada con éxito!');
 }
+
+// ==================== SEGURIDAD & AUTENTICACIÓN ERP ====================
+let currentAuthUser = null;
+
+async function checkAuthSession() {
+  const token = localStorage.getItem('leonora_erp_token');
+  const loginModal = document.getElementById('erp-login-modal');
+  const userSessionWrapper = document.getElementById('erpUserSessionWrapper');
+
+  if (!token) {
+    if (loginModal) loginModal.style.display = 'flex';
+    if (userSessionWrapper) userSessionWrapper.style.display = 'none';
+    return false;
+  }
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      currentAuthUser = data.user;
+      updateUserSessionUI(data.user);
+      if (loginModal) loginModal.style.display = 'none';
+      return true;
+    } else {
+      localStorage.removeItem('leonora_erp_token');
+      localStorage.removeItem('leonora_erp_user');
+      if (loginModal) loginModal.style.display = 'flex';
+      if (userSessionWrapper) userSessionWrapper.style.display = 'none';
+      return false;
+    }
+  } catch (err) {
+    console.warn('No se pudo verificar token en el servidor, usando cache si existe:', err);
+    const savedUser = localStorage.getItem('leonora_erp_user');
+    if (savedUser) {
+      try {
+        currentAuthUser = JSON.parse(savedUser);
+        updateUserSessionUI(currentAuthUser);
+        if (loginModal) loginModal.style.display = 'none';
+        return true;
+      } catch (e) {}
+    }
+    if (loginModal) loginModal.style.display = 'flex';
+    return false;
+  }
+}
+
+function updateUserSessionUI(user) {
+  const wrapper = document.getElementById('erpUserSessionWrapper');
+  const nameLabel = document.getElementById('userNameLabel');
+  const avatarText = document.getElementById('userAvatarText');
+  const dropdownFullName = document.getElementById('userDropdownFullName');
+  const dropdownRole = document.getElementById('userDropdownRole');
+  const dropdownUsername = document.getElementById('userDropdownUsername');
+
+  if (wrapper) wrapper.style.display = 'block';
+
+  if (user) {
+    const displayName = user.nombre_completo || user.username || 'Usuario';
+    const parts = displayName.trim().split(' ');
+    const initials = (parts[0][0] + (parts.length > 1 ? parts[1][0] : '')).toUpperCase();
+
+    if (avatarText) avatarText.textContent = initials;
+    if (nameLabel) nameLabel.textContent = parts[0] + (parts.length > 1 ? ' ' + parts[1][0] + '.' : '');
+    if (dropdownFullName) dropdownFullName.textContent = displayName;
+    if (dropdownRole) dropdownRole.textContent = user.rol === 'admin' ? 'Gerencia General' : 'Operaciones';
+    if (dropdownUsername) dropdownUsername.textContent = '@' + user.username;
+  }
+}
+
+async function handleErpLogin(event) {
+  if (event) event.preventDefault();
+
+  const usernameInput = document.getElementById('loginUsername');
+  const passwordInput = document.getElementById('loginPassword');
+  const alertBox = document.getElementById('loginAlertBox');
+  const alertText = document.getElementById('loginAlertText');
+  const submitBtn = document.getElementById('btnLoginSubmit');
+
+  const username = usernameInput ? usernameInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+
+  if (!username || !password) {
+    if (alertBox) {
+      alertText.textContent = 'Por favor ingresa usuario y contraseña';
+      alertBox.style.display = 'flex';
+    }
+    return;
+  }
+
+  if (alertBox) alertBox.style.display = 'none';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Validando credenciales...';
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      localStorage.setItem('leonora_erp_token', data.token);
+      localStorage.setItem('leonora_erp_user', JSON.stringify(data.user));
+      currentAuthUser = data.user;
+      updateUserSessionUI(data.user);
+
+      const loginModal = document.getElementById('erp-login-modal');
+      if (loginModal) {
+        loginModal.style.transition = 'opacity 0.25s ease';
+        loginModal.style.opacity = '0';
+        setTimeout(() => {
+          loginModal.style.display = 'none';
+          loginModal.style.opacity = '1';
+        }, 250);
+      }
+
+      showToast(`¡Bienvenido a la Suite ERP, ${data.user.nombre_completo || data.user.username}!`, 'success');
+    } else {
+      if (alertBox) {
+        alertText.textContent = data.error || 'Usuario o contraseña incorrectos';
+        alertBox.style.display = 'flex';
+      }
+    }
+  } catch (err) {
+    console.error('Error al iniciar sesión:', err);
+    if (alertBox) {
+      alertText.textContent = 'Error de conexión con el servidor de autenticación';
+      alertBox.style.display = 'flex';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión en la Suite';
+    }
+  }
+}
+
+function toggleLoginPasswordVisibility() {
+  const passwordInput = document.getElementById('loginPassword');
+  const icon = document.getElementById('togglePasswordIcon');
+  if (!passwordInput) return;
+
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    if (icon) {
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    }
+  } else {
+    passwordInput.type = 'password';
+    if (icon) {
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+}
+
+function fillDefaultCredentials() {
+  const usernameInput = document.getElementById('loginUsername');
+  const passwordInput = document.getElementById('loginPassword');
+  if (usernameInput) usernameInput.value = 'admin';
+  if (passwordInput) passwordInput.value = 'Leonora2026*';
+}
+
+function toggleUserMenu() {
+  const menu = document.getElementById('userDropdownMenu');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('erpUserSessionWrapper');
+  const menu = document.getElementById('userDropdownMenu');
+  if (wrapper && menu && !wrapper.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+function openChangePasswordModal() {
+  const menu = document.getElementById('userDropdownMenu');
+  if (menu) menu.style.display = 'none';
+  const modal = document.getElementById('modalChangePassword');
+  const alert = document.getElementById('changePasswordAlert');
+  if (alert) alert.style.display = 'none';
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById('modalChangePassword');
+  if (modal) modal.style.display = 'none';
+  const form = document.getElementById('formChangePassword');
+  if (form) form.reset();
+}
+
+async function handleChangePasswordSubmit(event) {
+  if (event) event.preventDefault();
+
+  const oldPassword = document.getElementById('inputOldPassword').value;
+  const newPassword = document.getElementById('inputNewPassword').value;
+  const confirmPassword = document.getElementById('inputConfirmPassword').value;
+  const alertBox = document.getElementById('changePasswordAlert');
+  const alertText = document.getElementById('changePasswordAlertText');
+  const submitBtn = document.getElementById('btnSubmitChangePassword');
+  const token = localStorage.getItem('leonora_erp_token');
+
+  if (newPassword !== confirmPassword) {
+    if (alertBox) {
+      alertText.textContent = 'La confirmación no coincide con la nueva contraseña';
+      alertBox.style.display = 'flex';
+    }
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    if (alertBox) {
+      alertText.textContent = 'La nueva contraseña debe tener al menos 6 caracteres';
+      alertBox.style.display = 'flex';
+    }
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+  }
+
+  try {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      closeChangePasswordModal();
+      showToast('¡Contraseña actualizada con éxito!', 'success');
+    } else {
+      if (alertBox) {
+        alertText.textContent = data.error || 'No se pudo actualizar la contraseña';
+        alertBox.style.display = 'flex';
+      }
+    }
+  } catch (err) {
+    if (alertBox) {
+      alertText.textContent = 'Error de conexión al cambiar la contraseña';
+      alertBox.style.display = 'flex';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Guardar Nueva Contraseña';
+    }
+  }
+}
+
+function logoutErp() {
+  localStorage.removeItem('leonora_erp_token');
+  localStorage.removeItem('leonora_erp_user');
+  currentAuthUser = null;
+
+  const userSessionWrapper = document.getElementById('erpUserSessionWrapper');
+  if (userSessionWrapper) userSessionWrapper.style.display = 'none';
+
+  const menu = document.getElementById('userDropdownMenu');
+  if (menu) menu.style.display = 'none';
+
+  const loginModal = document.getElementById('erp-login-modal');
+  if (loginModal) loginModal.style.display = 'flex';
+
+  const passwordInput = document.getElementById('loginPassword');
+  if (passwordInput) passwordInput.value = '';
+
+  showToast('Has cerrado sesión de manera segura', 'info');
+}
+

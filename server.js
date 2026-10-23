@@ -4,12 +4,53 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Configuración de Tokens JWT Seguros
+const JWT_SECRET = process.env.JWT_SECRET || 'finca-la-leonora-auth-secret-key-2026-secure';
+
+function createToken(payload, expiresInHours = 72) {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + (expiresInHours * 3600);
+  const body = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyToken(token) {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [header, body, signature] = parts;
+  const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  if (expectedSig !== signature) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const user = verifyToken(token);
+  if (!user) {
+    return res.status(401).json({ error: 'No autorizado. Debe iniciar sesión.' });
+  }
+  req.user = user;
+  next();
+}
 
 // Middlewares
 app.use(cors());
@@ -18,9 +59,95 @@ app.use(express.json());
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname)));
 
-// ==================== ENDPOINTS DE LA API ====================
+// ==================== ENDPOINTS DE SEGURIDAD & AUTENTICACIÓN ====================
 
-// 1. Estado de la conexión a Neon
+// 1. Iniciar Sesión (Login)
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
+    }
+    const user = await db.authenticateUser(username, password);
+    if (!user) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+    const token = createToken({
+      id: user.id,
+      username: user.username,
+      nombre_completo: user.nombre_completo,
+      rol: user.rol,
+      email: user.email
+    });
+    res.json({
+      success: true,
+      message: 'Inicio de sesión exitoso',
+      token,
+      user
+    });
+  } catch (err) {
+    console.error('Error en /api/auth/login:', err);
+    res.status(500).json({ error: 'Error interno en la autenticación' });
+  }
+});
+
+// 2. Verificar Sesión Actual
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  res.json({ valid: true, user: req.user });
+});
+
+// 3. Cambiar Contraseña
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Debes indicar la contraseña actual y la nueva contraseña' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener mínimo 6 caracteres' });
+    }
+    const result = await db.changeUserPassword(req.user.id, oldPassword, newPassword);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.json({ success: true, message: result.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Listar Usuarios (Solo Administrador)
+app.get('/api/auth/users', requireAuth, async (req, res) => {
+  try {
+    if (req.user.rol !== 'admin') {
+      return res.status(403).json({ error: 'Acceso reservado a la gerencia / administrador' });
+    }
+    const users = await db.getAllUsers();
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Crear Nuevo Usuario (Solo Administrador)
+app.post('/api/auth/users', requireAuth, async (req, res) => {
+  try {
+    if (req.user.rol !== 'admin') {
+      return res.status(403).json({ error: 'Acceso reservado a la gerencia / administrador' });
+    }
+    const result = await db.createUser(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.json({ success: true, user: result.user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==================== ENDPOINTS DE LA API OPERATIVA & CONSOLIDACIÓN ====================
+
+// 6. Estado de la conexión a Neon y Servidor
 app.get('/api/status', async (req, res) => {
   try {
     const status = await db.testAndInitDb();

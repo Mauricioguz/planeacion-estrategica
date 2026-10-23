@@ -2,6 +2,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const connectionString = process.env.DATABASE_URL;
@@ -56,6 +57,29 @@ async function testAndInitDb() {
       // Sembrar datos por defecto de Finca La Leonora
       await seedDefaultData(client);
     }
+
+    // Verificar y crear tabla pe_usuarios si no existe
+    const userTableCheck = await client.query(`
+      SELECT to_regclass('public.pe_usuarios') as exists;
+    `);
+    if (!userTableCheck.rows[0].exists) {
+      console.log('📌 Creando tabla pe_usuarios en Neon...');
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS pe_usuarios (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(50) UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          salt VARCHAR(64) NOT NULL,
+          nombre_completo VARCHAR(120) NOT NULL,
+          rol VARCHAR(30) DEFAULT 'admin',
+          email VARCHAR(120),
+          activo BOOLEAN DEFAULT TRUE,
+          ultimo_ingreso TIMESTAMP WITH TIME ZONE,
+          creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    }
+    await seedDefaultUsers(client);
 
     client.release();
     return { connected: true, database: res.rows[0].db_name };
@@ -451,6 +475,198 @@ function getFallbackWarehouseData() {
   };
 }
 
+// ==================== SEGURIDAD & AUTENTICACIÓN (PBKDF2 SHA512) ====================
+
+function hashPassword(password, salt = null) {
+  if (!salt) {
+    salt = crypto.randomBytes(16).toString('hex');
+  }
+  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return { hash, salt };
+}
+
+function verifyPassword(password, hash, salt) {
+  const verifyHash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return verifyHash === hash;
+}
+
+// Usuario en memoria de respaldo para modo offline
+const initialAdminSec = hashPassword('Leonora2026*');
+let fallbackUsers = [
+  {
+    id: 1,
+    username: 'admin',
+    password_hash: initialAdminSec.hash,
+    salt: initialAdminSec.salt,
+    nombre_completo: 'Mauricio Guzmán - Gerencia General',
+    rol: 'admin',
+    email: 'gerencia@fincaleonora.com',
+    activo: true,
+    ultimo_ingreso: null
+  }
+];
+
+async function seedDefaultUsers(client) {
+  try {
+    const check = await client.query('SELECT count(*) as count FROM pe_usuarios WHERE username = $1;', ['admin']);
+    if (parseInt(check.rows[0].count) === 0) {
+      const { hash, salt } = hashPassword('Leonora2026*');
+      await client.query(`
+        INSERT INTO pe_usuarios (username, password_hash, salt, nombre_completo, rol, email, activo)
+        VALUES ($1, $2, $3, $4, $5, $6, $7);
+      `, ['admin', hash, salt, 'Mauricio Guzmán - Gerencia General', 'admin', 'gerencia@fincaleonora.com', true]);
+      console.log('✅ Usuario administrador [admin] sembrado exitosamente en Neon.');
+    }
+  } catch (err) {
+    console.error('Error al sembrar usuario administrador en Neon:', err.message);
+  }
+}
+
+async function authenticateUser(username, password) {
+  if (!username || !password) return null;
+
+  if (pool && isConnected) {
+    try {
+      const res = await pool.query(
+        'SELECT * FROM pe_usuarios WHERE LOWER(username) = LOWER($1) AND activo = true LIMIT 1;',
+        [username.trim()]
+      );
+      if (res.rows.length === 0) return null;
+      const user = res.rows[0];
+      const isValid = verifyPassword(password, user.password_hash, user.salt);
+      if (!isValid) return null;
+
+      // Actualizar último ingreso
+      await pool.query('UPDATE pe_usuarios SET ultimo_ingreso = CURRENT_TIMESTAMP WHERE id = $1;', [user.id]);
+
+      return {
+        id: user.id,
+        username: user.username,
+        nombre_completo: user.nombre_completo,
+        rol: user.rol,
+        email: user.email,
+        ultimo_ingreso: user.ultimo_ingreso
+      };
+    } catch (err) {
+      console.error('Error en consulta de autenticación Neon, verificando fallback:', err.message);
+    }
+  }
+
+  // Fallback si la BD no está disponible
+  const user = fallbackUsers.find(u => u.username.toLowerCase() === username.trim().toLowerCase() && u.activo);
+  if (user && verifyPassword(password, user.password_hash, user.salt)) {
+    user.ultimo_ingreso = new Date().toISOString();
+    return {
+      id: user.id,
+      username: user.username,
+      nombre_completo: user.nombre_completo,
+      rol: user.rol,
+      email: user.email,
+      ultimo_ingreso: user.ultimo_ingreso
+    };
+  }
+  return null;
+}
+
+async function changeUserPassword(userId, oldPassword, newPassword) {
+  if (!userId || !oldPassword || !newPassword) {
+    return { success: false, error: 'Parámetros incompletos' };
+  }
+
+  if (pool && isConnected) {
+    try {
+      const res = await pool.query('SELECT * FROM pe_usuarios WHERE id = $1 AND activo = true;', [userId]);
+      if (res.rows.length === 0) {
+        return { success: false, error: 'Usuario no encontrado' };
+      }
+      const user = res.rows[0];
+      if (!verifyPassword(oldPassword, user.password_hash, user.salt)) {
+        return { success: false, error: 'La contraseña actual no es correcta' };
+      }
+      const { hash, salt } = hashPassword(newPassword);
+      await pool.query('UPDATE pe_usuarios SET password_hash = $1, salt = $2 WHERE id = $3;', [hash, salt, userId]);
+      return { success: true, message: 'Contraseña actualizada exitosamente en Neon' };
+    } catch (err) {
+      console.error('Error al cambiar contraseña en Neon:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Fallback
+  const user = fallbackUsers.find(u => u.id === userId);
+  if (!user || !verifyPassword(oldPassword, user.password_hash, user.salt)) {
+    return { success: false, error: 'La contraseña actual no es correcta' };
+  }
+  const { hash, salt } = hashPassword(newPassword);
+  user.password_hash = hash;
+  user.salt = salt;
+  return { success: true, message: 'Contraseña actualizada en memoria' };
+}
+
+async function getAllUsers() {
+  if (pool && isConnected) {
+    try {
+      const res = await pool.query(
+        'SELECT id, username, nombre_completo, rol, email, activo, ultimo_ingreso, creado_en FROM pe_usuarios ORDER BY id ASC;'
+      );
+      return res.rows;
+    } catch (err) {
+      console.error('Error al obtener lista de usuarios en Neon:', err.message);
+    }
+  }
+  return fallbackUsers.map(u => ({
+    id: u.id,
+    username: u.username,
+    nombre_completo: u.nombre_completo,
+    rol: u.rol,
+    email: u.email,
+    activo: u.activo,
+    ultimo_ingreso: u.ultimo_ingreso
+  }));
+}
+
+async function createUser(data) {
+  const { username, password, nombre_completo, rol = 'admin', email = '' } = data;
+  if (!username || !password || !nombre_completo) {
+    return { success: false, error: 'Datos incompletos para crear usuario' };
+  }
+  const { hash, salt } = hashPassword(password);
+
+  if (pool && isConnected) {
+    try {
+      const exists = await pool.query('SELECT id FROM pe_usuarios WHERE LOWER(username) = LOWER($1);', [username.trim()]);
+      if (exists.rows.length > 0) {
+        return { success: false, error: 'El nombre de usuario ya está registrado' };
+      }
+      const res = await pool.query(`
+        INSERT INTO pe_usuarios (username, password_hash, salt, nombre_completo, rol, email, activo)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
+        RETURNING id, username, nombre_completo, rol, email, activo, creado_en;
+      `, [username.trim(), hash, salt, nombre_completo.trim(), rol, email.trim()]);
+      return { success: true, user: res.rows[0] };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Fallback
+  const newId = fallbackUsers.length + 1;
+  const newUser = {
+    id: newId,
+    username: username.trim(),
+    password_hash: hash,
+    salt,
+    nombre_completo: nombre_completo.trim(),
+    rol,
+    email: email.trim(),
+    activo: true,
+    ultimo_ingreso: null,
+    creado_en: new Date().toISOString()
+  };
+  fallbackUsers.push(newUser);
+  return { success: true, user: { id: newUser.id, username: newUser.username, nombre_completo: newUser.nombre_completo, rol: newUser.rol, email: newUser.email } };
+}
+
 module.exports = {
   pool,
   testAndInitDb,
@@ -460,5 +676,11 @@ module.exports = {
   upsertRealMonthlyInNeon,
   syncFromExistingApps,
   getErpHarvestData,
-  getErpWarehouseData
+  getErpWarehouseData,
+  hashPassword,
+  verifyPassword,
+  authenticateUser,
+  changeUserPassword,
+  getAllUsers,
+  createUser
 };
