@@ -44,26 +44,29 @@
         <i class="fa-solid fa-arrows-rotate" style="color: #3b82f6;"></i> Sincronizar Apps
       </button>
 
-      <!-- Selector de Horizonte Temporal -->
-      <div class="horizon-toggle" title="Seleccionar horizonte de visualización">
-        <button class="horizon-btn" id="horizon1YearBtn" onclick="setHorizon(12)">1 Año (2026)</button>
-        <button class="horizon-btn active" id="horizon2YearsBtn" onclick="setHorizon(24)">2 Años (2026 - 2027)</button>
+      <!-- Controles Específicos del Modelo Financiero (Solo visibles en Planeación) -->
+      <div class="plan-only-header-controls" id="planOnlyHeaderControls" style="display: none; align-items: center; gap: 0.5rem;">
+        <!-- Selector de Horizonte Temporal -->
+        <div class="horizon-toggle" title="Seleccionar horizonte de visualización">
+          <button class="horizon-btn" id="horizon1YearBtn" onclick="setHorizon(12)">1 Año (2026)</button>
+          <button class="horizon-btn active" id="horizon2YearsBtn" onclick="setHorizon(24)">2 Años (2026 - 2027)</button>
+        </div>
+
+        <!-- Exportar a Excel -->
+        <button class="btn-header" onclick="exportToExcel()" title="Descargar modelo financiero y plan en Excel">
+          <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Excel
+        </button>
+
+        <!-- Respaldo / Exportar JSON -->
+        <button class="btn-header" onclick="exportBackupJSON()" title="Guardar respaldo del sistema en archivo JSON">
+          <i class="fa-solid fa-download"></i> Respaldo
+        </button>
+
+        <!-- Importar JSON -->
+        <button class="btn-header" onclick="openImportModal()" title="Cargar respaldo desde archivo JSON">
+          <i class="fa-solid fa-upload"></i> Restaurar
+        </button>
       </div>
-
-      <!-- Exportar a Excel -->
-      <button class="btn-header" onclick="exportToExcel()" title="Descargar modelo financiero y plan en Excel">
-        <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Excel
-      </button>
-
-      <!-- Respaldo / Exportar JSON -->
-      <button class="btn-header" onclick="exportBackupJSON()" title="Guardar respaldo del sistema en archivo JSON">
-        <i class="fa-solid fa-download"></i> Respaldo
-      </button>
-
-      <!-- Importar JSON -->
-      <button class="btn-header" onclick="openImportModal()" title="Cargar respaldo desde archivo JSON">
-        <i class="fa-solid fa-upload"></i> Restaurar
-      </button>
 
       <!-- Alternar Tema Claro / Oscuro -->
       <button class="btn-header" onclick="toggleTheme()" id="themeToggleBtn" title="Cambiar tema claro/oscuro">
@@ -788,40 +791,36 @@
 
     <!-- ==================== MÓDULO 2: AGRICONTROL BI ==================== -->
     <div id="erp-agricontrol-view" class="erp-module-section">
-      <!-- Barra Superior de Navegación de Módulo -->
-      <div class="module-back-bar">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-          </button>
-          <div class="module-breadcrumb">
-            <span>Finca La Leonora</span> &bull; <strong style="color: #10b981;">AgriControl BI (App Embebida)</strong>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <button class="btn-secondary" onclick="toggleAgriDetails()" id="btnToggleAgriDetails">
-            <i class="fa-solid fa-table-cells"></i> Fichas de Lotes & Suelo
-          </button>
-          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
-            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
-          </button>
-        </div>
-      </div>
-
-      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
       <div class="embedded-iframe-container" id="agriIframeContainer">
-        <div class="iframe-toolbar">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <span class="status-dot online"></span>
-            <strong style="color: #10b981; font-size: 0.85rem;">AgriControl BI (Gestión Agronómica, Lotes, Suelos, Clima & Labores)</strong>
+        <div class="embedded-compact-toolbar">
+          <div class="toolbar-left">
+            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+            </button>
+            <div class="toolbar-app-badge" style="--accent: #10b981;">
+              <i class="fa-solid fa-seedling"></i>
+              <strong>AgriControl BI</strong>
+            </div>
+            <span class="status-dot online" title="Servidor en línea"></span>
           </div>
-          <div class="iframe-url-display">
-            <i class="fa-solid fa-lock" style="color: #10b981;"></i>
-            <span>https://agri-control-bi.onrender.com/</span>
+
+          <div class="toolbar-center">
+            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-lock"></i> agri-control-bi.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            </a>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary" onclick="reloadAgriIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+
+          <div class="toolbar-right">
+            <button class="btn-toolbar-action" onclick="toggleAgriDetails()" id="btnToggleAgriDetails" title="Ver / Ocultar Fichas de Lotes y Suelos">
+              <i class="fa-solid fa-table-cells"></i> <span>Fichas Lotes</span>
+            </button>
+            <button class="btn-toolbar-action" onclick="reloadAgriIframe()" title="Recargar App">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('agriIframeContainer')" title="Maximizar pantalla completa">
+              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
+            </button>
           </div>
         </div>
         <iframe id="agriIframe" src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
@@ -1034,40 +1033,36 @@
 
     <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
     <div id="erp-harvest-view" class="erp-module-section">
-      <!-- Barra Superior de Navegación de Módulo -->
-      <div class="module-back-bar">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-          </button>
-          <div class="module-breadcrumb">
-            <span>Finca La Leonora</span> &bull; <strong style="color: #3b82f6;">Control de Productividad (App Embebida)</strong>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <button class="btn-secondary" onclick="toggleHarvestDetails()" id="btnToggleHarvestDetails">
-            <i class="fa-solid fa-database"></i> Datos de Báscula Neon
-          </button>
-          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
-            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
-          </button>
-        </div>
-      </div>
-
-      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
       <div class="embedded-iframe-container" id="harvestIframeContainer">
-        <div class="iframe-toolbar">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <span class="status-dot online"></span>
-            <strong style="color: #60a5fa; font-size: 0.85rem;">Control de Productividad (Pesaje, Báscula & Cosecha en Vivo)</strong>
+        <div class="embedded-compact-toolbar">
+          <div class="toolbar-left">
+            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+            </button>
+            <div class="toolbar-app-badge" style="--accent: #3b82f6;">
+              <i class="fa-solid fa-scale-balanced"></i>
+              <strong>Control Productividad</strong>
+            </div>
+            <span class="status-dot online" title="Servidor en línea"></span>
           </div>
-          <div class="iframe-url-display">
-            <i class="fa-solid fa-link" style="color: #3b82f6;"></i>
-            <input type="text" id="harvestAppUrlInput" value="https://control-productividad-app.onrender.com/" placeholder="URL de Control de Productividad" onchange="updateHarvestIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+
+          <div class="toolbar-center">
+            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-lock"></i> control-productividad-app.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            </a>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary" onclick="reloadHarvestIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://control-productividad-app.onrender.com/" id="harvestExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+
+          <div class="toolbar-right">
+            <button class="btn-toolbar-action" onclick="toggleHarvestDetails()" id="btnToggleHarvestDetails" title="Ver Datos de Báscula Neon">
+              <i class="fa-solid fa-database"></i> <span>Báscula Neon</span>
+            </button>
+            <button class="btn-toolbar-action" onclick="reloadHarvestIframe()" title="Recargar App">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('harvestIframeContainer')" title="Maximizar pantalla completa">
+              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
+            </button>
           </div>
         </div>
         <iframe id="harvestIframe" src="https://control-productividad-app.onrender.com/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
@@ -1250,40 +1245,36 @@
 
     <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (TIENDAS & STOCK) ==================== -->
     <div id="erp-ghalocafe-view" class="erp-module-section">
-      <!-- Barra Superior de Navegación de Módulo -->
-      <div class="module-back-bar">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-          </button>
-          <div class="module-breadcrumb">
-            <span>Finca La Leonora</span> &bull; <strong style="color: #f59e0b;">GhaloCafe Comercial (App Embebida)</strong>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <button class="btn-secondary" onclick="toggleGhaloDetails()" id="btnToggleGhaloDetails">
-            <i class="fa-solid fa-store"></i> Inventario & Bodegas
-          </button>
-          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
-            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
-          </button>
-        </div>
-      </div>
-
-      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
       <div class="embedded-iframe-container" id="ghaloIframeContainer">
-        <div class="iframe-toolbar">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <span class="status-dot online"></span>
-            <strong style="color: #fbbf24; font-size: 0.85rem;">GhaloCafe Comercial (Tueste, Puntos de Venta & Distribución)</strong>
+        <div class="embedded-compact-toolbar">
+          <div class="toolbar-left">
+            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+            </button>
+            <div class="toolbar-app-badge" style="--accent: #f59e0b;">
+              <i class="fa-solid fa-mug-hot"></i>
+              <strong>Sistema GhaloCafe</strong>
+            </div>
+            <span class="status-dot online" title="Servidor en línea"></span>
           </div>
-          <div class="iframe-url-display">
-            <i class="fa-solid fa-link" style="color: #f59e0b;"></i>
-            <input type="text" id="ghaloAppUrlInput" value="https://sistema-ghalocafe.onrender.com" placeholder="URL de Sistema GhaloCafe" onchange="updateGhaloIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+
+          <div class="toolbar-center">
+            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-lock"></i> sistema-ghalocafe.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            </a>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary" onclick="reloadGhaloIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://sistema-ghalocafe.onrender.com" id="ghaloExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+
+          <div class="toolbar-right">
+            <button class="btn-toolbar-action" onclick="toggleGhaloDetails()" id="btnToggleGhaloDetails" title="Ver Inventario y Tiendas Neon">
+              <i class="fa-solid fa-store"></i> <span>Tiendas & Stock</span>
+            </button>
+            <button class="btn-toolbar-action" onclick="reloadGhaloIframe()" title="Recargar App">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('ghaloIframeContainer')" title="Maximizar pantalla completa">
+              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
+            </button>
           </div>
         </div>
         <iframe id="ghaloIframe" src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
@@ -1392,40 +1383,36 @@
 
     <!-- ==================== MÓDULO 5: GHALOINV (INVENTARIOS & BODEGAS) ==================== -->
     <div id="erp-inventory-view" class="erp-module-section">
-      <!-- Barra Superior de Navegación de Módulo -->
-      <div class="module-back-bar">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <button class="btn-secondary" onclick="switchErpModule('erp-hub-view')" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1rem;">
-            <i class="fa-solid fa-arrow-left"></i> Volver al Portal de Aplicaciones
-          </button>
-          <div class="module-breadcrumb">
-            <span>Finca La Leonora</span> &bull; <strong style="color: #06b6d4;">GhaloInv (Inventarios & Bodega Embebido)</strong>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <button class="btn-secondary" onclick="toggleWebSimulator()" id="btnToggleWebSim">
-            <i class="fa-solid fa-cart-shopping"></i> Vitrina de Productos
-          </button>
-          <button class="btn-primary" onclick="switchErpModule('plan-finance-view')" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
-            <i class="fa-solid fa-chart-line"></i> Ir a Planeación Consolidada &rarr;
-          </button>
-        </div>
-      </div>
-
-      <!-- Espacio Principal: Aplicativo Completo Embebido -->
+      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
       <div class="embedded-iframe-container" id="invIframeContainer">
-        <div class="iframe-toolbar">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <span class="status-dot online"></span>
-            <strong style="color: #22d3ee; font-size: 0.85rem;">GhaloInv (Inventarios, Stock de Café Tostado, Insumos & Bodega)</strong>
+        <div class="embedded-compact-toolbar">
+          <div class="toolbar-left">
+            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+            </button>
+            <div class="toolbar-app-badge" style="--accent: #06b6d4;">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              <strong>GhaloInv (Inventarios)</strong>
+            </div>
+            <span class="status-dot online" title="Servidor en línea"></span>
           </div>
-          <div class="iframe-url-display">
-            <i class="fa-solid fa-link" style="color: #06b6d4;"></i>
-            <input type="text" id="invAppUrlInput" value="https://ghaloinv-app.onrender.com" placeholder="URL de GhaloInv en Render" onchange="updateInvIframeUrl(this.value)" title="URL de tu aplicación web para embeberla aquí">
+
+          <div class="toolbar-center">
+            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-lock"></i> ghaloinv-app.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            </a>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary" onclick="reloadInvIframe()" title="Recargar App"><i class="fa-solid fa-arrows-rotate"></i> Recargar</button>
-            <a href="https://ghaloinv-app.onrender.com" id="invExternalLink" target="_blank" class="btn-secondary" title="Abrir en pestaña nueva"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+
+          <div class="toolbar-right">
+            <button class="btn-toolbar-action" onclick="toggleWebSimulator()" id="btnToggleWebSim" title="Vitrina de Productos">
+              <i class="fa-solid fa-cart-shopping"></i> <span>Vitrina</span>
+            </button>
+            <button class="btn-toolbar-action" onclick="reloadInvIframe()" title="Recargar App">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('invIframeContainer')" title="Maximizar pantalla completa">
+              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
+            </button>
           </div>
         </div>
         <iframe id="invIframe" src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>

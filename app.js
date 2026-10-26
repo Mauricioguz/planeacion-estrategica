@@ -1601,6 +1601,21 @@ function switchErpModule(moduleId) {
   if (moduleId === 'erp-web-view') moduleId = 'erp-inventory-view';
   activeErpModule = moduleId;
 
+  const isEmbedded = ['erp-agricontrol-view', 'erp-harvest-view', 'erp-ghalocafe-view', 'erp-inventory-view'].includes(moduleId);
+
+  // Auto-compactar la cabecera cuando se navega dentro de un módulo embebido para ganar espacio vertical
+  if (isEmbedded) {
+    document.body.classList.add('compact-header-mode');
+  } else {
+    document.body.classList.remove('compact-header-mode');
+  }
+
+  // Controles exclusivos de Planeación Financiera (1-2 Años, Excel, Respaldo, Restaurar)
+  const planOnlyControls = document.getElementById('planOnlyHeaderControls');
+  if (planOnlyControls) {
+    planOnlyControls.style.display = (moduleId === 'plan-finance-view') ? 'inline-flex' : 'none';
+  }
+
   // Barra de píldoras ERP: en el Portal de Aplicaciones (erp-hub-view) la ocultamos para mantener la pantalla 100% limpia
   const suiteBar = document.querySelector('.erp-suite-bar');
   if (suiteBar) {
@@ -1641,6 +1656,40 @@ function switchErpModule(moduleId) {
     loadErpWarehouseAndStoresData();
   }
 }
+
+// ==================== MODO PANTALLA COMPLETA / ZEN DE MÓDULOS EMBEBIDOS ====================
+function toggleIframeFullscreen(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const isZen = container.classList.toggle('fullscreen-zen');
+  const btn = container.querySelector('.btn-fullscreen-toggle');
+  if (btn) {
+    if (isZen) {
+      btn.innerHTML = '<i class="fa-solid fa-compress"></i> <span>Salir (Esc)</span>';
+      btn.title = 'Salir del modo pantalla completa (o presiona tecla Esc)';
+      showToast('Modo Pantalla Completa activado. Presiona Esc para salir.');
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Maximizar</span>';
+      btn.title = 'Maximizar pantalla completa';
+    }
+  }
+}
+
+// Salir del modo pantalla completa al presionar Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const zenContainers = document.querySelectorAll('.embedded-iframe-container.fullscreen-zen');
+    zenContainers.forEach(container => {
+      container.classList.remove('fullscreen-zen');
+      const btn = container.querySelector('.btn-fullscreen-toggle');
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Maximizar</span>';
+        btn.title = 'Maximizar pantalla completa';
+      }
+    });
+  }
+});
 
 // ==================== GESTIÓN DE APLICACIONES EMBEBIDAS (SUITE ERP) ====================
 
