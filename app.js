@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadErpWarehouseAndStoresData();
   initSavedIframeUrls();
   checkAuthSession();
+  prewarmAllModules(true);
 });
 
 // Cargar datos de LocalStorage o inicializar con los de data.js
@@ -2329,4 +2330,95 @@ function logoutErp() {
 
   showToast('Has cerrado sesión de manera segura', 'info');
 }
+
+// ==================== PRE-WARMING & WAKE-UP DE MÓDULOS EN LA NUBE ====================
+
+let isPrewarmingActive = false;
+let prewarmPollInterval = null;
+
+async function prewarmAllModules(silent = true) {
+  if (isPrewarmingActive) return;
+  isPrewarmingActive = true;
+
+  const globalStatus = document.getElementById('prewarmGlobalStatus');
+  const btn = document.getElementById('btnPrewarmAll');
+
+  if (globalStatus) {
+    globalStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #f59e0b;"></i> Verificando servidores en la nube...';
+  }
+
+  const badges = {
+    'mod-agri': document.getElementById('badge-status-mod-agri'),
+    'mod-prod': document.getElementById('badge-status-mod-prod'),
+    'mod-ghalo': document.getElementById('badge-status-mod-ghalo'),
+    'mod-inv': document.getElementById('badge-status-mod-inv')
+  };
+
+  try {
+    const res = await fetch('/api/erp/prewarm');
+    if (res.ok) {
+      const data = await res.json();
+      let allOnline = true;
+
+      data.results.forEach(item => {
+        const badge = badges[item.id];
+        if (!badge) return;
+
+        if (item.status === 'online') {
+          badge.className = 'app-launcher-status live';
+          const durText = item.durationMs < 1000 ? '<1s' : (Math.round(item.durationMs / 100) / 10) + 's';
+          badge.innerHTML = `<i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea (${durText})`;
+          badge.title = `Servidor activo y respondiendo (${item.url})`;
+        } else {
+          allOnline = false;
+          badge.className = 'app-launcher-status waking';
+          badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="font-size: 0.45rem;"></i> Despertando...`;
+          badge.title = `Servidor reactivándose en Render (${item.message || 'encendiéndose'})`;
+        }
+      });
+
+      if (globalStatus) {
+        if (allOnline) {
+          globalStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Todos los Módulos Activos (0s espera)';
+          if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-bolt" style="color: #10b981;"></i> Módulos Calientes';
+          }
+          if (prewarmPollInterval) {
+            clearTimeout(prewarmPollInterval);
+            prewarmPollInterval = null;
+          }
+        } else {
+          globalStatus.innerHTML = '<i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b;"></i> Reactivando servidores dormidos en Render...';
+          if (!prewarmPollInterval) {
+            prewarmPollInterval = setTimeout(() => {
+              prewarmPollInterval = null;
+              isPrewarmingActive = false;
+              prewarmAllModules(true);
+            }, 8000);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Prewarm API no disponible:', err.message);
+    if (globalStatus) {
+      globalStatus.innerHTML = '<i class="fa-solid fa-cloud" style="color: var(--text-muted);"></i> Conexión Directa Neon DB';
+    }
+  } finally {
+    isPrewarmingActive = false;
+  }
+}
+
+async function triggerManualPrewarm(btn) {
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Despertando...';
+  }
+  showToast('⚡ Enviando pulso de arranque a todas las aplicaciones en la nube...', 'info');
+  await prewarmAllModules(false);
+  setTimeout(() => {
+    if (btn) btn.disabled = false;
+  }, 3000);
+}
+
 

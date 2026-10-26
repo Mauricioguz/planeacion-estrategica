@@ -156,6 +156,14 @@
         <p>
           Selecciona el módulo operativo o de control al que deseas ingresar.
         </p>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.65rem; flex-wrap: wrap;">
+          <button class="btn-prewarm" onclick="triggerManualPrewarm(this)" id="btnPrewarmAll" title="Enviar pulso de encendido a todas las aplicaciones en Render">
+            <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Despertar Todos los Módulos
+          </button>
+          <span id="prewarmGlobalStatus" class="prewarm-status-pill">
+            <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Pre-calentamiento Activo (Neon DB)
+          </span>
+        </div>
       </div>
 
       <!-- Cuadrícula Compacta de Aplicaciones (App Launcher Grid) -->
@@ -167,7 +175,7 @@
             <div class="app-launcher-icon" style="--icon-bg: rgba(16, 185, 129, 0.15); --icon-color: #10b981;">
               <i class="fa-solid fa-seedling"></i>
             </div>
-            <span class="app-launcher-status live">
+            <span class="app-launcher-status live" id="badge-status-mod-agri">
               <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
@@ -192,7 +200,7 @@
             <div class="app-launcher-icon" style="--icon-bg: rgba(59, 130, 246, 0.15); --icon-color: #3b82f6;">
               <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <span class="app-launcher-status live">
+            <span class="app-launcher-status live" id="badge-status-mod-prod">
               <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
@@ -217,7 +225,7 @@
             <div class="app-launcher-icon" style="--icon-bg: rgba(245, 158, 11, 0.15); --icon-color: #f59e0b;">
               <i class="fa-solid fa-mug-hot"></i>
             </div>
-            <span class="app-launcher-status live">
+            <span class="app-launcher-status live" id="badge-status-mod-ghalo">
               <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
@@ -242,7 +250,7 @@
             <div class="app-launcher-icon" style="--icon-bg: rgba(6, 182, 212, 0.15); --icon-color: #06b6d4;">
               <i class="fa-solid fa-boxes-stacked"></i>
             </div>
-            <span class="app-launcher-status live">
+            <span class="app-launcher-status live" id="badge-status-mod-inv">
               <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> En Línea
             </span>
           </div>
@@ -268,7 +276,7 @@
               <i class="fa-solid fa-chart-line"></i>
             </div>
             <span class="app-launcher-status live" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
-              <i class="fa-solid fa-crown" style="font-size: 0.45rem;"></i> Módulo Central
+              <i class="fa-solid fa-crown" style="font-size: 0.45rem;"></i> Instantáneo (Neon DB)
             </span>
           </div>
           <div class="app-launcher-badge" style="color: #fbbf24;">Consolidador Dirección</div>

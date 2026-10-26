@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const https = require('https');
 require('dotenv').config();
 
 const db = require('./db');
@@ -303,7 +304,99 @@ app.get('/api/erp/consolidated', async (req, res) => {
   }
 });
 
-// 11. Ruta de fallback para SPA (Single Page Application)
+// 11. ERP: Pre-calentamiento y Wake-up de Aplicaciones en Render
+const EXTERNAL_APPS_RENDER = [
+  { id: 'mod-agri', name: 'AgriControl BI', url: 'https://agri-control-bi.onrender.com/' },
+  { id: 'mod-prod', name: 'Control de Productividad', url: 'https://control-productividad-app.onrender.com/' },
+  { id: 'mod-ghalo', name: 'Sistema GhaloCafe', url: 'https://sistema-ghalocafe.onrender.com' },
+  { id: 'mod-inv', name: 'GhaloInv Inventarios', url: 'https://ghaloinv-app.onrender.com' }
+];
+
+function pingExternalService(appObj, timeoutMs = 12000) {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    try {
+      const parsedUrl = new URL(appObj.url);
+      const req = https.request({
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname || '/',
+        method: 'GET',
+        timeout: timeoutMs,
+        headers: { 'User-Agent': 'FincaLaLeonora-SuiteERP/KeepAlive' }
+      }, (res) => {
+        res.resume();
+        const durationMs = Date.now() - startTime;
+        resolve({
+          id: appObj.id,
+          name: appObj.name,
+          url: appObj.url,
+          status: 'online',
+          statusCode: res.statusCode,
+          durationMs
+        });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({
+          id: appObj.id,
+          name: appObj.name,
+          url: appObj.url,
+          status: 'waking',
+          message: 'Servicio reactivándose en Render...',
+          durationMs: Date.now() - startTime
+        });
+      });
+
+      req.on('error', (err) => {
+        resolve({
+          id: appObj.id,
+          name: appObj.name,
+          url: appObj.url,
+          status: 'waking',
+          message: err.message,
+          durationMs: Date.now() - startTime
+        });
+      });
+
+      req.end();
+    } catch (e) {
+      resolve({
+        id: appObj.id,
+        name: appObj.name,
+        url: appObj.url,
+        status: 'error',
+        message: e.message
+      });
+    }
+  });
+}
+
+app.get('/api/erp/prewarm', async (req, res) => {
+  try {
+    const pingResults = await Promise.all(
+      EXTERNAL_APPS_RENDER.map(app => pingExternalService(app, 15000))
+    );
+    res.json({
+      timestamp: new Date(),
+      results: pingResults
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Función de Keep-Alive periódico en segundo plano
+function triggerKeepAliveHeartbeat() {
+  console.log(`[${new Date().toISOString()}] ⚡ Keep-Alive: Enviando pulso a módulos Render para evitar suspensión...`);
+  EXTERNAL_APPS_RENDER.forEach(app => {
+    pingExternalService(app, 15000).then(res => {
+      console.log(`[Keep-Alive] ${app.name}: ${res.status} (${res.statusCode || res.message}) en ${res.durationMs}ms`);
+    });
+  });
+}
+
+// 12. Ruta de fallback para SPA (Single Page Application)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -317,4 +410,11 @@ app.listen(PORT, async () => {
 
   // Intentar probar e inicializar Neon al arrancar
   await db.testAndInitDb();
+
+  // Pre-calentar módulos 3 segundos después del inicio
+  setTimeout(triggerKeepAliveHeartbeat, 3000);
+
+  // Mantener despiertos los servicios con un pulso cada 12 minutos
+  setInterval(triggerKeepAliveHeartbeat, 12 * 60 * 1000);
 });
+
