@@ -2119,8 +2119,29 @@ function simulateCheckout() {
 // ==================== SEGURIDAD & AUTENTICACIÓN ERP ====================
 let currentAuthUser = null;
 
+function getStoredAuthToken() {
+  return sessionStorage.getItem('leonora_erp_token') || localStorage.getItem('leonora_erp_token');
+}
+
+function getStoredAuthUser() {
+  const userStr = sessionStorage.getItem('leonora_erp_user') || localStorage.getItem('leonora_erp_user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearStoredAuth() {
+  localStorage.removeItem('leonora_erp_token');
+  localStorage.removeItem('leonora_erp_user');
+  sessionStorage.removeItem('leonora_erp_token');
+  sessionStorage.removeItem('leonora_erp_user');
+}
+
 function getAuthHeaders(extra = {}) {
-  const token = localStorage.getItem('leonora_erp_token');
+  const token = getStoredAuthToken();
   return {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
@@ -2191,7 +2212,7 @@ function lockAppSuite() {
 }
 
 async function checkAuthSession() {
-  const token = localStorage.getItem('leonora_erp_token');
+  const token = getStoredAuthToken();
   const userSessionWrapper = document.getElementById('erpUserSessionWrapper');
 
   if (!token) {
@@ -2213,8 +2234,7 @@ async function checkAuthSession() {
       updateUserSessionUI(data.user);
       return true;
     } else {
-      localStorage.removeItem('leonora_erp_token');
-      localStorage.removeItem('leonora_erp_user');
+      clearStoredAuth();
       lockAppSuite();
       if (userSessionWrapper) userSessionWrapper.style.display = 'none';
       return false;
@@ -2232,8 +2252,7 @@ async function checkAuthSession() {
         }
       }
     } catch (e) {}
-    localStorage.removeItem('leonora_erp_token');
-    localStorage.removeItem('leonora_erp_user');
+    clearStoredAuth();
     lockAppSuite();
     return false;
   }
@@ -2298,8 +2317,18 @@ async function handleErpLogin(event) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      localStorage.setItem('leonora_erp_token', data.token);
-      localStorage.setItem('leonora_erp_user', JSON.stringify(data.user));
+      clearStoredAuth();
+      const rememberCheck = document.getElementById('rememberSessionCheck');
+      const remember = rememberCheck ? rememberCheck.checked : false;
+
+      if (remember) {
+        localStorage.setItem('leonora_erp_token', data.token);
+        localStorage.setItem('leonora_erp_user', JSON.stringify(data.user));
+      } else {
+        sessionStorage.setItem('leonora_erp_token', data.token);
+        sessionStorage.setItem('leonora_erp_user', JSON.stringify(data.user));
+      }
+
       currentAuthUser = data.user;
       updateUserSessionUI(data.user);
       unlockAppSuite();
@@ -2440,8 +2469,7 @@ async function handleChangePasswordSubmit(event) {
 }
 
 function logoutErp() {
-  localStorage.removeItem('leonora_erp_token');
-  localStorage.removeItem('leonora_erp_user');
+  clearStoredAuth();
   currentAuthUser = null;
 
   const userSessionWrapper = document.getElementById('erpUserSessionWrapper');
@@ -2455,7 +2483,7 @@ function logoutErp() {
   const passwordInput = document.getElementById('loginPassword');
   if (passwordInput) passwordInput.value = '';
 
-  showToast('Has cerrado sesión de manera segura', 'info');
+  showToast('Has cerrado sesión de manera segura. La plataforma está bloqueada.', 'info');
 }
 
 // ==================== PRE-WARMING & WAKE-UP DE MÓDULOS EN LA NUBE ====================
