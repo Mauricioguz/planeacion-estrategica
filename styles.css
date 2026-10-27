@@ -2021,6 +2021,8 @@ body.compact-header-mode .embedded-iframe-container {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .btn-prewarm {
   background: rgba(245, 158, 11, 0.15);
   border: 1px solid rgba(245, 158, 11, 0.35);
@@ -2149,16 +2151,33 @@ body.compact-header-mode .embedded-iframe-container {
 
 /* ==================== SISTEMA DE AUTENTICACIÓN Y SEGURIDAD ==================== */
 
+body.not-authenticated #erp-app-root {
+  display: none !important;
+}
+
+body.not-authenticated {
+  overflow: hidden !important;
+}
+
+body.authenticated #erp-login-modal {
+  display: none !important;
+}
+
 .erp-login-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: radial-gradient(circle at 50% 25%, #0f172a 0%, #030712 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  backdrop-filter: blur(24px);
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 10000000 !important;
+  background: radial-gradient(circle at 50% 25%, #0f172a 0%, #030712 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
   animation: fadeInLogin 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -2170,13 +2189,14 @@ body.compact-header-mode .embedded-iframe-container {
 .erp-login-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(17, 24, 39, 0.85);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.08);
-  border-radius: 20px;
-  padding: 2.5rem 2rem 1.75rem 2rem;
-  position: relative;
-  overflow: hidden;
+  background: rgba(17, 24, 39, 0.95) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 45px rgba(245, 158, 11, 0.12) !important;
+  border-radius: 20px !important;
+  padding: 2.25rem 2rem 1.75rem 2rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+  z-index: 10000001 !important;
 }
 
 .erp-login-card::before {
@@ -2195,13 +2215,16 @@ body.compact-header-mode .embedded-iframe-container {
 }
 
 .erp-login-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #f59e0b;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
-  margin-bottom: 0.85rem;
+  width: 72px !important;
+  height: 72px !important;
+  max-width: 72px !important;
+  max-height: 72px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.35) !important;
+  margin-bottom: 0.85rem !important;
+  display: inline-block !important;
 }
 
 .erp-login-brand h2 {

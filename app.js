@@ -16,20 +16,17 @@ let chartInstances = {};
 
 // ==================== INICIALIZACIÓN ====================
 let isBackendConnected = false;
+let isAppSuiteUnlocked = false;
 
-document.addEventListener("DOMContentLoaded", () => {
-  initAppData();
+document.addEventListener("DOMContentLoaded", async () => {
   initTheme();
-  setupEventListeners();
-  populateDropdowns();
-  renderAll();
-  checkBackendStatus();
-  switchErpModule('erp-hub-view');
-  loadErpHarvestData();
-  loadErpWarehouseAndStoresData();
-  initSavedIframeUrls();
-  checkAuthSession();
-  prewarmAllModules(true);
+  // Blindaje de seguridad: la Suite ERP no se inicializa ni se muestra hasta validar credenciales
+  const isAuthenticated = await checkAuthSession();
+  if (isAuthenticated) {
+    unlockAppSuite();
+  } else {
+    lockAppSuite();
+  }
 });
 
 // Cargar datos de LocalStorage o inicializar con los de data.js
@@ -120,9 +117,13 @@ async function triggerExternalSync() {
   try {
     const res = await fetch("/api/sync-external", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ mesIndex: activeControlMonthIndex })
     });
+    if (res.status === 401) {
+      logoutErp();
+      return;
+    }
     const result = await res.json();
     if (result.success) {
       showToast(`¡Sincronización exitosa! ${result.message}`);
@@ -1826,7 +1827,10 @@ function initSavedIframeUrls() {
   const harvestFrame = document.getElementById('harvestIframe');
   const harvestLink = document.getElementById('harvestExternalLink');
   if (harvestInput) harvestInput.value = harvestUrl;
-  if (harvestFrame && harvestFrame.src !== harvestUrl) harvestFrame.src = harvestUrl;
+  if (harvestFrame) {
+    harvestFrame.dataset.src = harvestUrl;
+    if (isAppSuiteUnlocked) harvestFrame.src = harvestUrl;
+  }
   if (harvestLink) harvestLink.href = harvestUrl;
 
   const ghaloUrl = localStorage.getItem('FINCA_GHALO_URL') || defaultGhaloUrl;
@@ -1834,7 +1838,10 @@ function initSavedIframeUrls() {
   const ghaloFrame = document.getElementById('ghaloIframe');
   const ghaloLink = document.getElementById('ghaloExternalLink');
   if (ghaloInput) ghaloInput.value = ghaloUrl;
-  if (ghaloFrame && ghaloFrame.src !== ghaloUrl) ghaloFrame.src = ghaloUrl;
+  if (ghaloFrame) {
+    ghaloFrame.dataset.src = ghaloUrl;
+    if (isAppSuiteUnlocked) ghaloFrame.src = ghaloUrl;
+  }
   if (ghaloLink) ghaloLink.href = ghaloUrl;
 
   const invUrl = localStorage.getItem('FINCA_INV_URL') || defaultInvUrl;
@@ -1842,14 +1849,18 @@ function initSavedIframeUrls() {
   const invFrame = document.getElementById('invIframe');
   const invLink = document.getElementById('invExternalLink');
   if (invInput) invInput.value = invUrl;
-  if (invFrame && invFrame.src !== invUrl) invFrame.src = invUrl;
+  if (invFrame) {
+    invFrame.dataset.src = invUrl;
+    if (isAppSuiteUnlocked) invFrame.src = invUrl;
+  }
   if (invLink) invLink.href = invUrl;
 }
 
 // Cargar datos consolidados para el Hub Central
 async function loadErpConsolidatedData() {
   try {
-    const res = await fetch('/api/erp/consolidated');
+    const res = await fetch('/api/erp/consolidated', { headers: getAuthHeaders() });
+    if (res.status === 401) { logoutErp(); return; }
     if (!res.ok) return;
     const data = await res.json();
     if (data.harvestStats) {
@@ -1919,7 +1930,8 @@ async function loadErpHarvestData() {
 
   // Intentar refrescar desde API en vivo de Neon
   try {
-    const res = await fetch('/api/erp/harvest');
+    const res = await fetch('/api/erp/harvest', { headers: getAuthHeaders() });
+    if (res.status === 401) { logoutErp(); return; }
     if (!res.ok) return;
     const data = await res.json();
     if (data.stats) {
@@ -2012,7 +2024,11 @@ async function loadErpWarehouseAndStoresData() {
 
   // Intentar refrescar desde API
   try {
-    const [whRes, stRes] = await Promise.all([fetch('/api/erp/warehouse'), fetch('/api/erp/stores')]);
+    const [whRes, stRes] = await Promise.all([
+      fetch('/api/erp/warehouse', { headers: getAuthHeaders() }),
+      fetch('/api/erp/stores', { headers: getAuthHeaders() })
+    ]);
+    if (whRes.status === 401 || stRes.status === 401) { logoutErp(); return; }
     if (whRes.ok && stRes.ok) {
       const whData = await whRes.json();
       const stData = await stRes.json();
@@ -2103,13 +2119,83 @@ function simulateCheckout() {
 // ==================== SEGURIDAD & AUTENTICACIÓN ERP ====================
 let currentAuthUser = null;
 
+function getAuthHeaders(extra = {}) {
+  const token = localStorage.getItem('leonora_erp_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+    ...extra
+  };
+}
+
+function unlockAppSuite() {
+  isAppSuiteUnlocked = true;
+  document.body.classList.remove('not-authenticated');
+  document.body.classList.add('authenticated');
+
+  const root = document.getElementById('erp-app-root');
+  if (root) root.style.display = 'block';
+
+  const loginModal = document.getElementById('erp-login-modal');
+  if (loginModal) loginModal.style.display = 'none';
+
+  // Cargar de forma segura los iframes
+  const iframes = [
+    { id: 'agriIframe', defaultUrl: 'https://agri-control-bi.onrender.com/' },
+    { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com/' },
+    { id: 'ghaloIframe', defaultUrl: 'https://sistema-ghalocafe.onrender.com' },
+    { id: 'invIframe', defaultUrl: 'https://ghaloinv-app.onrender.com' }
+  ];
+
+  iframes.forEach(item => {
+    const frame = document.getElementById(item.id);
+    if (frame) {
+      const targetSrc = frame.dataset.src || item.defaultUrl;
+      if (!frame.src || frame.src === 'about:blank' || frame.src.endsWith('about:blank')) {
+        frame.src = targetSrc;
+      }
+    }
+  });
+
+  initAppData();
+  setupEventListeners();
+  populateDropdowns();
+  renderAll();
+  checkBackendStatus();
+  switchErpModule('erp-hub-view');
+  loadErpHarvestData();
+  loadErpWarehouseAndStoresData();
+  initSavedIframeUrls();
+  prewarmAllModules(true);
+}
+
+function lockAppSuite() {
+  isAppSuiteUnlocked = false;
+  document.body.classList.remove('authenticated');
+  document.body.classList.add('not-authenticated');
+
+  const root = document.getElementById('erp-app-root');
+  if (root) root.style.display = 'none';
+
+  const loginModal = document.getElementById('erp-login-modal');
+  if (loginModal) {
+    loginModal.style.display = 'flex';
+    loginModal.style.opacity = '1';
+  }
+
+  // Descargar iframes por seguridad absoluta
+  ['agriIframe', 'harvestIframe', 'ghaloIframe', 'invIframe'].forEach(id => {
+    const frame = document.getElementById(id);
+    if (frame) frame.src = 'about:blank';
+  });
+}
+
 async function checkAuthSession() {
   const token = localStorage.getItem('leonora_erp_token');
-  const loginModal = document.getElementById('erp-login-modal');
   const userSessionWrapper = document.getElementById('erpUserSessionWrapper');
 
   if (!token) {
-    if (loginModal) loginModal.style.display = 'flex';
+    lockAppSuite();
     if (userSessionWrapper) userSessionWrapper.style.display = 'none';
     return false;
   }
@@ -2125,27 +2211,30 @@ async function checkAuthSession() {
       const data = await res.json();
       currentAuthUser = data.user;
       updateUserSessionUI(data.user);
-      if (loginModal) loginModal.style.display = 'none';
       return true;
     } else {
       localStorage.removeItem('leonora_erp_token');
       localStorage.removeItem('leonora_erp_user');
-      if (loginModal) loginModal.style.display = 'flex';
+      lockAppSuite();
       if (userSessionWrapper) userSessionWrapper.style.display = 'none';
       return false;
     }
   } catch (err) {
-    console.warn('No se pudo verificar token en el servidor, usando cache si existe:', err);
-    const savedUser = localStorage.getItem('leonora_erp_user');
-    if (savedUser) {
-      try {
-        currentAuthUser = JSON.parse(savedUser);
-        updateUserSessionUI(currentAuthUser);
-        if (loginModal) loginModal.style.display = 'none';
-        return true;
-      } catch (e) {}
-    }
-    if (loginModal) loginModal.style.display = 'flex';
+    console.warn('Verificación offline de sesión:', err);
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp && payload.exp > Math.floor(Date.now() / 1000)) {
+          currentAuthUser = payload;
+          updateUserSessionUI(payload);
+          return true;
+        }
+      }
+    } catch (e) {}
+    localStorage.removeItem('leonora_erp_token');
+    localStorage.removeItem('leonora_erp_user');
+    lockAppSuite();
     return false;
   }
 }
@@ -2213,17 +2302,7 @@ async function handleErpLogin(event) {
       localStorage.setItem('leonora_erp_user', JSON.stringify(data.user));
       currentAuthUser = data.user;
       updateUserSessionUI(data.user);
-
-      const loginModal = document.getElementById('erp-login-modal');
-      if (loginModal) {
-        loginModal.style.transition = 'opacity 0.25s ease';
-        loginModal.style.opacity = '0';
-        setTimeout(() => {
-          loginModal.style.display = 'none';
-          loginModal.style.opacity = '1';
-        }, 250);
-      }
-
+      unlockAppSuite();
       showToast(`¡Bienvenido a la Suite ERP, ${data.user.nombre_completo || data.user.username}!`, 'success');
     } else {
       if (alertBox) {
@@ -2371,8 +2450,7 @@ function logoutErp() {
   const menu = document.getElementById('userDropdownMenu');
   if (menu) menu.style.display = 'none';
 
-  const loginModal = document.getElementById('erp-login-modal');
-  if (loginModal) loginModal.style.display = 'flex';
+  lockAppSuite();
 
   const passwordInput = document.getElementById('loginPassword');
   if (passwordInput) passwordInput.value = '';

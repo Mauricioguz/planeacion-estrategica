@@ -166,7 +166,7 @@ app.get('/api/status', async (req, res) => {
 });
 
 // 2. Obtener datos completos de planeación
-app.get('/api/plan', async (req, res) => {
+app.get('/api/plan', requireAuth, async (req, res) => {
   try {
     const neonData = await db.getFullPlanFromNeon();
     if (neonData && neonData.activities && neonData.activities.length > 0) {
@@ -181,7 +181,7 @@ app.get('/api/plan', async (req, res) => {
 });
 
 // 3. Crear o actualizar actividad en Neon
-app.post('/api/activities', async (req, res) => {
+app.post('/api/activities', requireAuth, async (req, res) => {
   try {
     const activity = req.body;
     if (!activity || !activity.title) {
@@ -196,7 +196,7 @@ app.post('/api/activities', async (req, res) => {
 });
 
 // 4. Eliminar actividad en Neon
-app.delete('/api/activities/:id', async (req, res) => {
+app.delete('/api/activities/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.deleteActivityFromNeon(id);
@@ -208,7 +208,7 @@ app.delete('/api/activities/:id', async (req, res) => {
 });
 
 // 5. Guardar cifras reales mensuales en Neon
-app.post('/api/real-monthly', async (req, res) => {
+app.post('/api/real-monthly', requireAuth, async (req, res) => {
   try {
     const { items, mesIndex } = req.body;
     if (!items || mesIndex === undefined) {
@@ -223,7 +223,7 @@ app.post('/api/real-monthly', async (req, res) => {
 });
 
 // 6. Sincronizar datos desde aplicaciones existentes (Ventas de café y P&G)
-app.post('/api/sync-external', async (req, res) => {
+app.post('/api/sync-external', requireAuth, async (req, res) => {
   try {
     const { mesIndex } = req.body;
     const syncResult = await db.syncFromExistingApps(mesIndex || 9);
@@ -237,7 +237,7 @@ app.post('/api/sync-external', async (req, res) => {
 // ==================== ENDPOINTS DE LA SUITE ERP UNIFICADA ====================
 
 // 7. ERP: Cosecha y Recolección (desde control-productividad-db)
-app.get('/api/erp/harvest', async (req, res) => {
+app.get('/api/erp/harvest', requireAuth, async (req, res) => {
   try {
     const data = await db.getErpHarvestData();
     res.json(data);
@@ -248,7 +248,7 @@ app.get('/api/erp/harvest', async (req, res) => {
 });
 
 // 8. ERP: Bodega y Salidas de Café (desde control-productividad-db)
-app.get('/api/erp/warehouse', async (req, res) => {
+app.get('/api/erp/warehouse', requireAuth, async (req, res) => {
   try {
     const data = await db.getErpWarehouseData();
     res.json(data);
@@ -259,7 +259,7 @@ app.get('/api/erp/warehouse', async (req, res) => {
 });
 
 // 9. ERP: GhaloCafe Tiendas & Puntos de Venta (desde ghalocafe_db / configuración)
-app.get('/api/erp/stores', (req, res) => {
+app.get('/api/erp/stores', requireAuth, (req, res) => {
   res.json({
     stores: [
       { id: 'st-1', name: 'Bodega Principal La Leonora', city: 'Palestina (Caldas)', type: 'Origen & Distribución', stockKilos: 480, manager: 'Mauricio Guzmán' },
@@ -279,7 +279,7 @@ app.get('/api/erp/stores', (req, res) => {
 });
 
 // 10. ERP: Consolidado Directivo General (Cruce integral de las 4 apps + web)
-app.get('/api/erp/consolidated', async (req, res) => {
+app.get('/api/erp/consolidated', requireAuth, async (req, res) => {
   try {
     const harvest = await db.getErpHarvestData();
     const warehouse = await db.getErpWarehouseData();

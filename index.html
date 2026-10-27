@@ -15,12 +15,68 @@
   <!-- Estilos Maestros -->
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
+<body class="not-authenticated">
+
+  <!-- ==================== PANTALLA DE ACCESO / LOGIN SEGURO Y BLINDADO ==================== -->
+  <div id="erp-login-modal" class="erp-login-backdrop" style="display: flex;">
+    <div class="erp-login-card">
+      <div class="erp-login-brand">
+        <img src="./assets/logo.jpg" alt="Logo Finca La Leonora & GhaloCafe" class="erp-login-logo" id="loginLogoImg">
+        <h2>Finca La Leonora <span style="font-family: 'Playfair Display', serif; color: var(--primary-gold);">• Ghalocafe<span style="color: #d4a373;">.</span></span></h2>
+        <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; margin-top: 0.4rem; display: inline-block;">
+          <i class="fa-solid fa-shield-halved"></i> SUITE ERP & PLANEACIÓN ESTRATÉGICA
+        </span>
+        <p class="erp-login-subtitle">Ingresa tus credenciales para acceder a la plataforma unificada</p>
+      </div>
+
+      <form id="erpLoginForm" onsubmit="handleErpLogin(event)" class="erp-login-form">
+        <div id="loginAlertBox" class="login-alert" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="loginAlertText">Usuario o contraseña incorrectos</span>
+        </div>
+
+        <div class="login-input-group">
+          <label for="loginUsername"><i class="fa-solid fa-user"></i> Usuario o Correo</label>
+          <div class="input-with-icon">
+            <input type="text" id="loginUsername" placeholder="Ingresa tu usuario" required autocomplete="username" autofocus>
+          </div>
+        </div>
+
+        <div class="login-input-group">
+          <label for="loginPassword"><i class="fa-solid fa-lock"></i> Contraseña</label>
+          <div class="input-with-icon">
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-password" onclick="toggleLoginPasswordVisibility()" title="Mostrar u ocultar contraseña">
+              <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 0.25rem 0 1rem 0; font-size: 0.82rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" id="rememberSessionCheck" checked style="accent-color: #f59e0b; width: 16px; height: 16px;">
+            Recordar sesión activa
+          </label>
+        </div>
+
+        <button type="submit" class="btn-login-submit" id="btnLoginSubmit">
+          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión en la Suite
+        </button>
+      </form>
+
+      <div class="erp-login-footer">
+        <i class="fa-solid fa-lock" style="color: #10b981;"></i> Conexión Cifrada • PostgreSQL Neon • Finca La Leonora
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONTENEDOR PRINCIPAL ERP (BLOQUEADO HASTA AUTENTICARSE) ==================== -->
+  <div id="erp-app-root" style="display: none;">
 
   <!-- ==================== ENCABEZADO PRINCIPAL ==================== -->
   <header class="app-header">
     <div class="brand-section">
-      <img src="./assets/logo.svg" alt="Logo Finca La Leonora & GhaloCafe" class="brand-logo" id="headerLogo" onerror="this.src='./assets/logo.jpg'">
+      <img src="./assets/logo.jpg" alt="Logo Finca La Leonora & GhaloCafe" class="brand-logo" id="headerLogo">
       <div class="brand-info">
         <h1>
           Finca La Leonora
@@ -823,7 +879,7 @@
             </button>
           </div>
         </div>
-        <iframe id="agriIframe" src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
+        <iframe id="agriIframe" src="about:blank" data-src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Fichas y Paneles de Apoyo (Opcionales) -->
@@ -1065,7 +1121,7 @@
             </button>
           </div>
         </div>
-        <iframe id="harvestIframe" src="https://control-productividad-app.onrender.com/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
+        <iframe id="harvestIframe" src="about:blank" data-src="https://control-productividad-app.onrender.com/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
@@ -1277,7 +1333,7 @@
             </button>
           </div>
         </div>
-        <iframe id="ghaloIframe" src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
+        <iframe id="ghaloIframe" src="about:blank" data-src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas de Stock y Catálogo (Colapsable) -->
@@ -1415,7 +1471,7 @@
             </button>
           </div>
         </div>
-        <iframe id="invIframe" src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>
+        <iframe id="invIframe" src="about:blank" data-src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Simulador Interactivo Local (Colapsable) -->
@@ -1752,59 +1808,6 @@
     </div>
   </div>
 
-  <!-- ==================== PANTALLA DE ACCESO / LOGIN SEGURO ==================== -->
-  <div id="erp-login-modal" class="erp-login-backdrop" style="display: flex;">
-    <div class="erp-login-card">
-      <div class="erp-login-brand">
-        <img src="./assets/logo.svg" alt="Logo Finca La Leonora & GhaloCafe" class="erp-login-logo" onerror="this.src='./assets/logo.jpg'">
-        <h2>Finca La Leonora <span style="font-family: 'Playfair Display', serif; color: var(--primary-gold);">• Ghalocafe<span style="color: #d4a373;">.</span></span></h2>
-        <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; margin-top: 0.4rem; display: inline-block;">
-          <i class="fa-solid fa-shield-halved"></i> SUITE ERP & PLANEACIÓN ESTRATÉGICA
-        </span>
-        <p class="erp-login-subtitle">Ingresa tus credenciales para acceder a la plataforma unificada</p>
-      </div>
-
-      <form id="erpLoginForm" onsubmit="handleErpLogin(event)" class="erp-login-form">
-        <div id="loginAlertBox" class="login-alert" style="display: none;">
-          <i class="fa-solid fa-circle-exclamation"></i>
-          <span id="loginAlertText">Usuario o contraseña incorrectos</span>
-        </div>
-
-        <div class="login-input-group">
-          <label for="loginUsername"><i class="fa-solid fa-user"></i> Usuario o Correo</label>
-          <div class="input-with-icon">
-            <input type="text" id="loginUsername" placeholder="Ingresa tu usuario" required autocomplete="username" autofocus>
-          </div>
-        </div>
-
-        <div class="login-input-group">
-          <label for="loginPassword"><i class="fa-solid fa-lock"></i> Contraseña</label>
-          <div class="input-with-icon">
-            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
-            <button type="button" class="btn-toggle-password" onclick="toggleLoginPasswordVisibility()" title="Mostrar u ocultar contraseña">
-              <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
-            </button>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin: 0.25rem 0 1rem 0; font-size: 0.82rem;">
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-muted);">
-            <input type="checkbox" id="rememberSessionCheck" checked style="accent-color: #f59e0b; width: 16px; height: 16px;">
-            Recordar sesión activa
-          </label>
-        </div>
-
-        <button type="submit" class="btn-login-submit" id="btnLoginSubmit">
-          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión en la Suite
-        </button>
-      </form>
-
-      <div class="erp-login-footer">
-        <i class="fa-solid fa-lock" style="color: #10b981;"></i> Conexión Cifrada • PostgreSQL Neon • Finca La Leonora
-      </div>
-    </div>
-  </div>
-
   <!-- Modal Cambiar Contraseña -->
   <div id="modalChangePassword" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
     <div class="modal-card" style="max-width: 440px; background: #111827; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 90%;">
@@ -1841,6 +1844,8 @@
 
   <!-- Contenedor de Notificaciones Toast -->
   <div class="toast-container" id="toastContainer"></div>
+
+  </div> <!-- ==================== FIN #erp-app-root ==================== -->
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
