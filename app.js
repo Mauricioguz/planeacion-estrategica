@@ -1889,7 +1889,7 @@ async function loadErpHarvestData() {
     { id: 'cmuwtdxcw0006', fecha: '2026-09-29', recolector: 'NORBERTO', lote: 'Lote Manuela', kilos: 42 }
   ];
 
-  function renderHarvestUI(stats, recoles, ultimos) {
+  function renderHarvestUI(stats, recoles, ultimos, lotes) {
     const kgEl = document.getElementById('harvestTotalKg');
     const entriesEl = document.getElementById('harvestTotalEntries');
     const avgEl = document.getElementById('harvestAvgKg');
@@ -1910,6 +1910,25 @@ async function loadErpHarvestData() {
       `).join('');
     }
 
+    const lotsContainer = document.getElementById('harvestLotsBarsContainer');
+    if (lotsContainer && lotes && lotes.length > 0) {
+      const totalKilos = lotes.reduce((acc, curr) => acc + Number(curr.total_kilos || 0), 0) || 1;
+      const colors = ['#10b981', '#059669', '#d97706', '#b45309', '#3b82f6', '#8b5cf6'];
+      lotsContainer.innerHTML = lotes.map((l, idx) => {
+        const pct = ((Number(l.total_kilos) / totalKilos) * 100).toFixed(1);
+        const color = colors[idx % colors.length];
+        return `
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
+              <span><strong>🌱 ${l.lote_nombre}</strong></span>
+              <strong style="color: ${color};">${Number(l.total_kilos).toLocaleString()} kg (${pct}%)</strong>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%; background: ${color};"></div></div>
+          </div>
+        `;
+      }).join('');
+    }
+
     const recentBody = document.getElementById('harvestRecentEntriesBody');
     if (recentBody && ultimos) {
       recentBody.innerHTML = ultimos.map(rec => `
@@ -1928,14 +1947,14 @@ async function loadErpHarvestData() {
   // Render inicial inmediato
   renderHarvestUI(defaultStats, defaultRecoles, defaultRecent);
 
-  // Intentar refrescar desde API en vivo de Neon
+  // Refrescar desde API en vivo de Neon PostgreSQL
   try {
     const res = await fetch('/api/erp/harvest', { headers: getAuthHeaders() });
     if (res.status === 401) { logoutErp(); return; }
     if (!res.ok) return;
     const data = await res.json();
     if (data.stats) {
-      renderHarvestUI(data.stats, data.recolectores, data.ultimosRegistros);
+      renderHarvestUI(data.stats, data.recolectores, data.ultimosRegistros, data.kilosPorLote);
     }
   } catch (e) {
     // Operando con dataset local
@@ -2163,7 +2182,6 @@ function unlockAppSuite() {
   // Cargar de forma segura los iframes locales consolidados
   const iframes = [
     { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
-    { id: 'harvestIframe', defaultUrl: '/modules/control-productividad/' },
     { id: 'ghaloIframe', defaultUrl: '/modules/ghalocafe/index.html' },
     { id: 'invIframe', defaultUrl: '/modules/ghaloinv/index.html' }
   ];
@@ -2205,7 +2223,7 @@ function lockAppSuite() {
   }
 
   // Descargar iframes por seguridad absoluta
-  ['agriIframe', 'harvestIframe', 'ghaloIframe', 'invIframe'].forEach(id => {
+  ['agriIframe', 'ghaloIframe', 'invIframe'].forEach(id => {
     const frame = document.getElementById(id);
     if (frame) frame.src = 'about:blank';
   });

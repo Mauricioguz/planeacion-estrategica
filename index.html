@@ -1079,43 +1079,34 @@
 
     <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
     <div id="erp-harvest-view" class="erp-module-section">
-      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
-      <div class="embedded-iframe-container" id="harvestIframeContainer">
-        <div class="embedded-compact-toolbar">
-          <div class="toolbar-left">
-            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
-              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
-            </button>
-            <div class="toolbar-app-badge" style="--accent: #3b82f6;">
-              <i class="fa-solid fa-scale-balanced"></i>
-              <strong>Control Productividad</strong>
-            </div>
-            <span class="status-dot online" title="Servidor en línea"></span>
+      <!-- Barra Superior Unificada -->
+      <div class="embedded-compact-toolbar" style="border-radius: var(--radius-md); margin-bottom: 1.5rem; background: var(--surface-card); border: 1px solid var(--border-color);">
+        <div class="toolbar-left">
+          <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+            <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+          </button>
+          <div class="toolbar-app-badge" style="--accent: #3b82f6;">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <strong>Control de Productividad & Báscula</strong>
           </div>
-
-          <div class="toolbar-center">
-            <span class="toolbar-url-badge">
-              <i class="fa-solid fa-shield-halved" style="color: #3b82f6;"></i> Módulo Nativo Integrado (Neon DB)
-            </span>
-          </div>
-
-          <div class="toolbar-right">
-            <button class="btn-toolbar-action" onclick="toggleHarvestDetails()" id="btnToggleHarvestDetails" title="Ver Datos de Báscula Neon">
-              <i class="fa-solid fa-database"></i> <span>Báscula Neon</span>
-            </button>
-            <button class="btn-toolbar-action" onclick="reloadHarvestIframe()" title="Recargar App">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('harvestIframeContainer')" title="Maximizar pantalla completa">
-              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
-            </button>
-          </div>
+          <span class="status-dot online" title="Base de Datos Neon Conectada"></span>
         </div>
-        <iframe id="harvestIframe" src="about:blank" data-src="/modules/control-productividad/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
+
+        <div class="toolbar-center">
+          <span class="toolbar-url-badge">
+            <i class="fa-solid fa-database" style="color: #3b82f6;"></i> Neon PostgreSQL Live Feed (13.296 kg • 310 Pases)
+          </span>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn-toolbar-action" onclick="loadErpHarvestData()" title="Actualizar Datos de Báscula">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Actualizar</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
-      <div id="harvestDataContainer" style="display: none;">
+      <!-- Contenedor: KPIs Nativos de Productividad & Cosecha -->
+      <div id="harvestDataContainer" class="dashboard-kpis-grid" style="margin-bottom: 1.5rem;">
         <div class="kpi-card" style="--accent-color: #10b981;">
           <div class="kpi-top">
             <span class="kpi-label">Total Kilos Cereza Cosechados</span>
@@ -1230,7 +1221,7 @@
             </div>
           </div>
           <div style="padding: 1rem 0;">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 1rem;" id="harvestLotsBarsContainer">
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
                   <span><strong>🌱 Lote Amelia</strong> (Café Castillo)</span>
