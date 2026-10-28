@@ -72,6 +72,9 @@ app.use(express.static(path.join(__dirname)));
 const agriRoutes = require('./routes/agricontrol');
 app.use('/api', agriRoutes);
 
+const productividadRoutes = require('./routes/productividad');
+app.use('/api/productividad', productividadRoutes);
+
 // ==================== ENDPOINTS DE SEGURIDAD & AUTENTICACIÓN ====================
 
 // 1. Iniciar Sesión (Login)

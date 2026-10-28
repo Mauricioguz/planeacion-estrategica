@@ -1079,212 +1079,441 @@
 
     <!-- ==================== MÓDULO 3: CONTROL DE PRODUCTIVIDAD (COSECHA) ==================== -->
     <div id="erp-harvest-view" class="erp-module-section">
-      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
-      <div class="embedded-iframe-container" id="harvestIframeContainer">
-        <div class="embedded-compact-toolbar">
-          <div class="toolbar-left">
-            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
-              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
-            </button>
-            <div class="toolbar-app-badge" style="--accent: #3b82f6;">
-              <i class="fa-solid fa-scale-balanced"></i>
-              <strong>Control Productividad & Báscula</strong>
-            </div>
-            <span class="status-dot online" title="Servidor en línea"></span>
+      <!-- Barra Superior Unificada -->
+      <div class="embedded-compact-toolbar" style="border-radius: var(--radius-md); margin-bottom: 1.5rem; background: var(--surface-card); border: 1px solid var(--border-color);">
+        <div class="toolbar-left">
+          <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+            <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+          </button>
+          <div class="toolbar-app-badge" style="--accent: #3b82f6;">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <strong>Control de Productividad & Cosecha</strong>
           </div>
-
-          <div class="toolbar-center">
-            <span class="toolbar-url-badge">
-              <i class="fa-solid fa-shield-halved" style="color: #3b82f6;"></i> Sistema Operativo de Cosecha & Registros (Neon DB)
-            </span>
-          </div>
-
-          <div class="toolbar-right">
-            <button class="btn-toolbar-action" onclick="toggleHarvestDetails()" id="btnToggleHarvestDetails" title="Ver Métricas y Análisis Neon">
-              <i class="fa-solid fa-chart-pie"></i> <span>Métricas Neon</span>
-            </button>
-            <button class="btn-toolbar-action" onclick="reloadHarvestIframe()" title="Recargar App">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('harvestIframeContainer')" title="Maximizar pantalla completa">
-              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
-            </button>
-          </div>
-        </div>
-        <iframe id="harvestIframe" src="about:blank" data-src="https://control-productividad-app.onrender.com" class="embedded-iframe" title="Control de Productividad Live"></iframe>
-      </div>
-
-      <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
-      <div id="harvestDataContainer" style="display: none; margin-top: 1.5rem;">
-        <div class="kpi-card" style="--accent-color: #10b981;">
-          <div class="kpi-top">
-            <span class="kpi-label">Total Kilos Cereza Cosechados</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-weight-hanging"></i></div>
-          </div>
-          <div class="kpi-value" id="harvestTotalKg">13.296 kg</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive"><i class="fa-solid fa-check"></i> En Neon DB</span>
-            <span class="kpi-context">Cosecha registrada en báscula</span>
-          </div>
+          <span class="status-dot online" title="Base de Datos Neon Conectada"></span>
         </div>
 
-        <div class="kpi-card" style="--accent-color: #3b82f6;">
-          <div class="kpi-top">
-            <span class="kpi-label">Total Registros de Pesaje</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-list-ol"></i></div>
-          </div>
-          <div class="kpi-value" id="harvestTotalEntries">310 Pases</div>
-          <div class="kpi-footer">
-            <span class="trend-pill neutral">Continuo</span>
-            <span class="kpi-context">Entregas de recolectores</span>
-          </div>
+        <div class="toolbar-center">
+          <span class="toolbar-url-badge">
+            <i class="fa-solid fa-database" style="color: #3b82f6;"></i> Neon PostgreSQL Live Feed (100% Funcional)
+          </span>
         </div>
 
-        <div class="kpi-card" style="--accent-color: #f59e0b;">
-          <div class="kpi-top">
-            <span class="kpi-label">Promedio Kilos por Pase</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-calculator"></i></div>
-          </div>
-          <div class="kpi-value" id="harvestAvgKg">42.9 kg</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">+8.2% Eficiencia</span>
-            <span class="kpi-context">Rendimiento por jornada</span>
-          </div>
-        </div>
-
-        <div class="kpi-card" style="--accent-color: #8b5cf6;">
-          <div class="kpi-top">
-            <span class="kpi-label">Recolectores Activos</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-users"></i></div>
-          </div>
-          <div class="kpi-value">8 Operarios</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">Destajo al día</span>
-            <span class="kpi-context">Liquidación semanal</span>
-          </div>
+        <div class="toolbar-right">
+          <button class="btn-toolbar-action" onclick="loadProductividadData()" title="Refrescar Datos de Neon">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Actualizar</span>
+          </button>
         </div>
       </div>
 
-      <!-- Tablas de Cosecha: Top Recolectores y Distribución por Lote -->
-      <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
-        <!-- Top Recolectores -->
-        <div class="chart-card col-7">
+      <!-- Navegación de Sub-módulos de Productividad -->
+      <div class="erp-suite-bar" style="margin-bottom: 1.5rem; justify-content: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="erp-suite-pill active" onclick="switchProdTab('tab-prod-bascula')" id="btnTabProdBascula">
+          <i class="fa-solid fa-weight-hanging"></i> <span>Báscula & Pesajes</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchProdTab('tab-prod-recolectores')" id="btnTabProdRecos">
+          <i class="fa-solid fa-users"></i> <span>Recolectores</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchProdTab('tab-prod-procesos')" id="btnTabProdProcesos">
+          <i class="fa-solid fa-flask-vial"></i> <span>Beneficio & Lavado</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchProdTab('tab-prod-bodega')" id="btnTabProdBodega">
+          <i class="fa-solid fa-warehouse"></i> <span>Bodega Pergamino</span>
+        </button>
+      </div>
+
+      <!-- ==================== SUB-TAB 1: BÁSCULA & RECOLECCIÓN ==================== -->
+      <div id="tab-prod-bascula" class="prod-subtab-pane">
+        <!-- Tarjeta de Registro Rápido en Báscula -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #3b82f6;">
           <div class="chart-header">
             <div>
-              <h3><i class="fa-solid fa-medal" style="color: #f59e0b;"></i> Rendimiento Acumulado por Recolector</h3>
-              <div class="chart-subtitle">Pases de báscula y kilos recolectados registrados en Neon</div>
+              <h3><i class="fa-solid fa-scale-balanced" style="color: #3b82f6;"></i> Registrar Nuevo Pesaje en Báscula</h3>
+              <div class="chart-subtitle">Ingresa la entrega de café cereza recién cosechado para guardado en Neon DB</div>
+            </div>
+            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">Báscula Oficial</span>
+          </div>
+
+          <form id="formRegistroPesaje" onsubmit="handleGuardarPesaje(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputPesajeFecha"><i class="fa-regular fa-calendar"></i> Fecha Pesaje</label>
+                <input type="date" id="inputPesajeFecha" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label for="selectPesajeRecolector"><i class="fa-solid fa-user"></i> Recolector</label>
+                <select id="selectPesajeRecolector" class="form-select" required>
+                  <option value="">Cargando recolectores...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="selectPesajeLote"><i class="fa-solid fa-map-pin"></i> Lote de Origen</label>
+                <select id="selectPesajeLote" class="form-select" required>
+                  <option value="">Cargando lotes...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="inputPesajeKilos"><i class="fa-solid fa-weight-hanging"></i> Kilos Cereza (kg)</label>
+                <input type="number" step="0.1" min="0.5" max="300" id="inputPesajeKilos" class="form-input" placeholder="Ej: 45.5" required>
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitPesaje" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Pesaje</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- KPIs Clave de Cosecha -->
+        <div class="dashboard-kpis-grid" style="margin-bottom: 1.5rem;">
+          <div class="kpi-card" style="--accent-color: #10b981;">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Kilos Cereza Cosechados</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-weight-hanging"></i></div>
+            </div>
+            <div class="kpi-value" id="harvestTotalKg">13.296 kg</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive"><i class="fa-solid fa-check"></i> En Neon DB</span>
+              <span class="kpi-context">Cosecha registrada en báscula</span>
             </div>
           </div>
-          <div style="padding: 0.5rem 0;">
+
+          <div class="kpi-card" style="--accent-color: #3b82f6;">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Registros de Pesaje</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-list-ol"></i></div>
+            </div>
+            <div class="kpi-value" id="harvestTotalEntries">310 Pases</div>
+            <div class="kpi-footer">
+              <span class="trend-pill neutral">Continuo</span>
+              <span class="kpi-context">Entregas de recolectores</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--accent-color: #f59e0b;">
+            <div class="kpi-top">
+              <span class="kpi-label">Promedio Kilos por Pase</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-calculator"></i></div>
+            </div>
+            <div class="kpi-value" id="harvestAvgKg">42.9 kg</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive">+8.2% Eficiencia</span>
+              <span class="kpi-context">Rendimiento por jornada</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--accent-color: #8b5cf6;">
+            <div class="kpi-top">
+              <span class="kpi-label">Recolectores Activos</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-users"></i></div>
+            </div>
+            <div class="kpi-value" id="harvestTotalRecosActive">8 Operarios</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive">Destajo al día</span>
+              <span class="kpi-context">Liquidación semanal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla y Gráficos de Cosecha -->
+        <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+          <!-- Últimos Pesajes Registrados en Báscula -->
+          <div class="chart-card col-8">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-clipboard-list" style="color: #3b82f6;"></i> Registro de Últimos Pesajes en Báscula</h3>
+                <div class="chart-subtitle">Entregas registradas cronológicamente en Neon PostgreSQL</div>
+              </div>
+              <span class="badge-tag">Auditoría en Vivo</span>
+            </div>
+            <div class="table-scroll-container" style="max-height: 420px; overflow-y: auto;">
+              <table class="financial-matrix">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Recolector</th>
+                    <th>Lote</th>
+                    <th style="text-align: right;">Kilos Cereza</th>
+                    <th style="text-align: center;">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="harvestRecentEntriesBody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Kilos por Lote -->
+          <div class="chart-card col-4">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Cosecha por Lote</h3>
+                <div class="chart-subtitle">Distribución acumulada</div>
+              </div>
+            </div>
+            <div style="padding: 1rem 0;">
+              <div style="display: flex; flex-direction: column; gap: 1rem;" id="harvestLotsBarsContainer">
+                <!-- Dinámico -->
+              </div>
+              <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.75rem; color: var(--text-muted);">
+                <i class="fa-solid fa-link" style="color: #3b82f6;"></i> <strong>Cálculo Automático de Destajo:</strong> Los kilos registrados alimentan de inmediato el costo proyectado de mano de obra en el Estado de Resultados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SUB-TAB 2: RECOLECTORES ==================== -->
+      <div id="tab-prod-recolectores" class="prod-subtab-pane" style="display: none;">
+        <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+          <!-- Formulario Nuevo Recolector -->
+          <div class="chart-card col-5">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-user-plus" style="color: #f59e0b;"></i> Nuevo Recolector</h3>
+                <div class="chart-subtitle">Registrar operario para báscula y liquidación de destajo</div>
+              </div>
+            </div>
+            <form id="formNuevoRecolector" onsubmit="handleGuardarRecolector(event)" style="padding: 1rem 0;">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="inputRecoNombre">Nombre Completo</label>
+                <input type="text" id="inputRecoNombre" class="form-input" placeholder="Ej: PEDRO PÉREZ" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="inputRecoDoc">Cédula / Documento (Opcional)</label>
+                <input type="text" id="inputRecoDoc" class="form-input" placeholder="Ej: 1053800000">
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fa-solid fa-plus"></i> Guardar Recolector en Neon
+              </button>
+            </form>
+          </div>
+
+          <!-- Tabla Rendimiento por Recolector -->
+          <div class="chart-card col-7">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-medal" style="color: #f59e0b;"></i> Rendimiento Acumulado por Recolector</h3>
+                <div class="chart-subtitle">Total de pases y kilos registrados en Neon</div>
+              </div>
+            </div>
+            <div class="table-scroll-container" style="max-height: 420px; overflow-y: auto;">
+              <table class="financial-matrix">
+                <thead>
+                  <tr>
+                    <th>Recolector</th>
+                    <th style="text-align: center;">Pases</th>
+                    <th style="text-align: right;">Total Kilos</th>
+                    <th style="text-align: right;">Promedio</th>
+                    <th style="text-align: center;">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="harvestCollectorsTableBody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SUB-TAB 3: BENEFICIO & FERMENTACIÓN ==================== -->
+      <div id="tab-prod-procesos" class="prod-subtab-pane" style="display: none;">
+        <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+          <!-- Formulario Proceso Lavado -->
+          <div class="chart-card col-6">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-droplet" style="color: #06b6d4;"></i> Registro de Proceso Lavado</h3>
+                <div class="chart-subtitle">Cereza despulpada, café mojado, seco y pasillas</div>
+              </div>
+            </div>
+            <form id="formProcesoLavado" onsubmit="handleGuardarLavado(event)" style="padding: 1rem 0;">
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div class="form-group">
+                  <label for="lavadoFecha">Fecha</label>
+                  <input type="date" id="lavadoFecha" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="lavadoLote">Lote</label>
+                  <select id="lavadoLote" class="form-select" required></select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div class="form-group">
+                  <label for="lavadoCereza">Kg Cereza Procesada</label>
+                  <input type="number" step="0.1" id="lavadoCereza" class="form-input" placeholder="Ej: 500" required>
+                </div>
+                <div class="form-group">
+                  <label for="lavadoMojado">Kg Café Mojado</label>
+                  <input type="number" step="0.1" id="lavadoMojado" class="form-input" placeholder="Ej: 210">
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom: 1rem;">
+                <div class="form-group">
+                  <label for="lavadoSeco">Kg Café Seco (Pergamino)</label>
+                  <input type="number" step="0.1" id="lavadoSeco" class="form-input" placeholder="Ej: 105">
+                </div>
+                <div class="form-group">
+                  <label for="lavadoPasillaSeca">Kg Pasilla Seca</label>
+                  <input type="number" step="0.1" id="lavadoPasillaSeca" class="form-input" placeholder="Ej: 8.5">
+                </div>
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Proceso Lavado
+              </button>
+            </form>
+          </div>
+
+          <!-- Formulario Proceso Fermentación -->
+          <div class="chart-card col-6">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-flask" style="color: #a855f7;"></i> Proceso Fermentación Especial</h3>
+                <div class="chart-subtitle">Cafés diferenciados (Honey, Natural, Anaeróbico)</div>
+              </div>
+            </div>
+            <form id="formProcesoFermentacion" onsubmit="handleGuardarFermentacion(event)" style="padding: 1rem 0;">
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div class="form-group">
+                  <label for="fermFecha">Fecha</label>
+                  <input type="date" id="fermFecha" class="form-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="fermLote">Lote</label>
+                  <select id="fermLote" class="form-select" required></select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div class="form-group">
+                  <label for="fermCerezaTotal">Kg Cereza Total</label>
+                  <input type="number" step="0.1" id="fermCerezaTotal" class="form-input" placeholder="Ej: 350" required>
+                </div>
+                <div class="form-group">
+                  <label for="fermDias">Días / Horas Fermentación</label>
+                  <input type="number" id="fermDias" class="form-input" placeholder="Ej: 3 (días)" required>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom: 1rem;">
+                <div class="form-group">
+                  <label for="fermCafeSeco">Kg Café Seco Final</label>
+                  <input type="number" step="0.1" id="fermCafeSeco" class="form-input" placeholder="Ej: 75">
+                </div>
+                <div class="form-group">
+                  <label for="fermFlotes">Kg Flotes / Segunda</label>
+                  <input type="number" step="0.1" id="fermFlotes" class="form-input" placeholder="Ej: 12">
+                </div>
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: #a855f7; border-color: #a855f7;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Fermentación
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tabla Historial Procesos -->
+        <div class="chart-card" style="margin-bottom: 2rem;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-list-check" style="color: #06b6d4;"></i> Lotes de Beneficio Registrados</h3>
+              <div class="chart-subtitle">Historial de secado y rendimientos en Neon</div>
+            </div>
+          </div>
+          <div class="table-scroll-container">
             <table class="financial-matrix">
               <thead>
                 <tr>
-                  <th>Recolector</th>
-                  <th style="text-align: center;">Pases Registrados</th>
-                  <th style="text-align: right;">Total Kilos Cereza</th>
-                  <th style="text-align: right;">Promedio / Pase</th>
-                  <th style="text-align: center;">Liquidación Est.</th>
+                  <th>Fecha</th>
+                  <th>Tipo Proceso</th>
+                  <th>Lote</th>
+                  <th style="text-align: right;">Cereza Entrada</th>
+                  <th style="text-align: right;">Café Seco Obtenido</th>
+                  <th style="text-align: center;">Factor Estimado</th>
                 </tr>
               </thead>
-              <tbody id="harvestCollectorsTableBody">
+              <tbody id="tablaHistorialProcesosBody">
                 <!-- Dinámico -->
-                <tr>
-                  <td><strong>DIEGO CHAVEZ</strong></td>
-                  <td style="text-align: center;">62</td>
-                  <td style="text-align: right; font-weight: 700; color: #10b981;">3.240 kg</td>
-                  <td style="text-align: right;">52.2 kg</td>
-                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
-                </tr>
-                <tr>
-                  <td><strong>NORBERTO</strong></td>
-                  <td style="text-align: center;">58</td>
-                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.980 kg</td>
-                  <td style="text-align: right;">51.4 kg</td>
-                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
-                </tr>
-                <tr>
-                  <td><strong>SELSO</strong></td>
-                  <td style="text-align: center;">54</td>
-                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.750 kg</td>
-                  <td style="text-align: right;">50.9 kg</td>
-                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
-                </tr>
-                <tr>
-                  <td><strong>JAVIER</strong></td>
-                  <td style="text-align: center;">49</td>
-                  <td style="text-align: right; font-weight: 700; color: #10b981;">2.460 kg</td>
-                  <td style="text-align: right;">50.2 kg</td>
-                  <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
-                </tr>
               </tbody>
             </table>
           </div>
         </div>
-
-        <!-- Kilos por Lote -->
-        <div class="chart-card col-5">
-          <div class="chart-header">
-            <div>
-              <h3><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Cosecha por Lote</h3>
-              <div class="chart-subtitle">Volumen de café recolectado</div>
-            </div>
-          </div>
-          <div style="padding: 1rem 0;">
-            <div style="display: flex; flex-direction: column; gap: 1rem;" id="harvestLotsBarsContainer">
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
-                  <span><strong>🌱 Lote Amelia</strong> (Café Castillo)</span>
-                  <strong style="color: #10b981;">5.820 kg (43.8%)</strong>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 43.8%; background: #10b981;"></div></div>
-              </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
-                  <span><strong>🌱 Lote Manuela</strong> (Café + Aguacate)</span>
-                  <strong style="color: #059669;">4.610 kg (34.7%)</strong>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 34.7%; background: #059669;"></div></div>
-              </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.35rem;">
-                  <span><strong>🌱 Lote Origen</strong> (Café Especial)</span>
-                  <strong style="color: #d97706;">2.866 kg (21.5%)</strong>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 21.5%; background: #d97706;"></div></div>
-              </div>
-            </div>
-
-            <div style="margin-top: 1.5rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.75rem; color: var(--text-muted);">
-              <i class="fa-solid fa-link" style="color: #3b82f6;"></i> <strong>Integración Automática con Finanzas:</strong> El costo de recolección acumulado calculado en esta báscula ($13.296 kg &times; $600 COP/kg destajo = $7.98 M) viaja de manera directa al Estado de Resultados proyectado.
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Últimos 15 Pesajes Registrados en Báscula -->
-      <div class="financial-table-wrapper">
-        <div class="table-toolbar">
-          <div>
-            <strong>Registro de Últimos Pesajes en Báscula</strong>
-            <span class="badge-tag" style="margin-left: 0.5rem;">Neon Live Feed</span>
+      <!-- ==================== SUB-TAB 4: BODEGA PERGAMINO ==================== -->
+      <div id="tab-prod-bodega" class="prod-subtab-pane" style="display: none;">
+        <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
+          <!-- Formulario Salida Bodega -->
+          <div class="chart-card col-5">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-truck-ramp-box" style="color: #10b981;"></i> Registrar Salida de Bodega</h3>
+                <div class="chart-subtitle">Despacho de café pergamino seco para venta o tostión</div>
+              </div>
+            </div>
+            <form id="formSalidaBodega" onsubmit="handleGuardarSalidaBodega(event)" style="padding: 1rem 0;">
+              <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="bodegaFecha">Fecha Despacho</label>
+                <input type="date" id="bodegaFecha" class="form-input" required>
+              </div>
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div class="form-group">
+                  <label for="bodegaCantidad">Cantidad (kg Seco)</label>
+                  <input type="number" step="0.1" id="bodegaCantidad" class="form-input" placeholder="Ej: 125.0" required>
+                </div>
+                <div class="form-group">
+                  <label for="bodegaTipo">Tipo Salida</label>
+                  <select id="bodegaTipo" class="form-select" required>
+                    <option value="VENTA_VERDE">Venta Café Verde</option>
+                    <option value="TOSTION_PROPIA">Tostión Propia GhaloCafe</option>
+                    <option value="EXPORTACION">Exportación Directa</option>
+                    <option value="MUESTRA">Muestra Comercial</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="bodegaDestino">Cliente / Destino</label>
+                <input type="text" id="bodegaDestino" class="form-input" placeholder="Ej: Planta de Tostión Manizales" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="bodegaNotas">Notas Adicionales</label>
+                <input type="text" id="bodegaNotas" class="form-input" placeholder="Lote, número de guía o saco">
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fa-solid fa-check"></i> Registrar Salida en Neon
+              </button>
+            </form>
           </div>
-        </div>
-        <div class="table-scroll-container">
-          <table class="financial-matrix">
-            <thead>
-              <tr>
-                <th>ID Pesaje</th>
-                <th>Fecha de Registro</th>
-                <th>Recolector Asignado</th>
-                <th>Lote de Origen</th>
-                <th style="text-align: right;">Kilos Cereza Pesados</th>
-                <th style="text-align: center;">Estado</th>
-              </tr>
-            </thead>
-            <tbody id="harvestRecentEntriesBody">
-              <!-- Dinámico -->
-            </tbody>
-          </table>
+
+          <!-- Historial de Salidas -->
+          <div class="chart-card col-7">
+            <div class="chart-header">
+              <div>
+                <h3><i class="fa-solid fa-boxes-stacked" style="color: #10b981;"></i> Movimientos de Bodega Registrados</h3>
+                <div class="chart-subtitle">Despachos de café pergamino seco en Neon</div>
+              </div>
+            </div>
+            <div class="table-scroll-container" style="max-height: 420px; overflow-y: auto;">
+              <table class="financial-matrix">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Destino</th>
+                    <th style="text-align: right;">Kilos Despachados</th>
+                    <th>Notas</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaHistorialBodegaBody">
+                  <!-- Dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div> <!-- Fin erp-harvest-view -->

@@ -1197,6 +1197,11 @@ input.editable-real-input:focus {
   outline: none;
 }
 
+.form-select option {
+  background: #1e293b;
+  color: #fff;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

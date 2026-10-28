@@ -1652,7 +1652,7 @@ function switchErpModule(moduleId) {
   } else if (moduleId === 'erp-hub-view') {
     // Portal de Aplicaciones
   } else if (moduleId === 'erp-harvest-view') {
-    loadErpHarvestData();
+    loadProductividadData();
   } else if (moduleId === 'erp-ghalocafe-view') {
     loadErpWarehouseAndStoresData();
   }
@@ -1886,44 +1886,114 @@ async function loadErpConsolidatedData() {
   }
 }
 
-// Cargar datos de Cosecha & Recolección (Neon DB con fallback instantáneo)
-async function loadErpHarvestData() {
-  const defaultStats = { total_recolecciones: 310, total_kilos_cereza: 13296, promedio_pase_kilos: 42.9 };
-  const defaultRecoles = [
-    { nombre: 'DIEGO CHAVEZ', pases: 62, total_kilos: 3240, promedio_kilos: 52.2 },
-    { nombre: 'NORBERTO', pases: 58, total_kilos: 2980, promedio_kilos: 51.4 },
-    { nombre: 'SELSO', pases: 54, total_kilos: 2750, promedio_kilos: 50.9 },
-    { nombre: 'JAVIER', pases: 49, total_kilos: 2460, promedio_kilos: 50.2 }
-  ];
-  const defaultRecent = [
-    { id: 'cmuwtfv1i0008', fecha: '2026-09-29', recolector: 'DIEGO CHAVEZ', lote: 'Lote Amelia', kilos: 45 },
-    { id: 'cmuwte8iq0007', fecha: '2026-09-29', recolector: 'JAVIER', lote: 'Lote Amelia', kilos: 34 },
-    { id: 'cmuwtdxcw0006', fecha: '2026-09-29', recolector: 'NORBERTO', lote: 'Lote Manuela', kilos: 42 }
-  ];
+// ==================== MÓDULO NATIVO DE CONTROL DE PRODUCTIVIDAD (NEON DB) ====================
 
-  function renderHarvestUI(stats, recoles, ultimos, lotes) {
-    const kgEl = document.getElementById('harvestTotalKg');
-    const entriesEl = document.getElementById('harvestTotalEntries');
-    const avgEl = document.getElementById('harvestAvgKg');
-    if (kgEl) kgEl.textContent = `${Number(stats.total_kilos_cereza).toLocaleString()} kg`;
-    if (entriesEl) entriesEl.textContent = `${stats.total_recolecciones} Pases`;
-    if (avgEl) avgEl.textContent = `${stats.promedio_pase_kilos} kg`;
+let currentLotesList = [];
+let currentRecosList = [];
 
-    const tbody = document.getElementById('harvestCollectorsTableBody');
-    if (tbody && recoles) {
-      tbody.innerHTML = recoles.map(r => `
+function switchProdTab(tabId) {
+  document.querySelectorAll('.prod-subtab-pane').forEach(el => el.style.display = 'none');
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
+
+  const map = {
+    'tab-prod-bascula': 'btnTabProdBascula',
+    'tab-prod-recolectores': 'btnTabProdRecos',
+    'tab-prod-procesos': 'btnTabProdProcesos',
+    'tab-prod-bodega': 'btnTabProdBodega'
+  };
+  Object.keys(map).forEach(k => {
+    const btn = document.getElementById(map[k]);
+    if (btn) btn.classList.toggle('active', k === tabId);
+  });
+}
+
+// Cargar datos y poblar formularios y tablas de Productividad desde Neon
+async function loadProductividadData() {
+  const today = new Date().toISOString().split('T')[0];
+  ['inputPesajeFecha', 'lavadoFecha', 'fermFecha', 'bodegaFecha'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = today;
+  });
+
+  try {
+    const res = await fetch('/api/productividad/bootstrap', { headers: getAuthHeaders() });
+    if (res.status === 401) { logoutErp(); return; }
+    if (!res.ok) throw new Error('Error al cargar datos de productividad');
+
+    const data = await res.json();
+    if (!data.success) return;
+
+    currentLotesList = data.lotes || [];
+    currentRecosList = data.recolectores || [];
+
+    // 1. Dropdowns de Lotes
+    const loteSelects = ['selectPesajeLote', 'lavadoLote', 'fermLote'];
+    loteSelects.forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (sel) {
+        sel.innerHTML = '<option value="">-- Seleccionar Lote --</option>' + 
+          currentLotesList.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+      }
+    });
+
+    // 2. Dropdown de Recolectores
+    const recoSelect = document.getElementById('selectPesajeRecolector');
+    if (recoSelect) {
+      recoSelect.innerHTML = '<option value="">-- Seleccionar Recolector --</option>' + 
+        currentRecosList.filter(r => r.activo).map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+    }
+
+    // 3. Render de KPIs de Cosecha
+    if (data.harvest && data.harvest.stats) {
+      const stats = data.harvest.stats;
+      const kgEl = document.getElementById('harvestTotalKg');
+      const entriesEl = document.getElementById('harvestTotalEntries');
+      const avgEl = document.getElementById('harvestAvgKg');
+      const recosEl = document.getElementById('harvestTotalRecosActive');
+
+      if (kgEl) kgEl.textContent = `${Number(stats.total_kilos_cereza).toLocaleString()} kg`;
+      if (entriesEl) entriesEl.textContent = `${stats.total_recolecciones} Pases`;
+      if (avgEl) avgEl.textContent = `${stats.promedio_pase_kilos} kg`;
+      if (recosEl) recosEl.textContent = `${currentRecosList.filter(r => r.activo).length} Operarios`;
+    }
+
+    // 4. Render de Últimos Pesajes con botón de eliminar
+    const recentBody = document.getElementById('harvestRecentEntriesBody');
+    if (recentBody && data.harvest && data.harvest.ultimosRegistros) {
+      recentBody.innerHTML = data.harvest.ultimosRegistros.map(rec => `
+        <tr>
+          <td><span style="font-weight: 500;">${rec.fecha}</span></td>
+          <td><strong>${rec.recolector}</strong></td>
+          <td><span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">${rec.lote}</span></td>
+          <td style="text-align: right; font-weight: 700; color: #fff;">${rec.kilos} kg</td>
+          <td style="text-align: center;">
+            <button class="btn-toolbar-action" style="padding: 0.2rem 0.5rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" onclick="handleEliminarPesaje('${rec.id}', '${rec.kilos}', '${rec.recolector}')" title="Eliminar este pesaje de Neon">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 5. Render de Tabla de Rendimiento por Recolector
+    const recosBody = document.getElementById('harvestCollectorsTableBody');
+    if (recosBody && data.harvest && data.harvest.recolectores) {
+      recosBody.innerHTML = data.harvest.recolectores.map(r => `
         <tr>
           <td><strong>${r.nombre}</strong></td>
           <td style="text-align: center;">${r.pases}</td>
           <td style="text-align: right; font-weight: 700; color: #10b981;">${Number(r.total_kilos).toLocaleString()} kg</td>
           <td style="text-align: right;">${Number(r.promedio_kilos).toFixed(1)} kg</td>
-          <td style="text-align: center;"><span class="trend-pill positive">Al Día</span></td>
+          <td style="text-align: center;"><span class="trend-pill positive">Activo</span></td>
         </tr>
       `).join('');
     }
 
+    // 6. Render de Barras de Kilos por Lote
     const lotsContainer = document.getElementById('harvestLotsBarsContainer');
-    if (lotsContainer && lotes && lotes.length > 0) {
+    if (lotsContainer && data.harvest && data.harvest.kilosPorLote) {
+      const lotes = data.harvest.kilosPorLote;
       const totalKilos = lotes.reduce((acc, curr) => acc + Number(curr.total_kilos || 0), 0) || 1;
       const colors = ['#10b981', '#059669', '#d97706', '#b45309', '#3b82f6', '#8b5cf6'];
       lotsContainer.innerHTML = lotes.map((l, idx) => {
@@ -1941,35 +2011,224 @@ async function loadErpHarvestData() {
       }).join('');
     }
 
-    const recentBody = document.getElementById('harvestRecentEntriesBody');
-    if (recentBody && ultimos) {
-      recentBody.innerHTML = ultimos.map(rec => `
-        <tr>
-          <td><code style="font-size: 0.75rem; color: #94a3b8;">${rec.id.slice(0, 10)}...</code></td>
-          <td>${rec.fecha}</td>
-          <td><strong>${rec.recolector}</strong></td>
-          <td><span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">${rec.lote}</span></td>
-          <td style="text-align: right; font-weight: 700; color: #fff;">${rec.kilos} kg</td>
-          <td style="text-align: center;"><span class="badge-status completed">Pesado</span></td>
-        </tr>
-      `).join('');
+    // 7. Render de Historial de Procesos de Beneficio
+    const procesosBody = document.getElementById('tablaHistorialProcesosBody');
+    if (procesosBody) {
+      const allProcesos = [
+        ...(data.procesosLavado || []).map(p => ({ ...p, tipoDesc: 'Lavado Tradicional', cereza: p.pesoCerezaProcesada, seco: p.pesoCafeSeco })),
+        ...(data.procesosFermentacion || []).map(p => ({ ...p, tipoDesc: `Fermentación (${p.diasFermentacion}d)`, cereza: p.pesoCerezaTotal, seco: p.pesoCafeSeco }))
+      ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).slice(0, 15);
+
+      if (allProcesos.length === 0) {
+        procesosBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No hay registros de beneficio aún.</td></tr>';
+      } else {
+        procesosBody.innerHTML = allProcesos.map(p => {
+          const factor = (p.seco && p.seco > 0) ? ((p.cereza / p.seco) * 12.5).toFixed(1) : 'En secado';
+          return `
+            <tr>
+              <td>${p.fecha}</td>
+              <td><span class="badge-tag" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">${p.tipoDesc}</span></td>
+              <td><strong>${p.lote || 'General'}</strong></td>
+              <td style="text-align: right; font-weight: 600;">${Number(p.cereza).toLocaleString()} kg</td>
+              <td style="text-align: right; color: #10b981; font-weight: 700;">${p.seco ? Number(p.seco).toLocaleString() + ' kg' : 'Pendiente'}</td>
+              <td style="text-align: center;"><code style="color: #f59e0b;">${factor}</code></td>
+            </tr>
+          `;
+        }).join('');
+      }
     }
+
+    // 8. Render de Historial de Bodega
+    const bodegaBody = document.getElementById('tablaHistorialBodegaBody');
+    if (bodegaBody) {
+      const salidas = data.salidasBodega || [];
+      if (salidas.length === 0) {
+        bodegaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No hay despachos de bodega registrados.</td></tr>';
+      } else {
+        bodegaBody.innerHTML = salidas.map(s => `
+          <tr>
+            <td>${s.fecha}</td>
+            <td><span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">${s.tipo}</span></td>
+            <td><strong>${s.destino}</strong></td>
+            <td style="text-align: right; font-weight: 700; color: #10b981;">${Number(s.cantidad).toLocaleString()} kg</td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${s.notas || '-'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+  } catch (err) {
+    console.error('Error cargando datos de productividad:', err);
+    showToast('Aviso: Cargando datos locales de productividad', 'warning');
+  }
+}
+
+// Controladores de eventos de formulario
+async function handleGuardarPesaje(event) {
+  event.preventDefault();
+  const fecha = document.getElementById('inputPesajeFecha').value;
+  const recolectorId = document.getElementById('selectPesajeRecolector').value;
+  const loteId = document.getElementById('selectPesajeLote').value;
+  const pesoCereza = document.getElementById('inputPesajeKilos').value;
+
+  if (!recolectorId || !loteId || !pesoCereza) {
+    showToast('Por favor completa todos los campos del pesaje', 'error');
+    return;
   }
 
-  // Render inicial inmediato
-  renderHarvestUI(defaultStats, defaultRecoles, defaultRecent);
+  const btn = document.getElementById('btnSubmitPesaje');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+  }
 
-  // Refrescar desde API en vivo de Neon PostgreSQL
   try {
-    const res = await fetch('/api/erp/harvest', { headers: getAuthHeaders() });
-    if (res.status === 401) { logoutErp(); return; }
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.stats) {
-      renderHarvestUI(data.stats, data.recolectores, data.ultimosRegistros, data.kilosPorLote);
+    const res = await fetch('/api/productividad/recoleccion', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fecha, recolectorId, loteId, pesoCereza })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al guardar pesaje');
+
+    showToast(`✅ Pesaje de ${pesoCereza} kg guardado en Neon!`, 'success');
+    document.getElementById('inputPesajeKilos').value = '';
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Guardar Pesaje</span>';
     }
-  } catch (e) {
-    // Operando con dataset local
+  }
+}
+
+async function handleEliminarPesaje(id, kilos, recolector) {
+  if (!confirm(`¿Eliminar pesaje de ${kilos} kg de ${recolector}? Esta acción borrará el registro de Neon.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/productividad/recoleccion/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al eliminar');
+
+    showToast('Pesaje eliminado de Neon', 'info');
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function handleGuardarRecolector(event) {
+  event.preventDefault();
+  const nombre = document.getElementById('inputRecoNombre').value;
+  const documento = document.getElementById('inputRecoDoc').value;
+
+  try {
+    const res = await fetch('/api/productividad/recolector', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, documento, activo: true })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al crear recolector');
+
+    showToast(`✅ Recolector ${nombre.toUpperCase()} guardado en Neon!`, 'success');
+    document.getElementById('inputRecoNombre').value = '';
+    document.getElementById('inputRecoDoc').value = '';
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function handleGuardarLavado(event) {
+  event.preventDefault();
+  const payload = {
+    fecha: document.getElementById('lavadoFecha').value,
+    loteId: document.getElementById('lavadoLote').value,
+    pesoCerezaProcesada: document.getElementById('lavadoCereza').value,
+    pesoCafeMojado: document.getElementById('lavadoMojado').value,
+    pesoCafeSeco: document.getElementById('lavadoSeco').value,
+    pesoPasillaSeca: document.getElementById('lavadoPasillaSeca').value
+  };
+
+  try {
+    const res = await fetch('/api/productividad/lavado', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al guardar');
+
+    showToast('✅ Proceso de Lavado guardado en Neon!', 'success');
+    document.getElementById('formProcesoLavado').reset();
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function handleGuardarFermentacion(event) {
+  event.preventDefault();
+  const payload = {
+    fecha: document.getElementById('fermFecha').value,
+    loteId: document.getElementById('fermLote').value,
+    pesoCerezaTotal: document.getElementById('fermCerezaTotal').value,
+    diasFermentacion: document.getElementById('fermDias').value,
+    pesoCafeSeco: document.getElementById('fermCafeSeco').value,
+    pesoFlotesSegunda: document.getElementById('fermFlotes').value
+  };
+
+  try {
+    const res = await fetch('/api/productividad/fermentacion', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al guardar');
+
+    showToast('✅ Proceso de Fermentación guardado en Neon!', 'success');
+    document.getElementById('formProcesoFermentacion').reset();
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function handleGuardarSalidaBodega(event) {
+  event.preventDefault();
+  const payload = {
+    fecha: document.getElementById('bodegaFecha').value,
+    cantidad: document.getElementById('bodegaCantidad').value,
+    tipo: document.getElementById('bodegaTipo').value,
+    destino: document.getElementById('bodegaDestino').value,
+    notas: document.getElementById('bodegaNotas').value
+  };
+
+  try {
+    const res = await fetch('/api/productividad/bodega', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al guardar');
+
+    showToast('✅ Salida de Bodega registrada en Neon!', 'success');
+    document.getElementById('formSalidaBodega').reset();
+    await loadProductividadData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
   }
 }
 
@@ -2215,7 +2474,7 @@ function unlockAppSuite() {
   renderAll();
   checkBackendStatus();
   switchErpModule('erp-hub-view');
-  loadErpHarvestData();
+  loadProductividadData();
   loadErpWarehouseAndStoresData();
   initSavedIframeUrls();
   prewarmAllModules(true);
