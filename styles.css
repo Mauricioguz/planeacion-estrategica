@@ -1767,11 +1767,12 @@ input.editable-real-input:focus {
   min-width: 0;
 }
 
-.embedded-compact-toolbar .toolbar-url-link {
+.embedded-compact-toolbar .toolbar-url-link,
+.embedded-compact-toolbar .toolbar-url-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  font-family: monospace;
+  font-family: inherit;
   font-size: 0.74rem;
   color: var(--text-dim);
   background: rgba(0, 0, 0, 0.45);
@@ -1784,6 +1785,13 @@ input.editable-real-input:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 380px;
+  user-select: none;
+}
+
+.embedded-compact-toolbar .toolbar-url-badge {
+  color: #e2e8f0;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .embedded-compact-toolbar .toolbar-url-link:hover {
