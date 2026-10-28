@@ -1819,8 +1819,8 @@ function toggleWebSimulator() {
 function initSavedIframeUrls() {
   // URLs oficiales de la suite
   const defaultHarvestUrl = 'https://control-productividad-app.onrender.com';
-  const defaultGhaloUrl = '/modules/ghalocafe/index.html';
-  const defaultInvUrl = '/modules/ghaloinv/index.html';
+  const defaultGhaloUrl = 'https://sistema-ghalocafe.onrender.com';
+  const defaultInvUrl = 'https://ghaloinv-app.onrender.com';
 
   let harvestUrl = localStorage.getItem('FINCA_HARVEST_URL') || defaultHarvestUrl;
   if (harvestUrl.startsWith('/modules/control-productividad')) {
@@ -1837,7 +1837,11 @@ function initSavedIframeUrls() {
   }
   if (harvestLink) harvestLink.href = harvestUrl;
 
-  const ghaloUrl = localStorage.getItem('FINCA_GHALO_URL') || defaultGhaloUrl;
+  let ghaloUrl = localStorage.getItem('FINCA_GHALO_URL') || defaultGhaloUrl;
+  if (ghaloUrl.startsWith('/modules/ghalocafe')) {
+    ghaloUrl = defaultGhaloUrl;
+    localStorage.setItem('FINCA_GHALO_URL', ghaloUrl);
+  }
   const ghaloInput = document.getElementById('ghaloAppUrlInput');
   const ghaloFrame = document.getElementById('ghaloIframe');
   const ghaloLink = document.getElementById('ghaloExternalLink');
@@ -1848,7 +1852,11 @@ function initSavedIframeUrls() {
   }
   if (ghaloLink) ghaloLink.href = ghaloUrl;
 
-  const invUrl = localStorage.getItem('FINCA_INV_URL') || defaultInvUrl;
+  let invUrl = localStorage.getItem('FINCA_INV_URL') || defaultInvUrl;
+  if (invUrl.startsWith('/modules/ghaloinv')) {
+    invUrl = defaultInvUrl;
+    localStorage.setItem('FINCA_INV_URL', invUrl);
+  }
   const invInput = document.getElementById('invAppUrlInput');
   const invFrame = document.getElementById('invIframe');
   const invLink = document.getElementById('invExternalLink');
@@ -2183,12 +2191,12 @@ function unlockAppSuite() {
   const loginModal = document.getElementById('erp-login-modal');
   if (loginModal) loginModal.style.display = 'none';
 
-  // Cargar de forma segura los iframes locales consolidados
+  // Cargar de forma segura los iframes oficiales consolidados
   const iframes = [
     { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
     { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com' },
-    { id: 'ghaloIframe', defaultUrl: '/modules/ghalocafe/index.html' },
-    { id: 'invIframe', defaultUrl: '/modules/ghaloinv/index.html' }
+    { id: 'ghaloIframe', defaultUrl: 'https://sistema-ghalocafe.onrender.com' },
+    { id: 'invIframe', defaultUrl: 'https://ghaloinv-app.onrender.com' }
   ];
 
   iframes.forEach(item => {
