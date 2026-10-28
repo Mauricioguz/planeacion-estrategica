@@ -1817,12 +1817,16 @@ function toggleWebSimulator() {
 }
 
 function initSavedIframeUrls() {
-  // URLs locales oficiales consolidadas
-  const defaultHarvestUrl = '/modules/control-productividad/';
+  // URLs oficiales de la suite
+  const defaultHarvestUrl = 'https://control-productividad-app.onrender.com';
   const defaultGhaloUrl = '/modules/ghalocafe/index.html';
   const defaultInvUrl = '/modules/ghaloinv/index.html';
 
-  const harvestUrl = localStorage.getItem('FINCA_HARVEST_URL') || defaultHarvestUrl;
+  let harvestUrl = localStorage.getItem('FINCA_HARVEST_URL') || defaultHarvestUrl;
+  if (harvestUrl.startsWith('/modules/control-productividad')) {
+    harvestUrl = defaultHarvestUrl;
+    localStorage.setItem('FINCA_HARVEST_URL', harvestUrl);
+  }
   const harvestInput = document.getElementById('harvestAppUrlInput');
   const harvestFrame = document.getElementById('harvestIframe');
   const harvestLink = document.getElementById('harvestExternalLink');
@@ -2182,6 +2186,7 @@ function unlockAppSuite() {
   // Cargar de forma segura los iframes locales consolidados
   const iframes = [
     { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
+    { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com' },
     { id: 'ghaloIframe', defaultUrl: '/modules/ghalocafe/index.html' },
     { id: 'invIframe', defaultUrl: '/modules/ghaloinv/index.html' }
   ];
@@ -2223,7 +2228,7 @@ function lockAppSuite() {
   }
 
   // Descargar iframes por seguridad absoluta
-  ['agriIframe', 'ghaloIframe', 'invIframe'].forEach(id => {
+  ['agriIframe', 'harvestIframe', 'ghaloIframe', 'invIframe'].forEach(id => {
     const frame = document.getElementById(id);
     if (frame) frame.src = 'about:blank';
   });
