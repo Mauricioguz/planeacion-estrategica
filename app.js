@@ -1654,7 +1654,9 @@ function switchErpModule(moduleId) {
   } else if (moduleId === 'erp-harvest-view') {
     loadProductividadData();
   } else if (moduleId === 'erp-ghalocafe-view') {
-    loadErpWarehouseAndStoresData();
+    loadGhaloCafeData();
+  } else if (moduleId === 'erp-inventory-view') {
+    loadGhaloInvData();
   }
 }
 
@@ -2232,104 +2234,646 @@ async function handleGuardarSalidaBodega(event) {
   }
 }
 
-// Cargar datos de Bodega y Tiendas GhaloCafe (con fallback instantáneo)
-async function loadErpWarehouseAndStoresData() {
-  const defaultStores = [
-    { id: 'st-1', name: 'Bodega Principal La Leonora', city: 'Palestina (Caldas)', type: 'Origen & Distribución', stockKilos: 480, manager: 'Mauricio Guzmán' },
-    { id: 'st-2', name: 'Punto La Florida', city: 'Manizales', type: 'Tienda Boutique', stockKilos: 145, manager: 'Juanita Hernández' },
-    { id: 'st-3', name: 'Punto Villamaría', city: 'Villamaría', type: 'Punto de Venta Directo', stockKilos: 95, manager: 'Distribución Eje' },
-    { id: 'st-4', name: 'Punto Dosquebradas', city: 'Dosquebradas / Pereira', type: 'Punto Regional', stockKilos: 120, manager: 'Aliado Cafetero' },
-    { id: 'st-5', name: 'Punto Urapanes', city: 'Manizales', type: 'Café & Experiencia', stockKilos: 80, manager: 'Juanita Hernández' }
-  ];
+// ==================== MÓDULO NATIVO GHALOCAFE COMERCIAL ====================
+let ghaloCafeData = {
+  stats: {},
+  ingresos: [],
+  egresos: [],
+  tiendas: []
+};
+let ghaloProductsCache = [];
 
-  const defaultProducts = [
-    { sku: 'GH-M250', name: 'GhaloCafe Real Molido 250g', price: 18500, category: 'Especial' },
-    { sku: 'GH-M454', name: 'GhaloCafe Real Molido 454g (Libra)', price: 32000, category: 'Especial' },
-    { sku: 'GH-G250', name: 'GhaloCafe Real Grano 250g', price: 18500, category: 'Especial' },
-    { sku: 'GH-G454', name: 'GhaloCafe Real Grano 454g (Libra)', price: 32000, category: 'Especial' },
-    { sku: 'GH-G2500', name: 'GhaloCafe Real Grano 2.500g Institucional', price: 165000, category: 'Institucional/HORECA' }
-  ];
+function switchGhaloTab(tabId) {
+  document.querySelectorAll('.ghalo-subtab-pane').forEach(el => el.style.display = 'none');
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
 
-  const defaultShipments = [
-    { id: 'cmuwts58g000b', fecha: '2026-10-03', tipo: 'PASILLA', destino: 'VENTA_COOPERATIVA', metodo_beneficio: 'LAVADO', cantidad: 72 },
-    { id: 'cmuwtrrw8000a', fecha: '2026-10-03', tipo: 'PERGAMINO_SECO', destino: 'VENTA_COOPERATIVA', metodo_beneficio: 'LAVADO', cantidad: 53 },
-    { id: 'cmuvppnnb0004', fecha: '2026-10-02', tipo: 'PERGAMINO_SECO', destino: 'TOSTION', metodo_beneficio: 'FERMENTADO', cantidad: 37 }
-  ];
+  const map = {
+    'tab-ghalo-ventas': 'btnTabGhaloVentas',
+    'tab-ghalo-egresos': 'btnTabGhaloEgresos',
+    'tab-ghalo-tiendas': 'btnTabGhaloTiendas',
+    'tab-ghalo-balance': 'btnTabGhaloBalance'
+  };
+  Object.keys(map).forEach(k => {
+    const btn = document.getElementById(map[k]);
+    if (btn) btn.classList.toggle('active', k === tabId);
+  });
+}
 
-  function renderStoresUI(stores, products, shipments) {
-    const storesContainer = document.getElementById('storesGridContainer');
-    if (storesContainer && stores) {
-      storesContainer.innerHTML = stores.map(st => `
-        <div class="store-card">
-          <span class="store-card-city"><i class="fa-solid fa-location-dot"></i> ${st.city}</span>
-          <h4 class="store-card-name">${st.name}</h4>
-          <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.5rem;">${st.type} • Encargado: ${st.manager}</div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
-            <div>
-              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Stock Disponible</div>
-              <div class="store-card-stock">${st.stockKilos} kg</div>
+async function loadGhaloCafeData() {
+  const today = new Date().toISOString().split('T')[0];
+  const ventaFecha = document.getElementById('inputVentaFecha');
+  const egresoFecha = document.getElementById('inputEgresoFecha');
+  if (ventaFecha && !ventaFecha.value) ventaFecha.value = today;
+  if (egresoFecha && !egresoFecha.value) egresoFecha.value = today;
+
+  try {
+    const [ghaloRes, invRes, whRes] = await Promise.all([
+      fetch('/api/ghalocafe/bootstrap'),
+      fetch('/api/ghaloinv/bootstrap'),
+      fetch('/api/erp/warehouse').catch(() => null)
+    ]);
+
+    if (ghaloRes.ok) {
+      ghaloCafeData = await ghaloRes.json();
+    }
+
+    if (invRes.ok) {
+      const invData = await invRes.json();
+      ghaloProductsCache = invData.products || [];
+    }
+
+    // Actualizar KPIs de Ventas
+    const s = ghaloCafeData.stats || {};
+    const kpiIng = document.getElementById('kpiGhaloTotalIngresos');
+    const kpiVentasCount = document.getElementById('kpiGhaloVentasCount');
+    const kpiUtil = document.getElementById('kpiGhaloUtilidad');
+    const kpiMargen = document.getElementById('kpiGhaloMargen');
+    const kpiEgr = document.getElementById('kpiGhaloTotalEgresos');
+    const kpiEgrCount = document.getElementById('kpiGhaloEgresosCount');
+    const badgeVentas = document.getElementById('badgeVentasCount');
+    const badgeEgresos = document.getElementById('badgeEgresosCount');
+
+    if (kpiIng) kpiIng.textContent = `$${Number(s.totalIngresos || 0).toLocaleString()} COP`;
+    if (kpiVentasCount) kpiVentasCount.textContent = `${s.totalVentasCount || 0} ventas registradas`;
+    if (kpiUtil) kpiUtil.textContent = `$${Number(s.utilidadComercial || 0).toLocaleString()} COP`;
+    if (kpiMargen) kpiMargen.textContent = `${s.margenOperativo || 0}% margen`;
+    if (kpiEgr) kpiEgr.textContent = `$${Number(s.totalEgresos || 0).toLocaleString()} COP`;
+    if (kpiEgrCount) kpiEgrCount.textContent = `${s.totalEgresosCount || 0} gastos registrados`;
+    if (badgeVentas) badgeVentas.textContent = `${(ghaloCafeData.ingresos || []).length} registros`;
+    if (badgeEgresos) badgeEgresos.textContent = `${(ghaloCafeData.egresos || []).length} registros`;
+
+    // Balance Tab KPIs
+    const balIng = document.getElementById('balGhaloIngresos');
+    const balEgr = document.getElementById('balGhaloEgresos');
+    const balUtil = document.getElementById('balGhaloUtilidad');
+    const balMarg = document.getElementById('balGhaloMargenPct');
+    if (balIng) balIng.textContent = `$${Number(s.totalIngresos || 0).toLocaleString()} COP`;
+    if (balEgr) balEgr.textContent = `$${Number(s.totalEgresos || 0).toLocaleString()} COP`;
+    if (balUtil) balUtil.textContent = `$${Number(s.utilidadComercial || 0).toLocaleString()} COP`;
+    if (balMarg) balMarg.textContent = `Margen Operativo: ${s.margenOperativo || 0}%`;
+
+    // Dropdown de productos en formulario de ventas
+    const selProd = document.getElementById('selectVentaProducto');
+    if (selProd) {
+      if (ghaloProductsCache.length > 0) {
+        selProd.innerHTML = '<option value="">Seleccione producto...</option>' +
+          ghaloProductsCache.map(p => `<option value="${p.name}" data-price="${p.price}">${p.name} - $${Number(p.price).toLocaleString()} COP</option>`).join('');
+      } else {
+        selProd.innerHTML = `
+          <option value="">Seleccione producto...</option>
+          <option value="GhaloCafe Molido 454g" data-price="32000">GhaloCafe Molido 454g (Libra) - $32.000</option>
+          <option value="GhaloCafe Grano 454g" data-price="32000">GhaloCafe Grano 454g (Libra) - $32.000</option>
+          <option value="GhaloCafe Molido 250g" data-price="18500">GhaloCafe Molido 250g - $18.500</option>
+          <option value="GhaloCafe Grano 250g" data-price="18500">GhaloCafe Grano 250g - $18.500</option>
+          <option value="GhaloCafe Grano 2500g" data-price="165000">GhaloCafe Grano 2.500g Institucional - $165.000</option>
+        `;
+      }
+    }
+
+    // Tabla de Ventas
+    const tbodyVentas = document.getElementById('tablaVentasBody');
+    if (tbodyVentas) {
+      const items = ghaloCafeData.ingresos || [];
+      if (items.length === 0) {
+        tbodyVentas.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay ventas registradas aún. Registra una con el formulario superior.</td></tr>`;
+      } else {
+        tbodyVentas.innerHTML = items.map(v => `
+          <tr>
+            <td><code>#${v.id}</code></td>
+            <td>${v.fecha}</td>
+            <td><strong>${v.cliente}</strong></td>
+            <td>${v.producto}</td>
+            <td style="text-align: center; font-weight: 700;">${v.cantidad}</td>
+            <td style="text-align: right;">$${Number(v.precio_unitario).toLocaleString()}</td>
+            <td style="text-align: right; font-weight: 700; color: #10b981;">$${Number(v.total).toLocaleString()}</td>
+            <td><span class="badge-tag">${v.canal || 'Tienda'}</span></td>
+            <td><span style="font-size: 0.8rem; color: var(--text-muted);">${v.notas || '-'}</span></td>
+            <td style="text-align: center;">
+              <button class="btn-secondary" style="padding: 0.2rem 0.5rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" onclick="handleEliminarVenta(${v.id})" title="Eliminar Venta">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tabla de Egresos
+    const tbodyEgresos = document.getElementById('tablaEgresosBody');
+    if (tbodyEgresos) {
+      const items = ghaloCafeData.egresos || [];
+      if (items.length === 0) {
+        tbodyEgresos.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay egresos registrados aún. Registra uno con el formulario superior.</td></tr>`;
+      } else {
+        tbodyEgresos.innerHTML = items.map(e => `
+          <tr>
+            <td><code>#${e.id}</code></td>
+            <td>${e.fecha}</td>
+            <td><span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">${e.categoria}</span></td>
+            <td><strong>${e.descripcion}</strong></td>
+            <td style="text-align: right; font-weight: 700; color: #ef4444;">$${Number(e.monto).toLocaleString()}</td>
+            <td><code>${e.soporte || '-'}</code></td>
+            <td><span style="font-size: 0.8rem; color: var(--text-muted);">${e.notas || '-'}</span></td>
+            <td style="text-align: center;">
+              <button class="btn-secondary" style="padding: 0.2rem 0.5rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" onclick="handleEliminarEgreso(${e.id})" title="Eliminar Egreso">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tiendas & Puntos de Venta
+    const storesGrid = document.getElementById('storesGridContainerUnified');
+    if (storesGrid) {
+      const tiendas = ghaloCafeData.tiendas || [];
+      if (tiendas.length === 0) {
+        storesGrid.innerHTML = `<div style="color: var(--text-dim);">Cargando puntos de venta...</div>`;
+      } else {
+        storesGrid.innerHTML = tiendas.map(t => `
+          <div class="store-card" style="border-left: 4px solid var(--primary-gold);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <span class="store-card-city"><i class="fa-solid fa-location-dot"></i> ${t.location || 'Eje Cafetero'}</span>
+              <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">${t.type || 'Punto de Venta'}</span>
             </div>
-            <span class="trend-pill positive"><i class="fa-solid fa-check"></i> Activo</span>
+            <h4 class="store-card-name" style="margin: 0.25rem 0 0.5rem 0;">${t.name}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem;">
+              <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Stock Terminado</div>
+                <div class="store-card-stock" style="font-size: 1.2rem; font-weight: 700; color: #fff;">${Number(t.stock_unidades || 0).toLocaleString()} uds <span style="font-size: 0.8rem; color: var(--primary-gold);">(${t.stock_kilos || 0} kg)</span></div>
+              </div>
+              <span class="trend-pill positive"><i class="fa-solid fa-check"></i> Activo</span>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
     }
 
-    const catalogContainer = document.getElementById('productsCatalogContainer');
-    if (catalogContainer && products) {
-      catalogContainer.innerHTML = products.map(prod => `
-        <div class="product-card-erp">
-          <div>
-            <span class="product-sku">SKU: ${prod.sku}</span>
-            <h4 class="product-name">${prod.name}</h4>
-            <span class="badge-tag" style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">${prod.category}</span>
-          </div>
-          <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.75rem;">
-            <span class="product-price">$${prod.price.toLocaleString()} COP</span>
-            <button class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;" onclick="addToCart('${prod.sku}', '${prod.name}', ${prod.price})">
-              <i class="fa-solid fa-cart-plus"></i> Pedir
-            </button>
-          </div>
-        </div>
-      `).join('');
+    // Salidas de Bodega Pergamino
+    if (whRes && whRes.ok) {
+      const whData = await whRes.json();
+      const tbodySal = document.getElementById('tablaSalidasBodegaUnified');
+      if (tbodySal && whData.ultimasSalidas) {
+        tbodySal.innerHTML = whData.ultimasSalidas.map(sal => `
+          <tr>
+            <td><code>${(sal.id || '').slice(0, 10)}...</code></td>
+            <td>${sal.fecha}</td>
+            <td><strong>${sal.tipo}</strong></td>
+            <td><span class="badge-tag" style="background: ${sal.destino === 'TOSTION' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${sal.destino === 'TOSTION' ? '#fbbf24' : '#10b981'};">${sal.destino}</span></td>
+            <td>${sal.metodo_beneficio || 'TRADICIONAL'}</td>
+            <td style="text-align: right; font-weight: 700; color: #fff;">${sal.cantidad} kg</td>
+          </tr>
+        `).join('');
+      }
     }
 
-    const tbody = document.getElementById('warehouseShipmentsBody');
-    if (tbody && shipments) {
-      tbody.innerHTML = shipments.map(sal => `
-        <tr>
-          <td><code style="font-size: 0.75rem; color: #94a3b8;">${sal.id.slice(0, 10)}...</code></td>
-          <td>${sal.fecha}</td>
-          <td><strong>${sal.tipo}</strong></td>
-          <td><span class="badge-tag" style="background: ${sal.destino === 'TOSTION' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${sal.destino === 'TOSTION' ? '#fbbf24' : '#10b981'};">${sal.destino}</span></td>
-          <td>${sal.metodo_beneficio || 'TRADICIONAL'}</td>
-          <td style="text-align: right; font-weight: 700; color: #fff;">${sal.cantidad} kg</td>
-        </tr>
-      `).join('');
+  } catch (err) {
+    console.error('Error cargando datos de GhaloCafe:', err);
+  }
+}
+
+function autoFillPrecioVenta() {
+  const sel = document.getElementById('selectVentaProducto');
+  const priceInput = document.getElementById('inputVentaPrecio');
+  if (sel && priceInput) {
+    const opt = sel.options[sel.selectedIndex];
+    const price = opt ? opt.getAttribute('data-price') : null;
+    if (price) priceInput.value = price;
+    calcularTotalVenta();
+  }
+}
+
+function calcularTotalVenta() {
+  const cant = parseFloat(document.getElementById('inputVentaCantidad')?.value || 0);
+  const prec = parseFloat(document.getElementById('inputVentaPrecio')?.value || 0);
+  const preview = document.getElementById('ventaTotalPreview');
+  if (preview) {
+    if (cant > 0 && prec > 0) {
+      preview.textContent = `Total Venta: $${(cant * prec).toLocaleString()} COP`;
+    } else {
+      preview.textContent = '';
     }
   }
+}
 
-  // Render inicial inmediato
-  renderStoresUI(defaultStores, defaultProducts, defaultShipments);
+async function handleGuardarVenta(e) {
+  e.preventDefault();
+  const fecha = document.getElementById('inputVentaFecha').value;
+  const cliente = document.getElementById('inputVentaCliente').value;
+  const producto = document.getElementById('selectVentaProducto').value;
+  const cantidad = document.getElementById('inputVentaCantidad').value;
+  const precio_unitario = document.getElementById('inputVentaPrecio').value;
+  const canal = document.getElementById('selectVentaCanal').value;
+  const notas = document.getElementById('inputVentaNotas').value;
 
-  // Intentar refrescar desde API
+  const btn = document.getElementById('btnSubmitVenta');
+  if (btn) btn.disabled = true;
+
   try {
-    const [whRes, stRes] = await Promise.all([
-      fetch('/api/erp/warehouse', { headers: getAuthHeaders() }),
-      fetch('/api/erp/stores', { headers: getAuthHeaders() })
-    ]);
-    if (whRes.status === 401 || stRes.status === 401) { logoutErp(); return; }
-    if (whRes.ok && stRes.ok) {
-      const whData = await whRes.json();
-      const stData = await stRes.json();
-      const tostionEl = document.getElementById('ghaloTostionKg');
-      const coopEl = document.getElementById('ghaloCoopKg');
-      if (tostionEl && whData.stats) tostionEl.textContent = `${Number(whData.stats.kilos_tostion).toLocaleString()} kg`;
-      if (coopEl && whData.stats) coopEl.textContent = `${Number(whData.stats.kilos_cooperativa).toLocaleString()} kg`;
-      renderStoresUI(stData.stores, stData.products, whData.ultimasSalidas);
+    const res = await fetch('/api/ghalocafe/ingresos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fecha, cliente, producto, cantidad, precio_unitario, canal, notas })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al guardar venta');
+
+    showToast('☕ ¡Venta guardada con éxito en Neon DB!', 'success');
+    document.getElementById('inputVentaCliente').value = '';
+    document.getElementById('inputVentaCantidad').value = '';
+    document.getElementById('inputVentaNotas').value = '';
+    document.getElementById('ventaTotalPreview').textContent = '';
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleEliminarVenta(id) {
+  if (!confirm(`¿Eliminar la venta #${id} de Neon DB?`)) return;
+  try {
+    const res = await fetch(`/api/ghalocafe/ingresos/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al eliminar');
+
+    showToast('Venta eliminada de Neon DB', 'info');
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function handleGuardarEgreso(e) {
+  e.preventDefault();
+  const fecha = document.getElementById('inputEgresoFecha').value;
+  const categoria = document.getElementById('selectEgresoCategoria').value;
+  const descripcion = document.getElementById('inputEgresoDesc').value;
+  const monto = document.getElementById('inputEgresoMonto').value;
+  const soporte = document.getElementById('inputEgresoSoporte').value;
+  const notas = document.getElementById('inputEgresoNotas').value;
+
+  const btn = document.getElementById('btnSubmitEgreso');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/ghalocafe/egresos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fecha, categoria, descripcion, monto, soporte, notas })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al registrar egreso');
+
+    showToast('💸 ¡Egreso registrado con éxito en Neon DB!', 'success');
+    document.getElementById('inputEgresoDesc').value = '';
+    document.getElementById('inputEgresoMonto').value = '';
+    document.getElementById('inputEgresoSoporte').value = '';
+    document.getElementById('inputEgresoNotas').value = '';
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleEliminarEgreso(id) {
+  if (!confirm(`¿Eliminar el egreso #${id} de Neon DB?`)) return;
+  try {
+    const res = await fetch(`/api/ghalocafe/egresos/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al eliminar');
+
+    showToast('Egreso eliminado de Neon DB', 'info');
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+// Fallback compatibility
+function loadErpWarehouseAndStoresData() {
+  return loadGhaloCafeData();
+}
+
+// ==================== MÓDULO NATIVO GHALOINV (INVENTARIOS & BODEGAS) ====================
+let ghaloInvData = {
+  stats: {},
+  products: [],
+  warehouses: [],
+  balances: [],
+  recentDocuments: []
+};
+
+function switchInvTab(tabId) {
+  document.querySelectorAll('.inv-subtab-pane').forEach(el => el.style.display = 'none');
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
+
+  const map = {
+    'tab-inv-stock': 'btnTabInvStock',
+    'tab-inv-movimientos': 'btnTabInvMovs',
+    'tab-inv-productos': 'btnTabInvProds',
+    'tab-inv-bodegas': 'btnTabInvBodegas'
+  };
+  Object.keys(map).forEach(k => {
+    const btn = document.getElementById(map[k]);
+    if (btn) btn.classList.toggle('active', k === tabId);
+  });
+}
+
+async function loadGhaloInvData() {
+  const today = new Date().toISOString().split('T')[0];
+  const movFecha = document.getElementById('inputMovFecha');
+  if (movFecha && !movFecha.value) movFecha.value = today;
+
+  try {
+    const res = await fetch('/api/ghaloinv/bootstrap');
+    if (!res.ok) throw new Error('Error al conectar con API de inventarios');
+    ghaloInvData = await res.json();
+
+    // Actualizar KPIs de Inventario
+    const s = ghaloInvData.stats || {};
+    const kpiUds = document.getElementById('kpiInvTotalUnidades');
+    const kpiKg = document.getElementById('kpiInvTotalKilos');
+    const kpiVal = document.getElementById('kpiInvValoracion');
+    const kpiSkus = document.getElementById('kpiInvSkusCount');
+    const kpiBods = document.getElementById('kpiInvBodegasCount');
+
+    if (kpiUds) kpiUds.textContent = `${Number(s.totalUnidades || 0).toLocaleString()} uds`;
+    if (kpiKg) kpiKg.textContent = `${s.totalKilos || 0} kg café empacado`;
+    if (kpiVal) kpiVal.textContent = `$${Number(s.valorInventario || 0).toLocaleString()} COP`;
+    if (kpiSkus) kpiSkus.textContent = `${s.totalProductos || 0} SKUs activos`;
+    if (kpiBods) kpiBods.textContent = `${s.totalBodegas || 0} bodegas`;
+
+    // Dropdowns
+    const filBod = document.getElementById('filterInvBodega');
+    const selOrigen = document.getElementById('selectMovOrigen');
+    const selDestino = document.getElementById('selectMovDestino');
+    const selProd = document.getElementById('selectMovProducto');
+
+    const whs = ghaloInvData.warehouses || [];
+    const prods = ghaloInvData.products || [];
+
+    if (filBod) {
+      const currentVal = filBod.value;
+      filBod.innerHTML = '<option value="ALL">Todas las Bodegas</option>' +
+        whs.map(w => `<option value="${w.id}">${w.name} (${w.location})</option>`).join('');
+      if (currentVal) filBod.value = currentVal;
     }
-  } catch (e) {
-    // Operando con dataset local
+
+    if (selOrigen) {
+      selOrigen.innerHTML = whs.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+    }
+    if (selDestino) {
+      selDestino.innerHTML = whs.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+    }
+    if (selProd) {
+      selProd.innerHTML = prods.map(p => `<option value="${p.id}" data-cost="${p.cost_standard}">${p.sku} - ${p.name} (${p.presentation_g}g)</option>`).join('');
+    }
+
+    // Renderizar Tablas
+    renderInvStockTable();
+    renderInvDocsTable();
+    renderInvProductsTable();
+    renderInvWarehousesTable();
+
+  } catch (err) {
+    console.error('Error cargando datos de GhaloInv:', err);
+  }
+}
+
+function renderInvStockTable() {
+  const filBod = document.getElementById('filterInvBodega');
+  const selectedBodega = filBod ? filBod.value : 'ALL';
+  const tbody = document.getElementById('tablaInvBalancesBody');
+  if (!tbody) return;
+
+  let balances = ghaloInvData.balances || [];
+  if (selectedBodega !== 'ALL') {
+    balances = balances.filter(b => String(b.warehouse_id) === String(selectedBodega));
+  }
+
+  if (balances.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay existencias registradas con este filtro.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = balances.map(b => {
+    const qty = parseFloat(b.qty_on_hand || 0);
+    const kilos = ((qty * (b.presentation_g || 454)) / 1000).toFixed(1);
+    const totalVal = Math.round(qty * parseFloat(b.price || 0));
+    return `
+      <tr>
+        <td><strong>${b.warehouse_name}</strong></td>
+        <td><code>${b.sku}</code></td>
+        <td>${b.product_name}</td>
+        <td>${b.presentation_g}g</td>
+        <td style="text-align: right; font-weight: 700; color: ${qty <= 10 ? '#ef4444' : '#fff'};">${qty.toLocaleString()} uds</td>
+        <td style="text-align: right; font-weight: 600; color: var(--primary-gold);">${kilos} kg</td>
+        <td style="text-align: right;">$${Number(b.price || 0).toLocaleString()}</td>
+        <td style="text-align: right; font-weight: 700; color: #10b981;">$${totalVal.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderInvDocsTable() {
+  const tbody = document.getElementById('tablaInvDocsBody');
+  if (!tbody) return;
+
+  const docs = ghaloInvData.recentDocuments || [];
+  if (docs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay movimientos de inventario registrados aún.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = docs.map(d => `
+    <tr>
+      <td><code>${d.document_number}</code></td>
+      <td>${d.date}</td>
+      <td><span class="badge-tag" style="background: ${d.doc_type === 'ENTRADA' ? 'rgba(16, 185, 129, 0.2)' : d.doc_type === 'TRASLADO' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${d.doc_type === 'ENTRADA' ? '#10b981' : d.doc_type === 'TRASLADO' ? '#06b6d4' : '#ef4444'};">${d.doc_type}</span></td>
+      <td>${d.warehouse_from || '-'}</td>
+      <td>${d.warehouse_to || '-'}</td>
+      <td style="text-align: center; font-weight: 700;">${d.total_qty}</td>
+      <td><span style="font-size: 0.8rem; color: var(--text-muted);">${d.notes || '-'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderInvProductsTable() {
+  const tbody = document.getElementById('tablaInvProductsBody');
+  if (!tbody) return;
+
+  const prods = ghaloInvData.products || [];
+  if (prods.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay productos configurados en Neon DB.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = prods.map(p => `
+    <tr>
+      <td><code>#${p.id}</code></td>
+      <td><strong>${p.sku}</strong></td>
+      <td>${p.name}</td>
+      <td><span class="badge-tag">${p.type}</span></td>
+      <td style="text-align: center;">${p.presentation_g}g (${p.packaging_unit || 'Bolsa'})</td>
+      <td style="text-align: right;">$${Number(p.cost_standard || 0).toLocaleString()}</td>
+      <td style="text-align: right; font-weight: 700; color: var(--primary-gold);">$${Number(p.price || 0).toLocaleString()}</td>
+      <td style="text-align: center;"><span class="trend-pill positive">Activo</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderInvWarehousesTable() {
+  const tbody = document.getElementById('tablaInvWarehousesBody');
+  if (!tbody) return;
+
+  const whs = ghaloInvData.warehouses || [];
+  if (whs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 2rem;">No hay bodegas registradas.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = whs.map(w => `
+    <tr>
+      <td><code>#${w.id}</code></td>
+      <td><strong>${w.name}</strong></td>
+      <td>${w.location || 'Eje Cafetero'}</td>
+      <td><span class="badge-tag">${w.type}</span></td>
+      <td style="text-align: center;"><span class="trend-pill positive">Operativa</span></td>
+    </tr>
+  `).join('');
+}
+
+function handleTipoMovimientoChange() {
+  const tipo = document.getElementById('selectMovTipo')?.value;
+  const grpOrigen = document.getElementById('groupMovOrigen');
+  const grpDestino = document.getElementById('groupMovDestino');
+
+  if (tipo === 'ENTRADA') {
+    if (grpOrigen) grpOrigen.style.display = 'none';
+    if (grpDestino) grpDestino.style.display = 'block';
+  } else if (tipo === 'SALIDA') {
+    if (grpOrigen) grpOrigen.style.display = 'block';
+    if (grpDestino) grpDestino.style.display = 'none';
+  } else { // TRASLADO
+    if (grpOrigen) grpOrigen.style.display = 'block';
+    if (grpDestino) grpDestino.style.display = 'block';
+  }
+}
+
+async function handleGuardarMovimiento(e) {
+  e.preventDefault();
+  const date = document.getElementById('inputMovFecha').value;
+  const doc_type = document.getElementById('selectMovTipo').value;
+  const warehouse_from_id = document.getElementById('selectMovOrigen').value;
+  const warehouse_to_id = document.getElementById('selectMovDestino').value;
+  const product_id = parseInt(document.getElementById('selectMovProducto').value);
+  const qty = parseFloat(document.getElementById('inputMovCantidad').value);
+  const notes = document.getElementById('inputMovNotas').value;
+
+  if (doc_type === 'TRASLADO' && warehouse_from_id === warehouse_to_id) {
+    showToast('En un traslado, la bodega de origen y destino deben ser distintas', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitMovimiento');
+  if (btn) btn.disabled = true;
+
+  try {
+    const payload = {
+      doc_type,
+      warehouse_from_id: doc_type !== 'ENTRADA' ? parseInt(warehouse_from_id) : null,
+      warehouse_to_id: doc_type !== 'SALIDA' ? parseInt(warehouse_to_id) : null,
+      date,
+      notes,
+      items: [{ product_id, qty }]
+    };
+
+    const res = await fetch('/api/ghaloinv/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al aplicar movimiento');
+
+    showToast(`📦 ¡${result.message || 'Movimiento aplicado en Neon DB'}!`, 'success');
+    document.getElementById('inputMovCantidad').value = '';
+    document.getElementById('inputMovNotas').value = '';
+    await loadGhaloInvData();
+    // También refrescar GhaloCafe para que se actualicen los stocks
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGuardarProducto(e) {
+  e.preventDefault();
+  const sku = document.getElementById('inputProdSku').value;
+  const name = document.getElementById('inputProdNombre').value;
+  const type = document.getElementById('selectProdTipo').value;
+  const presentation_g = document.getElementById('inputProdGramos').value;
+  const price = document.getElementById('inputProdPrecio').value;
+  const cost_standard = document.getElementById('inputProdCosto').value;
+
+  const btn = document.getElementById('btnSubmitProducto');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/ghaloinv/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku, name, type, presentation_g, price, cost_standard })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al crear producto');
+
+    showToast(`🏷️ ¡Producto ${sku} creado en Neon DB!`, 'success');
+    document.getElementById('formRegistroProducto').reset();
+    await loadGhaloInvData();
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleGuardarBodega(e) {
+  e.preventDefault();
+  const name = document.getElementById('inputBodegaNombre').value;
+  const location = document.getElementById('inputBodegaUbicacion').value;
+  const type = document.getElementById('selectBodegaTipo').value;
+
+  const btn = document.getElementById('btnSubmitBodega');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/ghaloinv/warehouses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, location, type })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al crear bodega');
+
+    showToast(`🏬 ¡Bodega ${name} creada en Neon DB!`, 'success');
+    document.getElementById('formRegistroBodega').reset();
+    await loadGhaloInvData();
+    await loadGhaloCafeData();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -2450,23 +2994,14 @@ function unlockAppSuite() {
   const loginModal = document.getElementById('erp-login-modal');
   if (loginModal) loginModal.style.display = 'none';
 
-  // Cargar de forma segura los iframes oficiales consolidados
-  const iframes = [
-    { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
-    { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com' },
-    { id: 'ghaloIframe', defaultUrl: 'https://sistema-ghalocafe.onrender.com' },
-    { id: 'invIframe', defaultUrl: 'https://ghaloinv-app.onrender.com' }
-  ];
-
-  iframes.forEach(item => {
-    const frame = document.getElementById(item.id);
-    if (frame) {
-      const targetSrc = frame.dataset.src || item.defaultUrl;
-      if (!frame.src || frame.src === 'about:blank' || frame.src.endsWith('about:blank')) {
-        frame.src = targetSrc;
-      }
+  // Cargar de forma segura iframe local de AgriControl BI
+  const agriFrame = document.getElementById('agriIframe');
+  if (agriFrame) {
+    const targetSrc = agriFrame.dataset.src || '/modules/agri-control-bi/index.html';
+    if (!agriFrame.src || agriFrame.src === 'about:blank' || agriFrame.src.endsWith('about:blank')) {
+      agriFrame.src = targetSrc;
     }
-  });
+  }
 
   initAppData();
   setupEventListeners();
@@ -2475,9 +3010,8 @@ function unlockAppSuite() {
   checkBackendStatus();
   switchErpModule('erp-hub-view');
   loadProductividadData();
-  loadErpWarehouseAndStoresData();
-  initSavedIframeUrls();
-  prewarmAllModules(true);
+  loadGhaloCafeData();
+  loadGhaloInvData();
 }
 
 function lockAppSuite() {

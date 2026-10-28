@@ -75,6 +75,12 @@ app.use('/api', agriRoutes);
 const productividadRoutes = require('./routes/productividad');
 app.use('/api/productividad', productividadRoutes);
 
+const ghaloinvRoutes = require('./routes/ghaloinv');
+app.use('/api/ghaloinv', ghaloinvRoutes);
+
+const ghalocafeRoutes = require('./routes/ghalocafe');
+app.use('/api/ghalocafe', ghalocafeRoutes);
+
 // ==================== ENDPOINTS DE SEGURIDAD & AUTENTICACIÓN ====================
 
 // 1. Iniciar Sesión (Login)

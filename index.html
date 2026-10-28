@@ -1518,290 +1518,727 @@
       </div>
     </div> <!-- Fin erp-harvest-view -->
 
-    <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (TIENDAS & STOCK) ==================== -->
+    <!-- ==================== MÓDULO 4: GHALOCAFE COMERCIAL (VENTAS & FINANZAS) ==================== -->
     <div id="erp-ghalocafe-view" class="erp-module-section">
-      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
-      <div class="embedded-iframe-container" id="ghaloIframeContainer">
-        <div class="embedded-compact-toolbar">
-          <div class="toolbar-left">
-            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
-              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
-            </button>
-            <div class="toolbar-app-badge" style="--accent: #f59e0b;">
-              <i class="fa-solid fa-mug-hot"></i>
-              <strong>Sistema GhaloCafe</strong>
+      <!-- Barra Superior Unificada -->
+      <div class="embedded-compact-toolbar" style="border-radius: var(--radius-md); margin-bottom: 1.5rem; background: var(--surface-card); border: 1px solid var(--border-color);">
+        <div class="toolbar-left">
+          <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+            <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+          </button>
+          <div class="toolbar-app-badge" style="--accent: #f59e0b;">
+            <i class="fa-solid fa-mug-hot"></i>
+            <strong>Sistema Comercial GhaloCafe</strong>
+          </div>
+          <span class="status-dot online" title="Base de Datos Neon Conectada"></span>
+        </div>
+
+        <div class="toolbar-center">
+          <span class="toolbar-url-badge">
+            <i class="fa-solid fa-database" style="color: #f59e0b;"></i> Neon DB Live Feed (100% Funcional & Persistente)
+          </span>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn-toolbar-action" onclick="loadGhaloCafeData()" title="Refrescar Datos de Neon">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Píldoras de Navegación Sub-módulos GhaloCafe -->
+      <div class="erp-suite-bar" style="margin-bottom: 1.5rem; justify-content: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="erp-suite-pill active" onclick="switchGhaloTab('tab-ghalo-ventas')" id="btnTabGhaloVentas">
+          <i class="fa-solid fa-cash-register"></i> <span>Ventas & Facturación</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchGhaloTab('tab-ghalo-egresos')" id="btnTabGhaloEgresos">
+          <i class="fa-solid fa-receipt"></i> <span>Egresos & Costos</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchGhaloTab('tab-ghalo-tiendas')" id="btnTabGhaloTiendas">
+          <i class="fa-solid fa-store"></i> <span>Tiendas & Puntos de Venta</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchGhaloTab('tab-ghalo-balance')" id="btnTabGhaloBalance">
+          <i class="fa-solid fa-chart-pie"></i> <span>Balance Comercial</span>
+        </button>
+      </div>
+
+      <!-- ==================== SUB-TAB 1: VENTAS & FACTURACIÓN ==================== -->
+      <div id="tab-ghalo-ventas" class="ghalo-subtab-pane">
+        <!-- Formulario Registro de Ventas -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #f59e0b;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-cart-plus" style="color: #f59e0b;"></i> Registrar Nueva Venta Comercial</h3>
+              <div class="chart-subtitle">Registra salidas y ventas de producto terminado directo en Neon DB</div>
             </div>
-            <span class="status-dot online" title="Servidor en línea"></span>
+            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">Facturación GhaloCafe</span>
           </div>
 
-          <div class="toolbar-center">
-            <span class="toolbar-url-badge">
-              <i class="fa-solid fa-shield-halved" style="color: #f59e0b;"></i> Módulo Nativo Integrado (Neon DB)
-            </span>
-          </div>
+          <form id="formRegistroVenta" onsubmit="handleGuardarVenta(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputVentaFecha"><i class="fa-regular fa-calendar"></i> Fecha</label>
+                <input type="date" id="inputVentaFecha" class="form-input" required>
+              </div>
 
-          <div class="toolbar-right">
-            <button class="btn-toolbar-action" onclick="toggleGhaloDetails()" id="btnToggleGhaloDetails" title="Ver Inventario y Tiendas Neon">
-              <i class="fa-solid fa-store"></i> <span>Tiendas & Stock</span>
-            </button>
-            <button class="btn-toolbar-action" onclick="reloadGhaloIframe()" title="Recargar App">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('ghaloIframeContainer')" title="Maximizar pantalla completa">
-              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
-            </button>
-          </div>
-        </div>
-        <iframe id="ghaloIframe" src="about:blank" data-src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
-      </div>
+              <div class="form-group">
+                <label for="inputVentaCliente"><i class="fa-solid fa-user-tag"></i> Cliente / Comprador</label>
+                <input type="text" id="inputVentaCliente" class="form-input" placeholder="Ej: Café Quindío / Juan Pérez" required>
+              </div>
 
-      <!-- Contenedor 2: Métricas de Stock y Catálogo (Colapsable) -->
-      <div id="ghaloDataContainer" style="display: none;">
-        <div class="kpi-grid" style="margin-bottom: 2rem;">
-        <div class="kpi-card" style="--accent-color: #f59e0b;">
-          <div class="kpi-top">
-            <span class="kpi-label">Café Enviado a Tostión (Neon DB)</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-fire-burner"></i></div>
-          </div>
-          <div class="kpi-value" id="ghaloTostionKg">380 kg</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">Café Especial</span>
-            <span class="kpi-context">Destino: Marca Propia GhaloCafe</span>
-          </div>
-        </div>
+              <div class="form-group">
+                <label for="selectVentaProducto"><i class="fa-solid fa-mug-hot"></i> Producto</label>
+                <select id="selectVentaProducto" class="form-select" onchange="autoFillPrecioVenta()" required>
+                  <option value="">Seleccione producto...</option>
+                </select>
+              </div>
 
-        <div class="kpi-card" style="--accent-color: #10b981;">
-          <div class="kpi-top">
-            <span class="kpi-label">Café Pergamino a Cooperativa</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-truck-moving"></i></div>
-          </div>
-          <div class="kpi-value" id="ghaloCoopKg">2.231 kg</div>
-          <div class="kpi-footer">
-            <span class="trend-pill neutral">Trilla Tradicional</span>
-            <span class="kpi-context">Salidas registradas en bodega</span>
-          </div>
-        </div>
+              <div class="form-group">
+                <label for="inputVentaCantidad"><i class="fa-solid fa-boxes-stacked"></i> Cantidad (Uds)</label>
+                <input type="number" step="1" min="1" id="inputVentaCantidad" class="form-input" placeholder="Ej: 10" oninput="calcularTotalVenta()" required>
+              </div>
 
-        <div class="kpi-card" style="--accent-color: #06b6d4;">
-          <div class="kpi-top">
-            <span class="kpi-label">Puntos de Venta & Bodegas</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-store"></i></div>
-          </div>
-          <div class="kpi-value">5 Tiendas Activas</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">Eje Cafetero</span>
-            <span class="kpi-context">Palestina, Manizales, Villamaría, Pereira</span>
-          </div>
+              <div class="form-group">
+                <label for="inputVentaPrecio"><i class="fa-solid fa-dollar-sign"></i> Precio Unitario ($)</label>
+                <input type="number" step="100" min="1000" id="inputVentaPrecio" class="form-input" placeholder="Ej: 32000" oninput="calcularTotalVenta()" required>
+              </div>
+
+              <div class="form-group">
+                <label for="selectVentaCanal"><i class="fa-solid fa-shop"></i> Canal de Venta</label>
+                <select id="selectVentaCanal" class="form-select">
+                  <option value="TIENDA_MANIZALES">Tienda Manizales</option>
+                  <option value="TIENDA_VILLAMARIA">Tienda Villamaría</option>
+                  <option value="TIENDA_PEREIRA">Tienda Pereira</option>
+                  <option value="TIENDA_FINCA">Tienda Finca La Leonora</option>
+                  <option value="ECOMMERCE">Web E-Commerce</option>
+                  <option value="MAYORISTA">Mayorista / Distribuidor</option>
+                  <option value="EXPORTACION">Exportación</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="inputVentaNotas"><i class="fa-regular fa-note-sticky"></i> Referencia / Factura</label>
+                <input type="text" id="inputVentaNotas" class="form-input" placeholder="Ej: Fac #1042 / Pago Nequi">
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitVenta" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Guardar Venta</span>
+                </button>
+              </div>
+            </div>
+            <div id="ventaTotalPreview" style="margin-top: 0.75rem; font-size: 0.9rem; color: var(--primary-gold); font-weight: 600;"></div>
+          </form>
         </div>
 
-        <div class="kpi-card" style="--accent-color: #8b5cf6;">
-          <div class="kpi-top">
-            <span class="kpi-label">Stock Empacado Consolidado</span>
-            <div class="kpi-icon-badge"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <!-- KPIs de Ventas -->
+        <div class="dashboard-kpis-grid" style="margin-bottom: 1.5rem;">
+          <div class="kpi-card" style="--accent-color: #10b981;">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Ingresos Registrados</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-coins"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiGhaloTotalIngresos">$0 COP</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive" id="kpiGhaloVentasCount">0 ventas</span>
+              <span class="kpi-context">En Neon DB</span>
+            </div>
           </div>
-          <div class="kpi-value">920 kg Empacados</div>
-          <div class="kpi-footer">
-            <span class="trend-pill positive">5 SKUs</span>
-            <span class="kpi-context">Molido y Grano en inventario</span>
+
+          <div class="kpi-card" style="--accent-color: #3b82f6;">
+            <div class="kpi-top">
+              <span class="kpi-label">Utilidad Comercial Neta</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-chart-line"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiGhaloUtilidad">$0 COP</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive" id="kpiGhaloMargen">0%</span>
+              <span class="kpi-context">Margen comercial</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Ventas en Vivo -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
+            <div>
+              <strong>Historial de Ventas & Facturación (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla ghalocafe_ingresos</span>
+            </div>
+            <span class="badge-tag" id="badgeVentasCount">0 registros</span>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 60px;">ID</th>
+                  <th style="min-width: 100px;">Fecha</th>
+                  <th style="min-width: 150px;">Cliente</th>
+                  <th style="min-width: 180px;">Producto</th>
+                  <th style="min-width: 80px; text-align: center;">Cantidad</th>
+                  <th style="min-width: 110px; text-align: right;">Unitario</th>
+                  <th style="min-width: 120px; text-align: right;">Total</th>
+                  <th style="min-width: 130px;">Canal</th>
+                  <th style="min-width: 130px;">Notas</th>
+                  <th style="min-width: 70px; text-align: center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaVentasBody">
+                <tr><td colspan="10" style="text-align: center; padding: 2rem;">Cargando ventas...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- Grid de las 5 Tiendas / Bodegas -->
-      <div class="section-subheading" style="margin-bottom: 1rem;">
-        <h3><i class="fa-solid fa-shop"></i> Inventario de Café en Puntos de Venta & Bodegas</h3>
-        <span class="badge-tag">Red de Distribución GhaloCafe</span>
-      </div>
+      <!-- ==================== SUB-TAB 2: EGRESOS & COSTOS ==================== -->
+      <div id="tab-ghalo-egresos" class="ghalo-subtab-pane" style="display: none;">
+        <!-- Formulario Registro de Egresos -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #ef4444;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-receipt" style="color: #ef4444;"></i> Registrar Costo o Gasto Comercial</h3>
+              <div class="chart-subtitle">Costos de tostión, empaques, fletes, nómina comercial y operación de tiendas</div>
+            </div>
+            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Costos Operativos</span>
+          </div>
 
-      <div class="stores-grid" id="storesGridContainer">
-        <!-- Generado dinámicamente -->
-      </div>
+          <form id="formRegistroEgreso" onsubmit="handleGuardarEgreso(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputEgresoFecha"><i class="fa-regular fa-calendar"></i> Fecha</label>
+                <input type="date" id="inputEgresoFecha" class="form-input" required>
+              </div>
 
-      <!-- Catálogo Oficial de Productos GhaloCafe Real -->
-      <div class="section-subheading" style="margin-bottom: 1rem; margin-top: 2rem;">
-        <h3><i class="fa-solid fa-box-open"></i> Catálogo de Presentaciones & Precios de Venta</h3>
-        <span class="badge-tag">Marca Propia de Especialidad</span>
-      </div>
+              <div class="form-group">
+                <label for="selectEgresoCategoria"><i class="fa-solid fa-tags"></i> Categoría de Costo</label>
+                <select id="selectEgresoCategoria" class="form-select" required>
+                  <option value="TOSTION_MOLIENDA">Tostión & Molienda</option>
+                  <option value="EMPAQUES_VALVULAS">Empaques, Bolsas & Válvulas</option>
+                  <option value="NOMINA_COMERCIAL">Nómina Baristas / Comercial</option>
+                  <option value="FLETES_TRANSPORTE">Fletes & Envíos Nacionales</option>
+                  <option value="ARRIENDOS_TIENDAS">Arriendos / Puntos de Venta</option>
+                  <option value="SERVICIOS_PUBLICOS">Servicios Públicos & Internet</option>
+                  <option value="MARKETING_PUBLICIDAD">Marketing Digital & Pauta</option>
+                  <option value="OTROS_GASTOS">Otros Gastos Operativos</option>
+                </select>
+              </div>
 
-      <div class="products-grid" id="productsCatalogContainer">
-        <!-- Generado dinámicamente -->
-      </div>
+              <div class="form-group">
+                <label for="inputEgresoDesc"><i class="fa-solid fa-file-invoice"></i> Concepto / Descripción</label>
+                <input type="text" id="inputEgresoDesc" class="form-input" placeholder="Ej: Maquila de tostión 380 kg" required>
+              </div>
 
-      <!-- Tabla de Salidas de Bodega en Neon -->
-      <div class="financial-table-wrapper" style="margin-top: 2rem;">
-        <div class="table-toolbar">
-          <div>
-            <strong>Registro de Salidas de Bodega de Café (Neon DB)</strong>
-            <span class="badge-tag" style="margin-left: 0.5rem;">Tabla SalidaBodega</span>
+              <div class="form-group">
+                <label for="inputEgresoMonto"><i class="fa-solid fa-dollar-sign"></i> Monto ($ COP)</label>
+                <input type="number" step="100" min="100" id="inputEgresoMonto" class="form-input" placeholder="Ej: 950000" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputEgresoSoporte"><i class="fa-solid fa-paperclip"></i> N° Factura / Soporte</label>
+                <input type="text" id="inputEgresoSoporte" class="form-input" placeholder="Ej: FAC-9821 / Comprobante 44">
+              </div>
+
+              <div class="form-group">
+                <label for="inputEgresoNotas"><i class="fa-regular fa-note-sticky"></i> Notas / Observaciones</label>
+                <input type="text" id="inputEgresoNotas" class="form-input" placeholder="Ej: Proveedor Tostadora del Café">
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitEgreso" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #dc2626;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Registrar Egreso</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- KPIs de Egresos -->
+        <div class="dashboard-kpis-grid" style="margin-bottom: 1.5rem;">
+          <div class="kpi-card" style="--accent-color: #ef4444;">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Egresos Comerciales</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-receipt"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiGhaloTotalEgresos">$0 COP</div>
+            <div class="kpi-footer">
+              <span class="trend-pill negative" id="kpiGhaloEgresosCount">0 gastos</span>
+              <span class="kpi-context">En Neon DB</span>
+            </div>
           </div>
         </div>
-        <div class="table-scroll-container">
-          <table class="financial-matrix">
-            <thead>
-              <tr>
-                <th>ID Envío</th>
-                <th>Fecha</th>
-                <th>Tipo de Café</th>
-                <th>Destino Operativo</th>
-                <th>Método de Beneficio</th>
-                <th style="text-align: right;">Cantidad (Kilos)</th>
-              </tr>
-            </thead>
-            <tbody id="warehouseShipmentsBody">
-              <!-- Dinámico -->
-            </tbody>
-          </table>
+
+        <!-- Tabla de Egresos en Vivo -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
+            <div>
+              <strong>Registro de Costos & Gastos Operativos (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla ghalocafe_egresos</span>
+            </div>
+            <span class="badge-tag" id="badgeEgresosCount">0 registros</span>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 60px;">ID</th>
+                  <th style="min-width: 100px;">Fecha</th>
+                  <th style="min-width: 160px;">Categoría</th>
+                  <th style="min-width: 240px;">Descripción</th>
+                  <th style="min-width: 130px; text-align: right;">Monto ($)</th>
+                  <th style="min-width: 140px;">Soporte</th>
+                  <th style="min-width: 140px;">Notas</th>
+                  <th style="min-width: 70px; text-align: center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaEgresosBody">
+                <tr><td colspan="8" style="text-align: center; padding: 2rem;">Cargando egresos...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div> <!-- Fin ghaloDataContainer -->
-  </div> <!-- Fin erp-ghalocafe-view -->
+
+      <!-- ==================== SUB-TAB 3: TIENDAS & STOCK ==================== -->
+      <div id="tab-ghalo-tiendas" class="ghalo-subtab-pane" style="display: none;">
+        <div class="section-subheading" style="margin-bottom: 1rem;">
+          <h3><i class="fa-solid fa-shop"></i> Red de Distribución & Stock en Puntos de Venta (Neon DB)</h3>
+          <span class="badge-tag">Puntos de Venta GhaloCafe</span>
+        </div>
+
+        <div class="stores-grid" id="storesGridContainerUnified" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <!-- Generado dinámicamente -->
+        </div>
+
+        <div class="financial-table-wrapper" style="margin-top: 2rem;">
+          <div class="table-toolbar">
+            <div>
+              <strong>Salidas de Bodega Pergamino hacia Tostión / Cooperativa (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla SalidaBodega</span>
+            </div>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th>ID Envío</th>
+                  <th>Fecha</th>
+                  <th>Tipo de Café</th>
+                  <th>Destino</th>
+                  <th>Beneficio</th>
+                  <th style="text-align: right;">Cantidad (Kilos)</th>
+                </tr>
+              </thead>
+              <tbody id="tablaSalidasBodegaUnified">
+                <!-- Generado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SUB-TAB 4: BALANCE COMERCIAL ==================== -->
+      <div id="tab-ghalo-balance" class="ghalo-subtab-pane" style="display: none;">
+        <div class="chart-card" style="margin-bottom: 2rem;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-scale-balanced" style="color: #10b981;"></i> Resumen Ejecutivo Comercial GhaloCafe</h3>
+              <div class="chart-subtitle">Consolidado en tiempo real desde PostgreSQL Neon</div>
+            </div>
+          </div>
+          <div style="padding: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
+            <div style="background: rgba(16, 185, 129, 0.08); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #10b981;">
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Total Ingresos por Ventas</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: #10b981; margin: 0.5rem 0;" id="balGhaloIngresos">$0</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim);">Entradas de efectivo y facturación</div>
+            </div>
+            <div style="background: rgba(239, 68, 68, 0.08); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ef4444;">
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Total Costos & Egresos</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: #ef4444; margin: 0.5rem 0;" id="balGhaloEgresos">$0</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim);">Tostión, empaques, fletes, operaciones</div>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.08); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Margen Comercial Neto</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: #f59e0b; margin: 0.5rem 0;" id="balGhaloUtilidad">$0</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim);" id="balGhaloMargenPct">Margen: 0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- Fin erp-ghalocafe-view -->
 
     <!-- ==================== MÓDULO 5: GHALOINV (INVENTARIOS & BODEGAS) ==================== -->
     <div id="erp-inventory-view" class="erp-module-section">
-      <!-- Espacio Principal: Aplicativo Completo Embebido con Barra Compacta Unificada -->
-      <div class="embedded-iframe-container" id="invIframeContainer">
-        <div class="embedded-compact-toolbar">
-          <div class="toolbar-left">
-            <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
-              <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
-            </button>
-            <div class="toolbar-app-badge" style="--accent: #06b6d4;">
-              <i class="fa-solid fa-boxes-stacked"></i>
-              <strong>GhaloInv (Inventarios)</strong>
-            </div>
-            <span class="status-dot online" title="Servidor en línea"></span>
+      <!-- Barra Superior Unificada -->
+      <div class="embedded-compact-toolbar" style="border-radius: var(--radius-md); margin-bottom: 1.5rem; background: var(--surface-card); border: 1px solid var(--border-color);">
+        <div class="toolbar-left">
+          <button class="btn-toolbar-back" onclick="switchErpModule('erp-hub-view')" title="Volver al Portal de Aplicaciones">
+            <i class="fa-solid fa-arrow-left"></i> <span>Portal</span>
+          </button>
+          <div class="toolbar-app-badge" style="--accent: #06b6d4;">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <strong>GhaloInv (Inventarios & Bodegas)</strong>
           </div>
-
-          <div class="toolbar-center">
-            <span class="toolbar-url-badge">
-              <i class="fa-solid fa-shield-halved" style="color: #06b6d4;"></i> Módulo Nativo Integrado (Neon DB)
-            </span>
-          </div>
-
-          <div class="toolbar-right">
-            <button class="btn-toolbar-action" onclick="toggleWebSimulator()" id="btnToggleWebSim" title="Vitrina de Productos">
-              <i class="fa-solid fa-cart-shopping"></i> <span>Vitrina</span>
-            </button>
-            <button class="btn-toolbar-action" onclick="reloadInvIframe()" title="Recargar App">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-            <button class="btn-toolbar-action btn-fullscreen-toggle" onclick="toggleIframeFullscreen('invIframeContainer')" title="Maximizar pantalla completa">
-              <i class="fa-solid fa-expand"></i> <span>Maximizar</span>
-            </button>
-          </div>
+          <span class="status-dot online" title="Base de Datos Neon Conectada"></span>
         </div>
-        <iframe id="invIframe" src="about:blank" data-src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>
-      </div>
 
-      <!-- Contenedor 2: Simulador Interactivo Local (Colapsable) -->
-      <div id="webSimulatorContainer" style="display: none;">
-
-      <!-- Banner de Origen de Finca La Leonora -->
-      <div class="erp-hub-hero" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15));">
-        <div>
-          <span class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); margin-bottom: 0.5rem; display: inline-flex;">
-            <i class="fa-solid fa-award"></i> Café de Origen Único • Cordillera Central
+        <div class="toolbar-center">
+          <span class="toolbar-url-badge">
+            <i class="fa-solid fa-database" style="color: #06b6d4;"></i> Neon DB Live Feed (100% Funcional & Persistente)
           </span>
-          <h2 class="erp-hub-title">Finca La Leonora • Palestina, Caldas (1.750 msnm)</h2>
-          <p class="erp-hub-subtitle">
-            Café de especialidad cultivado bajo sombra y policultivo sostenible. Cosechado a mano grano a grano, beneficiado con procesos artesanales y tostado con perfiles que destacan notas a panela, frutos cítricos y chocolate fino.
-          </p>
         </div>
-        <div>
-          <img src="./assets/logo.jpg" alt="Logo Finca La Leonora" style="width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--primary-gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);">
+
+        <div class="toolbar-right">
+          <button class="btn-toolbar-action" onclick="loadGhaloInvData()" title="Refrescar Datos de Neon">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navegación de Sub-módulos GhaloInv -->
+      <div class="erp-suite-bar" style="margin-bottom: 1.5rem; justify-content: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="erp-suite-pill active" onclick="switchInvTab('tab-inv-stock')" id="btnTabInvStock">
+          <i class="fa-solid fa-cubes-stacked"></i> <span>Stock en Vivo</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchInvTab('tab-inv-movimientos')" id="btnTabInvMovs">
+          <i class="fa-solid fa-dolly"></i> <span>Movimientos & Kardex</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchInvTab('tab-inv-productos')" id="btnTabInvProds">
+          <i class="fa-solid fa-tags"></i> <span>Catálogo de SKUs</span>
+        </button>
+        <button class="erp-suite-pill" onclick="switchInvTab('tab-inv-bodegas')" id="btnTabInvBodegas">
+          <i class="fa-solid fa-warehouse"></i> <span>Bodegas & Almacenes</span>
+        </button>
+      </div>
+
+      <!-- ==================== SUB-TAB 1: STOCK EN VIVO ==================== -->
+      <div id="tab-inv-stock" class="inv-subtab-pane">
+        <!-- KPIs Clave de Inventario -->
+        <div class="dashboard-kpis-grid" style="margin-bottom: 1.5rem;">
+          <div class="kpi-card" style="--accent-color: #06b6d4;">
+            <div class="kpi-top">
+              <span class="kpi-label">Stock Total Consolidado</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-boxes-stacked"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiInvTotalUnidades">0 uds</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive" id="kpiInvTotalKilos">0 kg café</span>
+              <span class="kpi-context">En todas las bodegas</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--accent-color: #10b981;">
+            <div class="kpi-top">
+              <span class="kpi-label">Valorización de Inventario</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-vault"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiInvValoracion">$0 COP</div>
+            <div class="kpi-footer">
+              <span class="trend-pill positive" id="kpiInvSkusCount">0 SKUs</span>
+              <span class="kpi-context">Precio de venta público</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--accent-color: #8b5cf6;">
+            <div class="kpi-top">
+              <span class="kpi-label">Bodegas Operativas</span>
+              <div class="kpi-icon-badge"><i class="fa-solid fa-warehouse"></i></div>
+            </div>
+            <div class="kpi-value" id="kpiInvBodegasCount">0</div>
+            <div class="kpi-footer">
+              <span class="trend-pill neutral">Puntos físicos</span>
+              <span class="kpi-context">Eje cafetero</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Balances de Stock por Bodega -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
+            <div>
+              <strong>Existencias Actuales por Bodega y Presentación (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla inv_balances</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <select id="filterInvBodega" class="form-select" onchange="renderInvStockTable()" style="min-width: 180px; padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                <option value="ALL">Todas las Bodegas</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 120px;">Bodega / Tienda</th>
+                  <th style="min-width: 100px;">SKU</th>
+                  <th style="min-width: 220px;">Nombre del Producto</th>
+                  <th style="min-width: 110px;">Gramaje</th>
+                  <th style="min-width: 120px; text-align: right;">Stock (Uds)</th>
+                  <th style="min-width: 120px; text-align: right;">Kilos Netos</th>
+                  <th style="min-width: 130px; text-align: right;">Precio Venta</th>
+                  <th style="min-width: 140px; text-align: right;">Valor Total</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInvBalancesBody">
+                <tr><td colspan="8" style="text-align: center; padding: 2rem;">Cargando inventarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Vitrina E-Commerce Interactiva -->
-      <div class="dashboard-charts-grid" style="margin-bottom: 2rem;">
-        <!-- Catálogo de Compra -->
-        <div class="chart-card col-8">
+      <!-- ==================== SUB-TAB 2: MOVIMIENTOS & KARDEX ==================== -->
+      <div id="tab-inv-movimientos" class="inv-subtab-pane" style="display: none;">
+        <!-- Formulario Registro de Movimientos -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #06b6d4;">
           <div class="chart-header">
             <div>
-              <h3><i class="fa-solid fa-bag-shopping" style="color: #f59e0b;"></i> Tienda en Línea GhaloCafe Real (Simulador de Compra B2C)</h3>
-              <div class="chart-subtitle">Directo al consumidor sin intermediarios</div>
+              <h3><i class="fa-solid fa-dolly" style="color: #06b6d4;"></i> Registrar Movimiento de Inventario / Kardex</h3>
+              <div class="chart-subtitle">Entradas por producción/tostión, salidas por venta o traslados entre bodegas en Neon DB</div>
             </div>
-            <span class="badge-tag" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">Canal E-Commerce Activo</span>
+            <span class="badge-tag" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">Transacción Neon</span>
           </div>
 
-          <div style="padding: 1rem 0;">
-            <div class="products-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-              <!-- Producto 1 -->
-              <div class="product-card-erp">
-                <span class="product-sku">SKU: GH-M454</span>
-                <h4 class="product-name">GhaloCafe Molido 454g (Libra)</h4>
-                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Tueste medio, molienda fresca para cafetera tradicional o filtro.</p>
-                <div class="product-price">$32.000 COP</div>
-                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-M454', 'GhaloCafe Molido 454g', 32000)">
-                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
-                </button>
+          <form id="formRegistroMovimiento" onsubmit="handleGuardarMovimiento(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputMovFecha"><i class="fa-regular fa-calendar"></i> Fecha</label>
+                <input type="date" id="inputMovFecha" class="form-input" required>
               </div>
 
-              <!-- Producto 2 -->
-              <div class="product-card-erp">
-                <span class="product-sku">SKU: GH-G454</span>
-                <h4 class="product-name">GhaloCafe Grano 454g (Libra)</h4>
-                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Grano entero para conservar aromas y moler en casa al instante.</p>
-                <div class="product-price">$32.000 COP</div>
-                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-G454', 'GhaloCafe Grano 454g', 32000)">
-                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
-                </button>
+              <div class="form-group">
+                <label for="selectMovTipo"><i class="fa-solid fa-arrows-left-right"></i> Tipo de Movimiento</label>
+                <select id="selectMovTipo" class="form-select" onchange="handleTipoMovimientoChange()" required>
+                  <option value="ENTRADA">ENTRADA (Producción / Tostión / Compra)</option>
+                  <option value="TRASLADO">TRASLADO (Entre Bodegas / Tiendas)</option>
+                  <option value="SALIDA">SALIDA (Merma / Consumo / Ajuste)</option>
+                </select>
               </div>
 
-              <!-- Producto 3 -->
-              <div class="product-card-erp">
-                <span class="product-sku">SKU: GH-M250</span>
-                <h4 class="product-name">GhaloCafe Molido 250g</h4>
-                <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem;">Presentación personal compacta con válvula desgasificadora.</p>
-                <div class="product-price">$18.500 COP</div>
-                <button class="btn-primary" style="margin-top: 0.75rem; width: 100%; justify-content: center;" onclick="addToCart('GH-M250', 'GhaloCafe Molido 250g', 18500)">
-                  <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+              <div class="form-group" id="groupMovOrigen">
+                <label for="selectMovOrigen"><i class="fa-solid fa-warehouse"></i> Bodega Origen</label>
+                <select id="selectMovOrigen" class="form-select">
+                  <!-- Dinámico -->
+                </select>
+              </div>
+
+              <div class="form-group" id="groupMovDestino">
+                <label for="selectMovDestino"><i class="fa-solid fa-store"></i> Bodega Destino</label>
+                <select id="selectMovDestino" class="form-select">
+                  <!-- Dinámico -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="selectMovProducto"><i class="fa-solid fa-tag"></i> Producto / SKU</label>
+                <select id="selectMovProducto" class="form-select" required>
+                  <!-- Dinámico -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="inputMovCantidad"><i class="fa-solid fa-calculator"></i> Cantidad (Unidades)</label>
+                <input type="number" step="1" min="1" id="inputMovCantidad" class="form-input" placeholder="Ej: 50" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputMovNotas"><i class="fa-regular fa-note-sticky"></i> Notas / Motivo</label>
+                <input type="text" id="inputMovNotas" class="form-input" placeholder="Ej: Despacho para apertura de semana">
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitMovimiento" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Aplicar Movimiento</span>
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
 
-        <!-- Carrito de Compras en Vivo -->
-        <div class="chart-card col-4">
-          <div class="chart-header">
+        <!-- Tabla Historial Kardex -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
             <div>
-              <h3><i class="fa-solid fa-cart-shopping" style="color: #10b981;"></i> Carrito de Compras</h3>
-              <div class="chart-subtitle">Resumen del pedido digital</div>
+              <strong>Últimos Documentos & Movimientos de Kardex (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla inv_documents</span>
             </div>
-            <span class="badge-tag" id="cartCountBadge">0 Items</span>
           </div>
-
-          <div style="padding: 1rem 0.5rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 280px;">
-            <div id="cartItemsContainer" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 200px; overflow-y: auto;">
-              <div style="text-align: center; color: var(--text-dim); font-size: 0.82rem; padding: 2rem 0;">
-                <i class="fa-solid fa-basket-shopping" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4;"></i><br>
-                El carrito está vacío.<br>Agrega presentaciones de GhaloCafe.
-              </div>
-            </div>
-
-            <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1rem; margin-top: 1rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
-                <span>Subtotal:</span>
-                <strong id="cartSubtotal">$0 COP</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.75rem;">
-                <span>Envío Nacional:</span>
-                <strong style="color: var(--emerald-finca);">Gratis (> $50.000)</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">
-                <span>Total:</span>
-                <span id="cartTotal" style="color: var(--primary-gold);">$0 COP</span>
-              </div>
-              <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="simulateCheckout()">
-                <i class="fa-solid fa-lock"></i> Finalizar Pedido Simulado
-              </button>
-            </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 130px;">N° Documento</th>
+                  <th style="min-width: 100px;">Fecha</th>
+                  <th style="min-width: 110px;">Tipo</th>
+                  <th style="min-width: 150px;">Origen</th>
+                  <th style="min-width: 150px;">Destino</th>
+                  <th style="min-width: 100px; text-align: center;">Cantidad</th>
+                  <th style="min-width: 200px;">Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInvDocsBody">
+                <tr><td colspan="7" style="text-align: center; padding: 2rem;">Cargando documentos...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-      </div> <!-- Fin webSimulatorContainer -->
-    </div> <!-- Fin erp-web-view -->
+
+      <!-- ==================== SUB-TAB 3: CATÁLOGO DE PRODUCTOS / SKUS ==================== -->
+      <div id="tab-inv-productos" class="inv-subtab-pane" style="display: none;">
+        <!-- Formulario Nuevo SKU -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #10b981;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-plus" style="color: #10b981;"></i> Crear Nuevo Producto / Presentación</h3>
+              <div class="chart-subtitle">Registra nuevos SKUs en el catálogo central de Neon DB</div>
+            </div>
+          </div>
+
+          <form id="formRegistroProducto" onsubmit="handleGuardarProducto(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputProdSku"><i class="fa-solid fa-barcode"></i> SKU / Código</label>
+                <input type="text" id="inputProdSku" class="form-input" placeholder="Ej: GHALO-GEISHA-250" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputProdNombre"><i class="fa-solid fa-mug-hot"></i> Nombre Comercial</label>
+                <input type="text" id="inputProdNombre" class="form-input" placeholder="Ej: GhaloCafe Geisha 250g" required>
+              </div>
+
+              <div class="form-group">
+                <label for="selectProdTipo"><i class="fa-solid fa-filter"></i> Tipo / Presentación</label>
+                <select id="selectProdTipo" class="form-select">
+                  <option value="MOLIDO">MOLIDO</option>
+                  <option value="GRANO">GRANO</option>
+                  <option value="PERGAMINO">PERGAMINO</option>
+                  <option value="INSUMO">INSUMO / EMPAQUE</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="inputProdGramos"><i class="fa-solid fa-weight-scale"></i> Gramaje (g)</label>
+                <input type="number" step="1" min="50" id="inputProdGramos" class="form-input" placeholder="Ej: 250" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputProdPrecio"><i class="fa-solid fa-dollar-sign"></i> Precio Venta ($)</label>
+                <input type="number" step="100" min="0" id="inputProdPrecio" class="form-input" placeholder="Ej: 45000" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputProdCosto"><i class="fa-solid fa-calculator"></i> Costo Estándar ($)</label>
+                <input type="number" step="100" min="0" id="inputProdCosto" class="form-input" placeholder="Ej: 22000">
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitProducto" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Crear Producto</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tabla Catálogo SKUs -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
+            <div>
+              <strong>Catálogo Maestro de Productos y Presentaciones (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla inv_products</span>
+            </div>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 60px;">ID</th>
+                  <th style="min-width: 120px;">SKU</th>
+                  <th style="min-width: 220px;">Nombre Comercial</th>
+                  <th style="min-width: 100px;">Tipo</th>
+                  <th style="min-width: 100px; text-align: center;">Gramaje</th>
+                  <th style="min-width: 120px; text-align: right;">Costo Estándar</th>
+                  <th style="min-width: 120px; text-align: right;">Precio Venta</th>
+                  <th style="min-width: 80px; text-align: center;">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInvProductsBody">
+                <tr><td colspan="8" style="text-align: center; padding: 2rem;">Cargando catálogo...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SUB-TAB 4: BODEGAS & ALMACENES ==================== -->
+      <div id="tab-inv-bodegas" class="inv-subtab-pane" style="display: none;">
+        <!-- Formulario Nueva Bodega -->
+        <div class="chart-card" style="margin-bottom: 1.5rem; border-left: 4px solid #8b5cf6;">
+          <div class="chart-header">
+            <div>
+              <h3><i class="fa-solid fa-warehouse" style="color: #8b5cf6;"></i> Registrar Nueva Bodega o Punto de Venta</h3>
+              <div class="chart-subtitle">Agrega puntos físicos a la red logística en Neon DB</div>
+            </div>
+          </div>
+
+          <form id="formRegistroBodega" onsubmit="handleGuardarBodega(event)" style="padding: 1rem 0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+              <div class="form-group">
+                <label for="inputBodegaNombre"><i class="fa-solid fa-store"></i> Nombre de la Bodega</label>
+                <input type="text" id="inputBodegaNombre" class="form-input" placeholder="Ej: Tienda Armenia" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputBodegaUbicacion"><i class="fa-solid fa-location-dot"></i> Ciudad / Ubicación</label>
+                <input type="text" id="inputBodegaUbicacion" class="form-input" placeholder="Ej: Armenia, Quindío - CC Portal">
+              </div>
+
+              <div class="form-group">
+                <label for="selectBodegaTipo"><i class="fa-solid fa-shapes"></i> Tipo de Ubicación</label>
+                <select id="selectBodegaTipo" class="form-select">
+                  <option value="STORE">Punto de Venta / Tienda</option>
+                  <option value="CENTRAL">Bodega Principal</option>
+                  <option value="FARM">Bodega en Finca</option>
+                </select>
+              </div>
+
+              <div>
+                <button type="submit" class="btn-primary" id="btnSubmitBodega" style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Crear Bodega</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tabla Bodegas -->
+        <div class="financial-table-wrapper">
+          <div class="table-toolbar">
+            <div>
+              <strong>Red de Bodegas y Centros de Distribución (Neon DB)</strong>
+              <span class="badge-tag" style="margin-left: 0.5rem;">Tabla inv_warehouses</span>
+            </div>
+          </div>
+          <div class="table-scroll-container">
+            <table class="financial-matrix">
+              <thead>
+                <tr>
+                  <th style="min-width: 60px;">ID</th>
+                  <th style="min-width: 180px;">Nombre</th>
+                  <th style="min-width: 200px;">Ubicación</th>
+                  <th style="min-width: 120px;">Tipo</th>
+                  <th style="min-width: 80px; text-align: center;">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tablaInvWarehousesBody">
+                <tr><td colspan="5" style="text-align: center; padding: 2rem;">Cargando bodegas...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div> <!-- Fin erp-inventory-view -->
 
   <!-- ==================== MODAL: NUEVA / EDITAR ACTIVIDAD ==================== -->
   <div class="modal-overlay" id="activityModalOverlay">

@@ -240,3 +240,4 @@ router.post('/bodega', async (req, res) => {
 });
 
 module.exports = router;
+
