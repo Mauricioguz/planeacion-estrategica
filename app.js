@@ -1651,12 +1651,23 @@ function switchErpModule(moduleId) {
     switchTab(activeView);
   } else if (moduleId === 'erp-hub-view') {
     // Portal de Aplicaciones
+  } else if (moduleId === 'erp-agricontrol-view') {
+    ensureIframeLoaded('agriIframe', '/modules/agri-control-bi/index.html');
   } else if (moduleId === 'erp-harvest-view') {
-    loadProductividadData();
+    ensureIframeLoaded('harvestIframe', 'https://control-productividad-app.onrender.com');
   } else if (moduleId === 'erp-ghalocafe-view') {
-    loadGhaloCafeData();
+    ensureIframeLoaded('ghaloIframe', 'https://sistema-ghalocafe.onrender.com');
   } else if (moduleId === 'erp-inventory-view') {
-    loadGhaloInvData();
+    ensureIframeLoaded('invIframe', 'https://ghaloinv-app.onrender.com');
+  }
+}
+
+function ensureIframeLoaded(iframeId, defaultUrl) {
+  const frame = document.getElementById(iframeId);
+  if (!frame) return;
+  const targetSrc = frame.dataset.src || defaultUrl;
+  if (!frame.src || frame.src === 'about:blank' || frame.src.endsWith('about:blank')) {
+    frame.src = targetSrc;
   }
 }
 
@@ -2994,14 +3005,23 @@ function unlockAppSuite() {
   const loginModal = document.getElementById('erp-login-modal');
   if (loginModal) loginModal.style.display = 'none';
 
-  // Cargar de forma segura iframe local de AgriControl BI
-  const agriFrame = document.getElementById('agriIframe');
-  if (agriFrame) {
-    const targetSrc = agriFrame.dataset.src || '/modules/agri-control-bi/index.html';
-    if (!agriFrame.src || agriFrame.src === 'about:blank' || agriFrame.src.endsWith('about:blank')) {
-      agriFrame.src = targetSrc;
+  // Cargar y precalentar de forma segura los iframes oficiales originales
+  const iframes = [
+    { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
+    { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com' },
+    { id: 'ghaloIframe', defaultUrl: 'https://sistema-ghalocafe.onrender.com' },
+    { id: 'invIframe', defaultUrl: 'https://ghaloinv-app.onrender.com' }
+  ];
+
+  iframes.forEach(item => {
+    const frame = document.getElementById(item.id);
+    if (frame) {
+      const targetSrc = frame.dataset.src || item.defaultUrl;
+      if (!frame.src || frame.src === 'about:blank' || frame.src.endsWith('about:blank')) {
+        frame.src = targetSrc;
+      }
     }
-  }
+  });
 
   initAppData();
   setupEventListeners();
@@ -3009,9 +3029,8 @@ function unlockAppSuite() {
   renderAll();
   checkBackendStatus();
   switchErpModule('erp-hub-view');
-  loadProductividadData();
-  loadGhaloCafeData();
-  loadGhaloInvData();
+  initSavedIframeUrls();
+  prewarmAllModules(true);
 }
 
 function lockAppSuite() {

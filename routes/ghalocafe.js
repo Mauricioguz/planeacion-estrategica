@@ -136,3 +136,4 @@ router.delete('/egresos/:id', async (req, res) => {
 });
 
 module.exports = router;
+
