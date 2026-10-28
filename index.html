@@ -249,7 +249,7 @@
             <button class="btn-primary" onclick="switchErpModule('erp-agricontrol-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="btn-secondary" title="Abrir AgriControl BI en pestaña externa">
+            <a href="/modules/agri-control-bi/index.html" target="_blank" class="btn-secondary" title="Abrir AgriControl BI en pestaña directa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -274,7 +274,7 @@
             <button class="btn-primary" onclick="switchErpModule('erp-harvest-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="btn-secondary" title="Abrir Control de Productividad en pestaña externa">
+            <a href="/modules/control-productividad/" target="_blank" class="btn-secondary" title="Abrir Control de Productividad en pestaña directa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -299,7 +299,7 @@
             <button class="btn-primary" onclick="switchErpModule('erp-ghalocafe-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="btn-secondary" title="Abrir Sistema GhaloCafe en pestaña externa">
+            <a href="/modules/ghalocafe/index.html" target="_blank" class="btn-secondary" title="Abrir Sistema GhaloCafe en pestaña directa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -324,7 +324,7 @@
             <button class="btn-primary" onclick="switchErpModule('erp-inventory-view')">
               <i class="fa-solid fa-eye"></i> Ver Módulo
             </button>
-            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="btn-secondary" title="Abrir GhaloInv en pestaña externa">
+            <a href="/modules/ghaloinv/index.html" target="_blank" class="btn-secondary" title="Abrir GhaloInv en pestaña directa">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
@@ -864,8 +864,8 @@
           </div>
 
           <div class="toolbar-center">
-            <a href="https://agri-control-bi.onrender.com/" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
-              <i class="fa-solid fa-lock"></i> agri-control-bi.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            <a href="/modules/agri-control-bi/index.html" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Módulo Nativo Consolidado (Neon DB) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
             </a>
           </div>
 
@@ -881,7 +881,7 @@
             </button>
           </div>
         </div>
-        <iframe id="agriIframe" src="about:blank" data-src="https://agri-control-bi.onrender.com/" class="embedded-iframe" title="AgriControl BI Live"></iframe>
+        <iframe id="agriIframe" src="about:blank" data-src="/modules/agri-control-bi/index.html" class="embedded-iframe" title="AgriControl BI Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Fichas y Paneles de Apoyo (Opcionales) -->
@@ -1106,8 +1106,8 @@
           </div>
 
           <div class="toolbar-center">
-            <a href="https://control-productividad-app.onrender.com/" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
-              <i class="fa-solid fa-lock"></i> control-productividad-app.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            <a href="/modules/control-productividad/" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-circle-check" style="color: #3b82f6;"></i> Módulo Nativo Consolidado (Neon DB) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
             </a>
           </div>
 
@@ -1123,7 +1123,7 @@
             </button>
           </div>
         </div>
-        <iframe id="harvestIframe" src="about:blank" data-src="https://control-productividad-app.onrender.com/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
+        <iframe id="harvestIframe" src="about:blank" data-src="/modules/control-productividad/" class="embedded-iframe" title="Control de Productividad Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas y Tablas de Respaldo Neon DB (Colapsable) -->
@@ -1318,8 +1318,8 @@
           </div>
 
           <div class="toolbar-center">
-            <a href="https://sistema-ghalocafe.onrender.com" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
-              <i class="fa-solid fa-lock"></i> sistema-ghalocafe.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            <a href="/modules/ghalocafe/index.html" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-circle-check" style="color: #f59e0b;"></i> Módulo Nativo Consolidado (Neon DB) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
             </a>
           </div>
 
@@ -1335,7 +1335,7 @@
             </button>
           </div>
         </div>
-        <iframe id="ghaloIframe" src="about:blank" data-src="https://sistema-ghalocafe.onrender.com" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
+        <iframe id="ghaloIframe" src="about:blank" data-src="/modules/ghalocafe/index.html" class="embedded-iframe" title="Sistema GhaloCafe Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Métricas de Stock y Catálogo (Colapsable) -->
@@ -1456,8 +1456,8 @@
           </div>
 
           <div class="toolbar-center">
-            <a href="https://ghaloinv-app.onrender.com" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
-              <i class="fa-solid fa-lock"></i> ghaloinv-app.onrender.com <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
+            <a href="/modules/ghaloinv/index.html" target="_blank" class="toolbar-url-link" title="Abrir en ventana independiente">
+              <i class="fa-solid fa-circle-check" style="color: #06b6d4;"></i> Módulo Nativo Consolidado (Neon DB) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; opacity: 0.7;"></i>
             </a>
           </div>
 
@@ -1473,7 +1473,7 @@
             </button>
           </div>
         </div>
-        <iframe id="invIframe" src="about:blank" data-src="https://ghaloinv-app.onrender.com" class="embedded-iframe" title="GhaloInv Live"></iframe>
+        <iframe id="invIframe" src="about:blank" data-src="/modules/ghaloinv/index.html" class="embedded-iframe" title="GhaloInv Live"></iframe>
       </div>
 
       <!-- Contenedor 2: Simulador Interactivo Local (Colapsable) -->

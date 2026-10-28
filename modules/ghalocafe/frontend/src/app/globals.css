@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #059669;
+  --color-primary-dark: #047857;
+  --color-secondary: #0F172A;
+  --color-accent: #D97706;
+  --color-muted: #F8FAFC;
+}
+
+:root {
+  --primary: #059669;
+  --secondary: #0F172A;
+  --accent: #D97706;
+}
+
+body {
+  background: #F8FAFC;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #0F172A;
+  min-height: 100vh;
+  font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif);
+}
+
+@layer components {
+  /* Premium Executive Card Styling */
+  .card-agro {
+    background: #FFFFFF;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    @apply p-6 rounded-2xl transition-all duration-300 hover:shadow-lg hover:border-emerald-200/80;
+  }
+
+  .card-agro-premium {
+    background: #FFFFFF;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.06), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+    @apply p-6 rounded-3xl transition-all duration-300 hover:shadow-xl hover:border-emerald-300/80;
+  }
+
+  .btn-primary {
+    @apply bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg hover:shadow-emerald-700/25 transition-all duration-300 font-semibold border border-emerald-600/30;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+  }
+
+  .glass-dark {
+    background: #0F172A;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 4px 0 24px 0 rgba(15, 23, 42, 0.2);
+    color: white;
+  }
+}
+
+/* Custom Scrollbar for better UI */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(5, 150, 105, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.8);
+}

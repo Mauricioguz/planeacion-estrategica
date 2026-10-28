@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriControl BI - Finca La Leonora</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Sistema inteligente de control agrícola, administración de lotes, planificación de actividades y recomendaciones agronómicas basadas en BI para Finca La Leonora.">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js and Lucide Icons CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <!-- SIDEBAR NAVIGATION -->
+    <aside>
+      <div class="brand">
+        <div class="brand-icon">
+          <i data-lucide="leaf"></i>
+        </div>
+        <div class="brand-name" style="font-size: 1.1rem;">La Leonora BI</div>
+      </div>
+      
+      <nav style="flex-grow: 1;">
+        <ul class="nav-menu">
+          <li>
+            <a class="nav-item active" data-section="dashboard">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard BI</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" data-section="lotes">
+              <i data-lucide="layers"></i>
+              <span>Lotes & Cultivos</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" data-section="agenda">
+              <i data-lucide="calendar"></i>
+              <span>Agenda Actividades</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" data-section="suelos">
+              <i data-lucide="microscope"></i>
+              <span>Estudios de Suelo</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" data-section="clima">
+              <i data-lucide="cloud-sun"></i>
+              <span>Clima & Temporadas</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div style="font-weight: 700; color: #fff;">Finca La Leonora</div>
+        <div style="font-size:0.7rem; opacity:0.6;">Fecha Sistema: <span id="current-time-lbl"></span></div>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main>
+      
+      <!-- TOP STATUS BAR & HEADER -->
+      <header>
+        <div class="header-title-section">
+          <h1 id="page-title">Finca La Leonora</h1>
+          <p id="page-subtitle">Control Avanzado Agrícola, Monitoreo de Suelos y Decisiones Basadas en Datos (BI).</p>
+        </div>
+        
+        <div class="header-widgets">
+          <!-- Weather season switch -->
+          <div class="weather-widget">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Temporada:</span>
+            <div class="weather-toggle">
+              <button id="btn-clima-sequia" class="weather-btn active sequia">
+                <i data-lucide="sun"></i> Sequía
+              </button>
+              <button id="btn-clima-lluvia" class="weather-btn lluvia">
+                <i data-lucide="cloud-rain"></i> Lluvias
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ==========================================================================
+           SECTION 1: DASHBOARD BI
+           ========================================================================== -->
+      <section id="dashboard-section" class="app-section active">
+        <div class="dashboard-grid">
+          
+          <!-- KPI Row -->
+          <div class="kpi-row">
+            <div class="kpi-card kpi-cumplimiento">
+              <div class="kpi-header">
+                <span>Tasa Cumplimiento</span>
+                <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
+              </div>
+              <div class="kpi-value" id="kpi-cumplimiento-val">0%</div>
+              <div class="kpi-desc">Actividades completadas del plan</div>
+            </div>
+            
+            <div class="kpi-card kpi-lotes">
+              <div class="kpi-header">
+                <span>Lotes Activos</span>
+                <div class="kpi-icon"><i data-lucide="grid"></i></div>
+              </div>
+              <div class="kpi-value" id="kpi-lotes-val">0</div>
+              <div class="kpi-desc">Sectores de cultivo registrados</div>
+            </div>
+            
+            <div class="kpi-card kpi-atrasadas">
+              <div class="kpi-header">
+                <span>Tareas Atrasadas</span>
+                <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
+              </div>
+              <div class="kpi-value" id="kpi-atrasadas-val">0</div>
+              <div class="kpi-desc">Requieren reprogramación urgente</div>
+            </div>
+            
+            <div class="kpi-card kpi-riesgo">
+              <div class="kpi-header">
+                <span>Riesgo Climático</span>
+                <div class="kpi-icon"><i data-lucide="gauge"></i></div>
+              </div>
+              <div class="kpi-value" id="kpi-riesgo-val">0%</div>
+              <div class="kpi-desc">Estrés hídrico o riesgo de hongo</div>
+            </div>
+          </div>
+
+          <!-- BI Visualizations & Recommendations Grid -->
+          <div class="vis-row">
+            <!-- Charts Section -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title"><i data-lucide="bar-chart-3"></i> Rendimiento e Insumos por Lote</h2>
+                <div class="card-actions">
+                  <button class="btn btn-secondary" onclick="applyFilters()"><i data-lucide="refresh-cw"></i> Refrescar</button>
+                </div>
+              </div>
+              
+              <div class="charts-grid">
+                <div>
+                  <h3 style="font-size:0.9rem; margin-bottom:10px; color:var(--text-muted);">Estado de Tareas por Lote</h3>
+                  <div class="chart-wrapper">
+                    <canvas id="chartProductividad"></canvas>
+                  </div>
+                </div>
+                <div>
+                  <h3 style="font-size:0.9rem; margin-bottom:10px; color:var(--text-muted);">Distribución de Labores</h3>
+                  <div class="chart-wrapper">
+                    <canvas id="chartDistribucion"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Intelligent Recommendations -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title" style="color: var(--accent-gold);"><i data-lucide="sparkles"></i> Sugerencias BI (Buenas Prácticas)</h2>
+              </div>
+              <div class="bi-recommendations-list" id="bi-recs-list">
+                <!-- Inyectado desde bi-engine.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Field Observations Analyzer Row -->
+          <div class="card" style="margin-top: 10px;">
+            <div class="card-header">
+              <h2 class="card-title" style="color: var(--accent-blue);"><i data-lucide="brain-circuit"></i> Analizador de Observaciones de Campo (BI)</h2>
+              <span class="badge stage-badge">Escaneo de Bitácora</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+              Este módulo inteligente escanea las bitácoras y observaciones registradas por los operarios para extraer alertas sanitarias y problemas en tiempo real.
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Lote</th>
+                    <th>Incidencia Identificada</th>
+                    <th>Estado de Alerta</th>
+                    <th>Observación de Campo del Operario</th>
+                    <th>Fecha Registro</th>
+                    <th>Reportado Por</th>
+                    <th>Actividad Origen</th>
+                  </tr>
+                </thead>
+                <tbody id="observation-alerts-body">
+                  <!-- Inyectado dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- ==========================================================================
+           SECTION 2: LOTES Y CULTIVOS
+           ========================================================================== -->
+      <section id="lotes-section" class="app-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h2 style="color:white; font-size:1.5rem;">Lotes de Cultivo</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Registra los sectores de la finca. Soporta hasta 2 cultivos por lote para policultivos.</p>
+          </div>
+          <button class="btn btn-primary" onclick="abrirModalLote()">
+            <i data-lucide="plus-circle"></i> Nuevo Lote
+          </button>
+        </div>
+
+        <div class="lotes-grid" id="lotes-container">
+          <!-- Inyectado desde app.js -->
+        </div>
+      </section>
+
+      <!-- ==========================================================================
+           SECTION 3: AGENDA DE ACTIVIDADES
+           ========================================================================== -->
+      <section id="agenda-section" class="app-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h2 style="color:white; font-size:1.5rem;">Bitácora de Labores</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Planifica las labores de la finca, dosifica adecuadamente, y reprograma de forma ágil.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-secondary" onclick="abrirModalPersonal()">
+              <i data-lucide="users"></i> Administrar Operarios
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalActividad()">
+              <i data-lucide="calendar-plus"></i> Programar Actividad
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter and Search Bar -->
+        <div class="filter-bar">
+          <div class="filter-controls">
+            <select id="filter-lote" class="filter-select" onchange="applyFilters()">
+              <option value="">Todos los Lotes</option>
+            </select>
+            <select id="filter-cumplida" class="filter-select" onchange="applyFilters()">
+              <option value="">Todos los Estados</option>
+              <option value="completadas">Cumplidas</option>
+              <option value="pendientes">Pendientes a futuro</option>
+              <option value="atrasadas">Atrasadas</option>
+            </select>
+            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por operario, notas..." oninput="applyFilters()">
+          </div>
+          <button class="btn btn-secondary" onclick="document.getElementById('search-activity').value=''; document.getElementById('filter-lote').value=''; document.getElementById('filter-cumplida').value=''; applyFilters();">
+            Limpiar Filtros
+          </button>
+        </div>
+
+        <!-- Activities Log Table -->
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">Ok</th>
+                <th>Actividad</th>
+                <th>Etapa</th>
+                <th>Insumo, Dosificación & Aplicación</th>
+                <th>Fecha & Responsable</th>
+                <th>Estado</th>
+                <th style="width: 180px; text-align: right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="agenda-table-body">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==========================================================================
+           SECTION 4: ESTUDIOS DE SUELO
+           ========================================================================== -->
+      <section id="suelos-section" class="app-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h2 style="color:white; font-size:1.5rem;">Estudios de Suelo y Análisis Químicos</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Sube las imágenes de tus reportes de laboratorio. Se deben realizar dos análisis al año.</p>
+          </div>
+          <button class="btn btn-primary" onclick="abrirModalSuelo()">
+            <i data-lucide="file-up"></i> Registrar Análisis de Suelo
+          </button>
+        </div>
+
+        <!-- Gallery grid -->
+        <div class="lotes-grid" id="suelos-container">
+          <!-- Inyectado desde app.js -->
+        </div>
+      </section>
+
+      <!-- ==========================================================================
+           SECTION 5: CLIMA Y TEMPORADAS
+           ========================================================================== -->
+      <section id="clima-section" class="app-section">
+        <div style="margin-bottom:24px;">
+          <h2 style="color:white; font-size:1.5rem;">Monitoreo Climático Finca</h2>
+          <p style="color:var(--text-muted); font-size:0.9rem;">El clima define las necesidades de riego y el riesgo de enfermedades foliares.</p>
+        </div>
+
+        <div class="climate-panel">
+          <!-- Big Weather Display -->
+          <div class="climate-status-card">
+            <div id="climate-panel-icon" class="climate-icon-big sequia">
+              <i data-lucide="sun"></i>
+            </div>
+            <h3 id="climate-panel-title" style="color:white; font-size:1.3rem; margin-bottom:8px;">Temporada de Sequía</h3>
+            <p id="climate-panel-desc" style="color:var(--text-muted); font-size:0.85rem; max-width:280px;">Riego crítico activo para evitar pérdida foliar.</p>
+            
+            <div class="weather-stats-grid">
+              <div class="weather-stat-box">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Temp. Promedio</div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <input type="number" id="climate-input-temp" class="form-control" style="width:60px; padding:4px 8px; text-align:center;" min="5" max="50">
+                  <span style="font-weight:600; color:white;">°C</span>
+                </div>
+              </div>
+              <div class="weather-stat-box">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Humedad Relativa</div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <input type="number" id="climate-input-hum" class="form-control" style="width:60px; padding:4px 8px; text-align:center;" min="0" max="100">
+                  <span style="font-weight:600; color:white;">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Climate Recommendations -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title" style="color: var(--accent-blue);"><i data-lucide="shield-alert"></i> Mitigación y Labores Recomendadas por Clima</h3>
+            </div>
+            <div class="bi-recommendations-list" id="clima-recs-list" style="max-height: 420px;">
+              <!-- Se inyecta filtrado por clima -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       MODALS SECTION
+       ========================================================================== -->
+       
+  <!-- Modal: Crear/Editar Lote -->
+  <div class="modal-overlay" id="lote-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="lote-modal-title">Nuevo Lote de Cultivo</h3>
+        <button class="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="lote-form">
+        <input type="hidden" id="lote-form-id">
+        
+        <div class="form-group">
+          <label for="lote-form-nombre">Nombre del Lote (Ej. El Roble) *</label>
+          <input type="text" id="lote-form-nombre" class="form-control" required placeholder="Ingrese el nombre identificador">
+        </div>
+        
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="lote-form-cultivo">Cultivo Principal *</label>
+            <input type="text" id="lote-form-cultivo" class="form-control" list="crop-suggestions" required placeholder="Ej. Café">
+          </div>
+          <div class="form-group">
+            <label for="lote-form-fecha">Fecha Siembra Cultivo Principal</label>
+            <input type="date" id="lote-form-fecha" class="form-control">
+          </div>
+        </div>
+        
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="lote-form-cultivo2">Cultivo Secundario (Opcional - Policultivo)</label>
+            <input type="text" id="lote-form-cultivo2" class="form-control" list="crop-suggestions" placeholder="Ej. Plátano">
+          </div>
+          <div class="form-group">
+            <label for="lote-form-fecha2">Fecha Siembra Cultivo Secundario</label>
+            <input type="date" id="lote-form-fecha2" class="form-control">
+          </div>
+        </div>
+        
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="lote-form-area">Área (Hectáreas) *</label>
+            <input type="number" id="lote-form-area" class="form-control" required step="0.1" min="0.1" placeholder="Ej. 2.5">
+          </div>
+          <div class="form-group">
+            <label for="lote-form-etapa">Etapa Vegetativa Actual</label>
+            <select id="lote-form-etapa" class="form-control">
+              <option value="Siembra">Siembra / Establecimiento</option>
+              <option value="Crecimiento">Crecimiento / Vegetativo</option>
+              <option value="Floración">Floración</option>
+              <option value="Fructificación">Fructificación</option>
+              <option value="Cosecha">Cosecha</option>
+            </select>
+          </div>
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Lote</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Crear/Editar Actividad -->
+  <div class="modal-overlay" id="act-modal">
+    <div class="modal-content" style="width: 550px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="act-modal-title">Programar Actividad</h3>
+        <button class="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="act-form">
+        <input type="hidden" id="act-form-id">
+        
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="act-form-lote">Lote Asociado *</label>
+            <select id="act-form-lote" class="form-control" required>
+              <!-- Dinámico -->
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="act-form-cultivo-objetivo">Cultivo Objetivo *</label>
+            <select id="act-form-cultivo-objetivo" class="form-control" required>
+              <!-- Dinámico -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="act-form-tipo">Tipo de Labor *</label>
+            <input type="text" id="act-form-tipo" class="form-control" list="labor-suggestions" required placeholder="Ej. Fertilización Foliar">
+          </div>
+
+          <div class="form-group">
+            <label for="act-form-producto">Insumo / Producto Utilizado</label>
+            <input type="text" id="act-form-producto" class="form-control" list="producto-suggestions" placeholder="Ej. NPK 15-15-15 o Glifosato">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="act-form-etapa">Etapa del Cultivo</label>
+            <select id="act-form-etapa" class="form-control">
+              <option value="Siembra">Siembra / Establecimiento</option>
+              <option value="Crecimiento">Crecimiento / Vegetativo</option>
+              <option value="Floración">Floración</option>
+              <option value="Fructificación">Fructificación</option>
+              <option value="Cosecha">Cosecha</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="act-form-dosificacion">Dosificación Prescrita</label>
+            <input type="text" id="act-form-dosificacion" class="form-control" list="dosificacion-suggestions" placeholder="Ej. 2 ml/L, 200g/árbol">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="act-form-metodo">Tipo de Aplicación</label>
+            <select id="act-form-metodo" class="form-control">
+              <option value="Foliar">Foliar (Líquida)</option>
+              <option value="Suelo / Piso">Suelo / Piso (Granulado/Sólido)</option>
+              <option value="Herbicida">Herbicida</option>
+              <option value="Riego / Fertirriego">Riego / Fertirriego</option>
+              <option value="Otro">Otro Método</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <div class="form-row-2" style="gap: 10px; margin-bottom: 0;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="act-form-cantidad">Cantidad Total</label>
+                <input type="number" id="act-form-cantidad" class="form-control" placeholder="Ej. 50">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="act-form-unidad">Unidad</label>
+                <select id="act-form-unidad" class="form-control">
+                  <option value="Kg">Kg</option>
+                  <option value="L">L</option>
+                  <option value="g">g</option>
+                  <option value="ml">ml</option>
+                  <option value="Sacos">Sacos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="act-form-fecha">Fecha Programada *</label>
+            <input type="date" id="act-form-fecha" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="act-form-personal">Personal Responsable *</label>
+            <input type="text" id="act-form-personal" class="form-control" list="personal-suggestions" required placeholder="Nombre de operario">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="act-form-notas">Observaciones y Notas de Campo (Se analizarán en el Dashboard)</label>
+          <textarea id="act-form-notas" class="form-control" rows="3" placeholder="Registre incidencias (maleza, plagas, deficiencias encontradas) o notas de aplicación..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Agendar Actividad</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Subir Análisis de Suelo -->
+  <div class="modal-overlay" id="suelo-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Subir Análisis de Suelo</h3>
+        <button class="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <form id="suelo-form">
+        
+        <div class="form-group">
+          <label for="suelo-form-lote">Lote Analizado *</label>
+          <select id="suelo-form-lote" class="form-control" required>
+            <!-- Dinámico -->
+          </select>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="suelo-form-titulo">Título / Descripción del Reporte *</label>
+            <input type="text" id="suelo-form-titulo" class="form-control" required placeholder="Ej. Análisis de Macronutrientes Semestral">
+          </div>
+          <div class="form-group">
+            <label for="suelo-form-fecha">Fecha del Análisis *</label>
+            <input type="date" id="suelo-form-fecha" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="suelo-form-imagen">Reporte de Laboratorio (Imagen o PDF) *</label>
+          <input type="file" id="suelo-form-imagen" accept="image/*,application/pdf" class="form-control" required>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Selecciona una imagen (PNG, JPG) o un archivo PDF para guardar el estudio.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="suelo-form-notas">Observaciones / Resultados Clave del Suelo</label>
+          <textarea id="suelo-form-notas" class="form-control" rows="3" placeholder="Ej. pH ácido (5.2), bajo nivel de Nitrógeno. Se sugiere enmienda."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Análisis</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Zoom de Imagen de Análisis -->
+  <div class="modal-overlay" id="zoom-modal">
+    <div class="modal-content" style="width: 700px; max-width: 95%;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="zoom-modal-title">Vista del Análisis</h3>
+        <button class="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <div style="text-align: center; max-height: 500px; overflow: auto; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px;">
+        <img id="zoom-modal-img" src="" alt="Análisis de Suelos" style="max-width: 100%; height: auto; border-radius: 6px;">
+      </div>
+      <div id="zoom-modal-desc" style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Administrar Operarios -->
+  <div class="modal-overlay" id="personal-modal">
+    <div class="modal-content" style="width: 450px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Administrar Operarios</h3>
+        <button class="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <div>
+        <div class="form-group" style="display:flex; gap:10px; margin-bottom: 20px;">
+          <input type="text" id="personal-new-name" class="form-control" placeholder="Nombre del nuevo operario...">
+          <button type="button" class="btn btn-primary" onclick="agregarNuevoPersonal()" style="display:flex; align-items:center; gap:6px;"><i data-lucide="plus"></i> Agregar</button>
+        </div>
+        
+        <h4 style="color:white; font-size:0.95rem; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:6px;">Personal Registrado</h4>
+        <div id="personal-list-container" style="max-height: 250px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
+          <!-- Se inyecta dinámicamente -->
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top:15px;">
+        <button type="button" class="btn btn-secondary modal-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATALISTS PARA SUGERENCIAS / AUTOCOMPLETADOS DINÁMICOS -->
+  <datalist id="crop-suggestions"></datalist>
+  <datalist id="labor-suggestions"></datalist>
+  <datalist id="personal-suggestions"></datalist>
+  <datalist id="producto-suggestions"></datalist>
+  <datalist id="dosificacion-suggestions"></datalist>
+
+  <!-- SCRIPTS IMPORT -->
+  <script src="bi-engine.js"></script>
+  <script src="app.js"></script>
+  
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
