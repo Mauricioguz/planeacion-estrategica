@@ -430,11 +430,11 @@
         
         <div class="form-row-2">
           <div class="form-group">
-            <label for="lote-form-nombre">Nombre del Lote (Ej. El Roble) *</label>
-            <input type="text" id="lote-form-nombre" class="form-control" required placeholder="Ingrese el nombre identificador">
+            <label for="lote-form-nombre">Nombre del Lote (Ej. Alejandra / Manuela) *</label>
+            <input type="text" id="lote-form-nombre" class="form-control" required placeholder="Ingrese el nombre del lote">
           </div>
           <div class="form-group">
-            <label for="lote-form-etapa">Etapa Vegetativa Actual</label>
+            <label for="lote-form-etapa">Etapa Vegetativa General</label>
             <select id="lote-form-etapa" class="form-control">
               <option value="Siembra">Siembra / Establecimiento</option>
               <option value="Crecimiento">Crecimiento / Vegetativo</option>
@@ -445,74 +445,144 @@
           </div>
         </div>
         
-        <!-- SECCIÓN: CULTIVO PRINCIPAL -->
-        <div style="background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-          <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="sprout" style="width: 16px; height: 16px;"></i> Cultivo Principal
+        <!-- SECCIÓN: SIEMBRA 1 / CULTIVO PRINCIPAL -->
+        <div style="background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="sprout" style="width: 16px; height: 16px;"></i> Siembra 1 (Cultivo Principal) *
+            </span>
+            <span style="font-size: 0.75rem; color: #34d399; font-weight: 600;" id="calc-preview-1-mini"></span>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="lote-form-cultivo">Cultivo Principal *</label>
-              <input type="text" id="lote-form-cultivo" class="form-control" list="crop-suggestions" required placeholder="Ej. Café">
+              <label for="lote-form-cultivo">Cultivo / Variedad *</label>
+              <input type="text" id="lote-form-cultivo" class="form-control" list="crop-suggestions" required placeholder="Ej. Café Castillo / Geisha">
             </div>
             <div class="form-group">
               <label for="lote-form-fecha">Fecha de Siembra</label>
               <input type="date" id="lote-form-fecha" class="form-control">
             </div>
           </div>
-          <div class="form-row-3" style="margin-top: 8px;">
+          <div class="form-row-2" style="margin-top: 6px;">
             <div class="form-group">
-              <label for="lote-form-arboles1" style="color: #a7f3d0;">Nº de Árboles / Matas</label>
-              <input type="number" id="lote-form-arboles1" class="form-control" min="0" step="1" placeholder="Ej. 14000">
+              <label for="lote-form-arboles1" style="color: #a7f3d0;">Nº Árboles Actuales Sembrados</label>
+              <input type="number" id="lote-form-arboles1" class="form-control" min="0" step="1" placeholder="Ej. 9984">
             </div>
             <div class="form-group">
+              <label for="lote-form-pendientes1" style="color: #fde68a;">Árboles Pendientes (Por Sembrar)</label>
+              <input type="number" id="lote-form-pendientes1" class="form-control" min="0" step="1" placeholder="Ej. 1500">
+            </div>
+          </div>
+          <div class="form-row-2" style="margin-top: 6px;">
+            <div class="form-group">
               <label for="lote-form-surco1" style="color: #a7f3d0;" title="Distancia entre surcos o calles en metros">Dist. Surcos (m)</label>
-              <input type="number" id="lote-form-surco1" class="form-control" min="0" step="0.05" placeholder="Ej. 1.50">
+              <input type="number" id="lote-form-surco1" class="form-control" min="0" step="0.05" placeholder="Ej. 1.45">
             </div>
             <div class="form-group">
               <label for="lote-form-planta1" style="color: #a7f3d0;" title="Distancia entre plantas del mismo surco en metros">Dist. Plantas (m)</label>
-              <input type="number" id="lote-form-planta1" class="form-control" min="0" step="0.05" placeholder="Ej. 1.20">
+              <input type="number" id="lote-form-planta1" class="form-control" min="0" step="0.05" placeholder="Ej. 1.25">
             </div>
           </div>
           <div id="calc-preview-1" style="font-size: 0.78rem; color: #34d399; margin-top: 8px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; display: none;"></div>
         </div>
 
-        <!-- SECCIÓN: CULTIVO SECUNDARIO (POLICULTIVO) -->
-        <div style="background: rgba(59, 130, 246, 0.07); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-          <div style="font-weight: 700; color: #60a5fa; font-size: 0.92rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="layers" style="width: 16px; height: 16px;"></i> Cultivo Secundario (Opcional - Policultivo)
+        <!-- SECCIÓN: SIEMBRA 2 / SEGUNDO CULTIVO O OTRA FECHA -->
+        <div style="background: rgba(59, 130, 246, 0.07); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: #60a5fa; font-size: 0.92rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="layers" style="width: 16px; height: 16px;"></i> Siembra 2 (Distinta Fecha / Segundo Cultivo)
+            </span>
+            <span style="font-size: 0.75rem; color: #93c5fd; font-weight: 600;" id="calc-preview-2-mini"></span>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="lote-form-cultivo2">Cultivo Secundario</label>
-              <input type="text" id="lote-form-cultivo2" class="form-control" list="crop-suggestions" placeholder="Ej. Plátano o Aguacate">
+              <label for="lote-form-cultivo2">Cultivo / Variedad</label>
+              <input type="text" id="lote-form-cultivo2" class="form-control" list="crop-suggestions" placeholder="Ej. Café (Lote Nuevo) o Plátano">
             </div>
             <div class="form-group">
               <label for="lote-form-fecha2">Fecha de Siembra</label>
               <input type="date" id="lote-form-fecha2" class="form-control">
             </div>
           </div>
-          <div class="form-row-3" style="margin-top: 8px;">
+          <div class="form-row-2" style="margin-top: 6px;">
             <div class="form-group">
-              <label for="lote-form-arboles2" style="color: #bfdbfe;">Nº de Árboles / Matas</label>
-              <input type="number" id="lote-form-arboles2" class="form-control" min="0" step="1" placeholder="Ej. 2500">
+              <label for="lote-form-arboles2" style="color: #bfdbfe;">Nº Árboles Actuales Sembrados</label>
+              <input type="number" id="lote-form-arboles2" class="form-control" min="0" step="1" placeholder="Ej. 5800">
             </div>
             <div class="form-group">
+              <label for="lote-form-pendientes2" style="color: #fde68a;">Árboles Pendientes (Por Sembrar)</label>
+              <input type="number" id="lote-form-pendientes2" class="form-control" min="0" step="1" placeholder="Ej. 1000">
+            </div>
+          </div>
+          <div class="form-row-2" style="margin-top: 6px;">
+            <div class="form-group">
               <label for="lote-form-surco2" style="color: #bfdbfe;" title="Distancia entre surcos o calles en metros">Dist. Surcos (m)</label>
-              <input type="number" id="lote-form-surco2" class="form-control" min="0" step="0.05" placeholder="Ej. 3.00">
+              <input type="number" id="lote-form-surco2" class="form-control" min="0" step="0.05" placeholder="Ej. 1.45">
             </div>
             <div class="form-group">
               <label for="lote-form-planta2" style="color: #bfdbfe;" title="Distancia entre plantas del mismo surco en metros">Dist. Plantas (m)</label>
-              <input type="number" id="lote-form-planta2" class="form-control" min="0" step="0.05" placeholder="Ej. 2.00">
+              <input type="number" id="lote-form-planta2" class="form-control" min="0" step="0.05" placeholder="Ej. 1.25">
             </div>
           </div>
           <div id="calc-preview-2" style="font-size: 0.78rem; color: #93c5fd; margin-top: 8px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; display: none;"></div>
         </div>
 
-        <!-- SECCIÓN: ÁREA Y ASISTENTE DE DENSIDAD DE SIEMBRA -->
-        <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-            <label for="lote-form-area" style="font-weight: 700; color: #fff; margin-bottom: 0;">Área Total del Lote (Hectáreas) *</label>
+        <!-- BOTÓN PARA DESPLEGAR SIEMBRA 3 -->
+        <div style="margin-bottom: 14px; text-align: right;">
+          <button type="button" class="btn btn-secondary" id="btn-toggle-siembra3" style="font-size: 0.78rem; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="plus-circle" style="width: 14px; height: 14px; color: #fbbf24;"></i>
+            <span id="btn-toggle-siembra3-lbl">+ Agregar 3ª Siembra / Policultivo</span>
+          </button>
+        </div>
+
+        <!-- SECCIÓN: SIEMBRA 3 / TERCER CULTIVO O OTRA ETAPA (DINÁMICO) -->
+        <div id="sec-siembra-3" style="display: none; background: rgba(245, 158, 11, 0.07); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+          <div style="font-weight: 700; color: #fbbf24; font-size: 0.92rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="sprout" style="width: 16px; height: 16px;"></i> Siembra 3 (Tercer Cultivo / Lote Adicional)
+            </span>
+            <span style="font-size: 0.75rem; color: #fde68a; font-weight: 600;" id="calc-preview-3-mini"></span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="lote-form-cultivo3">Cultivo / Variedad</label>
+              <input type="text" id="lote-form-cultivo3" class="form-control" list="crop-suggestions" placeholder="Ej. Aguacate Hass o Café Soca">
+            </div>
+            <div class="form-group">
+              <label for="lote-form-fecha3">Fecha de Siembra</label>
+              <input type="date" id="lote-form-fecha3" class="form-control">
+            </div>
+          </div>
+          <div class="form-row-2" style="margin-top: 6px;">
+            <div class="form-group">
+              <label for="lote-form-arboles3" style="color: #fde68a;">Nº Árboles Actuales Sembrados</label>
+              <input type="number" id="lote-form-arboles3" class="form-control" min="0" step="1" placeholder="Ej. 1200">
+            </div>
+            <div class="form-group">
+              <label for="lote-form-pendientes3" style="color: #fde68a;">Árboles Pendientes (Por Sembrar)</label>
+              <input type="number" id="lote-form-pendientes3" class="form-control" min="0" step="1" placeholder="Ej. 500">
+            </div>
+          </div>
+          <div class="form-row-2" style="margin-top: 6px;">
+            <div class="form-group">
+              <label for="lote-form-surco3" style="color: #fde68a;" title="Distancia entre surcos o calles en metros">Dist. Surcos (m)</label>
+              <input type="number" id="lote-form-surco3" class="form-control" min="0" step="0.05" placeholder="Ej. 6.00">
+            </div>
+            <div class="form-group">
+              <label for="lote-form-planta3" style="color: #fde68a;" title="Distancia entre plantas del mismo surco en metros">Dist. Plantas (m)</label>
+              <input type="number" id="lote-form-planta3" class="form-control" min="0" step="0.05" placeholder="Ej. 5.00">
+            </div>
+          </div>
+          <div id="calc-preview-3" style="font-size: 0.78rem; color: #fbbf24; margin-top: 8px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; display: none;"></div>
+        </div>
+
+        <!-- SECCIÓN: ÁREA Y ASISTENTE BI: CAPACIDAD INSTALADA VS TEÓRICA -->
+        <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-weight: 700; color: #fff; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: #34d399;"></i>
+              Área del Lote & Balance de Capacidad Teórica vs Real
+            </div>
             <div style="display: flex; gap: 6px;">
               <button type="button" class="btn btn-secondary" id="btn-calc-area" style="font-size: 0.75rem; padding: 4px 10px;" title="Calcular automáticamente el área ocupada según los árboles y sus distancias">
                 <i data-lucide="calculator" style="width: 14px; height: 14px;"></i> Auto-Calcular Área
@@ -522,15 +592,27 @@
               </button>
             </div>
           </div>
-          <input type="number" id="lote-form-area" class="form-control" required step="0.01" min="0.01" placeholder="Ej. 2.50">
 
-          <!-- Resumen dinámico de densidades -->
-          <div id="lote-densidad-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; font-size: 0.78rem;"></div>
+          <div class="form-row-2">
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label for="lote-form-area" style="font-weight: 700; color: #34d399;">Área Total del Lote (Hectáreas) *</label>
+              <input type="number" id="lote-form-area" class="form-control" required step="0.01" min="0.01" placeholder="Ej. 3.50">
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label for="lote-form-pendientes" style="font-weight: 700; color: #fbbf24;" title="Total de árboles pendientes o proyectados por sembrar en este lote">
+                Árboles Totales Pendientes (Por Sembrar)
+              </label>
+              <input type="number" id="lote-form-pendientes" class="form-control" min="0" step="1" placeholder="Ej. 2500">
+            </div>
+          </div>
+
+          <!-- Resumen dinámico BI de Capacidad y Densidades -->
+          <div id="lote-densidad-summary" style="margin-top: 10px;"></div>
         </div>
         
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
           <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Lote</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-lote">Guardar Lote</button>
         </div>
       </form>
     </div>

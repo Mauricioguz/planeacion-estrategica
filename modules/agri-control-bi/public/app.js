@@ -491,6 +491,7 @@ function updateClimatePanel() {
    ========================================================================== */
 function renderLotesGrid() {
   const grid = document.getElementById("lotes-container");
+  if (!grid) return;
   grid.innerHTML = "";
 
   if (STATE.lotes.length === 0) {
@@ -505,33 +506,58 @@ function renderLotesGrid() {
   }
 
   STATE.lotes.forEach(l => {
-    // Buscar insumos aplicados en la historia
     const actsLote = STATE.actividades.filter(a => a.loteId === l.id && a.cumplida && a.productoNombre);
     const prodNombres = [...new Set(actsLote.map(a => a.productoNombre))];
 
     const card = document.createElement("div");
     card.className = "lote-card";
     
-    // Tag de cultivos (principal y secundario)
+    // Tags de cultivos presentes
     let cropsHtml = `<span class="lote-crop">${escapeHtml(l.cultivo)}</span>`;
     if (l.cultivo2) {
       cropsHtml += `<span class="lote-crop" style="background: rgba(59,130,246,0.12); color: var(--accent-blue); margin-left: 5px;">${escapeHtml(l.cultivo2)}</span>`;
     }
+    if (l.cultivo3) {
+      cropsHtml += `<span class="lote-crop" style="background: rgba(245,158,11,0.12); color: #fbbf24; margin-left: 5px;">${escapeHtml(l.cultivo3)}</span>`;
+    }
 
-    // Datos agronómicos calculados
+    // Datos de Siembra 1
     const a1 = Number(l.arboles1 || 0);
     const s1 = Number(l.distanciaSurco1 || 0);
     const p1 = Number(l.distanciaPlanta1 || 0);
+    const pend1 = Number(l.arbolesPendientes1 || 0);
     const densTeor1 = (s1 > 0 && p1 > 0) ? Math.round(10000 / (s1 * p1)) : 0;
     const densReal1 = (a1 > 0 && l.area > 0) ? Math.round(a1 / l.area) : 0;
 
+    // Datos de Siembra 2
     const a2 = Number(l.arboles2 || 0);
     const s2 = Number(l.distanciaSurco2 || 0);
     const p2 = Number(l.distanciaPlanta2 || 0);
+    const pend2 = Number(l.arbolesPendientes2 || 0);
     const densTeor2 = (s2 > 0 && p2 > 0) ? Math.round(10000 / (s2 * p2)) : 0;
     const densReal2 = (a2 > 0 && l.area > 0) ? Math.round(a2 / l.area) : 0;
 
-    const totalArboles = a1 + a2;
+    // Datos de Siembra 3
+    const a3 = Number(l.arboles3 || 0);
+    const s3 = Number(l.distanciaSurco3 || 0);
+    const p3 = Number(l.distanciaPlanta3 || 0);
+    const pend3 = Number(l.arbolesPendientes3 || 0);
+    const densTeor3 = (s3 > 0 && p3 > 0) ? Math.round(10000 / (s3 * p3)) : 0;
+    const densReal3 = (a3 > 0 && l.area > 0) ? Math.round(a3 / l.area) : 0;
+
+    // Totales actuales y pendientes
+    const totalArbolesActuales = a1 + a2 + a3;
+    const totalPendientes = Number(l.arbolesPendientes || 0) || (pend1 + pend2 + pend3);
+    const totalProyectado = totalArbolesActuales + totalPendientes;
+
+    // Capacidad Teórica del lote (según marco dominante o promedio)
+    let densTeorDominante = densTeor1 > 0 ? densTeor1 : (densTeor2 > 0 ? densTeor2 : (densTeor3 > 0 ? densTeor3 : 0));
+    let capacidadTeorica = (densTeorDominante > 0 && l.area > 0) ? Math.round(densTeorDominante * l.area) : 0;
+
+    let pctInstalada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalArbolesActuales / capacidadTeorica) * 100)) : 0;
+    let pctProyectada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalProyectado / capacidadTeorica) * 100)) : 0;
+    let pctPendiente = Math.max(0, pctProyectada - pctInstalada);
+    let faltanteTeorico = capacidadTeorica > totalProyectado ? (capacidadTeorica - totalProyectado) : 0;
 
     card.innerHTML = `
       <div class="lote-header">
@@ -550,22 +576,65 @@ function renderLotesGrid() {
           <span class="lote-stat-val" style="color: #34d399;">${l.area} Ha</span>
         </div>
         <div class="lote-stat-item">
-          <span class="lote-stat-lbl">Total Árboles</span>
-          <span class="lote-stat-val" style="color: #fbbf24;">${totalArboles > 0 ? totalArboles.toLocaleString() + ' arb.' : 'Sin parametrizar'}</span>
+          <span class="lote-stat-lbl">Total Árboles Sembrados</span>
+          <span class="lote-stat-val" style="color: #fbbf24;">${totalArbolesActuales > 0 ? totalArbolesActuales.toLocaleString() + ' arb.' : 'Sin parametrizar'}</span>
         </div>
       </div>
 
-      <!-- Detalle Agronómico: Cultivo Principal -->
-      <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem;">
+      <!-- PANEL BI: CAPACIDAD INSTALADA VS TEÓRICA -->
+      <div class="lote-capacity-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; margin-bottom: 4px;">
+          <span style="color: #cbd5e1; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="gauge" style="width: 14px; height: 14px; color: #10b981;"></i> Capacidad del Lote:
+          </span>
+          <span style="font-weight: 700; color: ${pctInstalada >= 80 ? '#10b981' : '#f59e0b'};">
+            ${capacidadTeorica > 0 ? `${pctInstalada}% Instalada` : 'Densidad sin definir'}
+          </span>
+        </div>
+
+        ${capacidadTeorica > 0 ? `
+        <div class="lote-capacity-bar-container" title="Verde: Sembrados actuales (${pctInstalada}%) | Amarillo: Pendientes (${pctPendiente}%)">
+          <div class="lote-capacity-installed" style="width: ${pctInstalada}%;"></div>
+          <div class="lote-capacity-pending" style="width: ${pctPendiente}%;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 0.68rem; color: var(--text-muted); text-align: center; margin-top: 6px;">
+          <div style="background: rgba(16,185,129,0.1); padding: 3px 4px; border-radius: 6px;">
+            <div style="color: #34d399; font-weight: 700;">${totalArbolesActuales.toLocaleString()}</div>
+            <div>Sembrados</div>
+          </div>
+          <div style="background: rgba(245,158,11,0.1); padding: 3px 4px; border-radius: 6px;">
+            <div style="color: #fbbf24; font-weight: 700;">+${totalPendientes.toLocaleString()}</div>
+            <div>Pendientes</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); padding: 3px 4px; border-radius: 6px;">
+            <div style="color: #fff; font-weight: 700;">${capacidadTeorica.toLocaleString()}</div>
+            <div>Teórica Máx.</div>
+          </div>
+        </div>
+        ` : `
+        <div style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">
+          Ingresa distancias entre surcos y plantas para calcular la capacidad máxima instalada vs teórica.
+        </div>
+        `}
+      </div>
+
+      <!-- Detalle Agronómico: Siembra 1 (Cultivo Principal) -->
+      <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
           <strong style="color: #10b981;">🌱 ${escapeHtml(l.cultivo)}</strong>
           <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra ? 'Siembra: ' + escapeHtml(l.fechaSiembra) : 'Sin fecha'}</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
           <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Árboles / Matas:</span>
+            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
             <strong>${a1 > 0 ? a1.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
           </div>
+          ${pend1 > 0 ? `
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #fde68a;">Árboles Pendientes:</span>
+            <strong style="color: #fbbf24;">+${pend1.toLocaleString()} plantas</strong>
+          </div>` : ''}
           <div style="display: flex; justify-content: space-between;">
             <span style="color: var(--text-muted);">Dist. Siembra:</span>
             <span>${(s1 > 0 && p1 > 0) ? `${s1}m × ${p1}m (${(s1 * p1).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
@@ -577,18 +646,23 @@ function renderLotesGrid() {
         </div>
       </div>
 
-      <!-- Detalle Agronómico: Cultivo Secundario (si existe) -->
+      <!-- Detalle Agronómico: Siembra 2 (Segundo Cultivo o Distinta Fecha) -->
       ${l.cultivo2 ? `
-      <div style="background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem;">
+      <div style="background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
           <strong style="color: #60a5fa;">🌿 ${escapeHtml(l.cultivo2)}</strong>
           <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra2 ? 'Siembra: ' + escapeHtml(l.fechaSiembra2) : 'Sin fecha'}</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
           <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Árboles / Matas:</span>
+            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
             <strong>${a2 > 0 ? a2.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
           </div>
+          ${pend2 > 0 ? `
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #fde68a;">Árboles Pendientes:</span>
+            <strong style="color: #fbbf24;">+${pend2.toLocaleString()} plantas</strong>
+          </div>` : ''}
           <div style="display: flex; justify-content: space-between;">
             <span style="color: var(--text-muted);">Dist. Siembra:</span>
             <span>${(s2 > 0 && p2 > 0) ? `${s2}m × ${p2}m (${(s2 * p2).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
@@ -596,6 +670,35 @@ function renderLotesGrid() {
           <div style="display: flex; justify-content: space-between;">
             <span style="color: var(--text-muted);">Densidad:</span>
             <strong style="color: #60a5fa;">${densReal2 > 0 ? `${densReal2.toLocaleString()} pl/Ha (Real)` : (densTeor2 > 0 ? `${densTeor2.toLocaleString()} pl/Ha (Teórica)` : '<span style="color:var(--text-muted); font-weight:normal;">-</span>')}</strong>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Detalle Agronómico: Siembra 3 (Tercer Cultivo / Siembra Adicional) -->
+      ${l.cultivo3 ? `
+      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <strong style="color: #fbbf24;">🌾 ${escapeHtml(l.cultivo3)}</strong>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra3 ? 'Siembra: ' + escapeHtml(l.fechaSiembra3) : 'Sin fecha'}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
+            <strong>${a3 > 0 ? a3.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
+          </div>
+          ${pend3 > 0 ? `
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #fde68a;">Árboles Pendientes:</span>
+            <strong style="color: #fbbf24;">+${pend3.toLocaleString()} plantas</strong>
+          </div>` : ''}
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Dist. Siembra:</span>
+            <span>${(s3 > 0 && p3 > 0) ? `${s3}m × ${p3}m (${(s3 * p3).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Densidad:</span>
+            <strong style="color: #fbbf24;">${densReal3 > 0 ? `${densReal3.toLocaleString()} pl/Ha (Real)` : (densTeor3 > 0 ? `${densTeor3.toLocaleString()} pl/Ha (Teórica)` : '<span style="color:var(--text-muted); font-weight:normal;">-</span>')}</strong>
           </div>
         </div>
       </div>
@@ -609,88 +712,156 @@ function renderLotesGrid() {
             : '<span class="text-muted" style="font-size:0.75rem">Ninguno registrado</span>'}
         </div>
       </div>
-      <div class="lote-actions">
-        <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote y Parámetros Agrícolas"><i data-lucide="edit"></i></button>
-        <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash"></i></button>
+
+      <div class="lote-actions" style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote"><i data-lucide="edit-2"></i></button>
+        <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash-2"></i></button>
       </div>
     `;
     grid.appendChild(card);
   });
+
+  actualizarSelectorLoteRapido();
   if (window.lucide) lucide.createIcons();
 }
-
 // Actualización en tiempo real de cálculos en modal de lote
 function actualizarCalculosModalLote() {
   const arboles1 = parseInt(document.getElementById("lote-form-arboles1")?.value) || 0;
+  const pend1 = parseInt(document.getElementById("lote-form-pendientes1")?.value) || 0;
   const surco1 = parseFloat(document.getElementById("lote-form-surco1")?.value) || 0;
   const planta1 = parseFloat(document.getElementById("lote-form-planta1")?.value) || 0;
 
   const arboles2 = parseInt(document.getElementById("lote-form-arboles2")?.value) || 0;
+  const pend2 = parseInt(document.getElementById("lote-form-pendientes2")?.value) || 0;
   const surco2 = parseFloat(document.getElementById("lote-form-surco2")?.value) || 0;
   const planta2 = parseFloat(document.getElementById("lote-form-planta2")?.value) || 0;
 
+  const arboles3 = parseInt(document.getElementById("lote-form-arboles3")?.value) || 0;
+  const pend3 = parseInt(document.getElementById("lote-form-pendientes3")?.value) || 0;
+  const surco3 = parseFloat(document.getElementById("lote-form-surco3")?.value) || 0;
+  const planta3 = parseFloat(document.getElementById("lote-form-planta3")?.value) || 0;
+
   const area = parseFloat(document.getElementById("lote-form-area")?.value) || 0;
+
+  const inputPendientesGlobal = document.getElementById("lote-form-pendientes");
+  const sumaPendientes = pend1 + pend2 + pend3;
+  if (inputPendientesGlobal && sumaPendientes > 0 && !inputPendientesGlobal.value) {
+    inputPendientesGlobal.value = sumaPendientes;
+  }
+  const pendientesGlobal = parseInt(inputPendientesGlobal?.value) || sumaPendientes;
 
   // Cultivo 1 preview
   const prev1 = document.getElementById("calc-preview-1");
-  if (prev1) {
-    if (surco1 > 0 && planta1 > 0) {
-      const densTeor = Math.round(10000 / (surco1 * planta1));
-      const m2Planta = (surco1 * planta1).toFixed(2);
-      const areaOcupada = arboles1 > 0 ? (arboles1 / densTeor).toFixed(2) : null;
+  const prev1Mini = document.getElementById("calc-preview-1-mini");
+  let densTeor1 = 0;
+  if (surco1 > 0 && planta1 > 0) {
+    densTeor1 = Math.round(10000 / (surco1 * planta1));
+    const m2Planta = (surco1 * planta1).toFixed(2);
+    const areaOcupada = arboles1 > 0 ? (arboles1 / densTeor1).toFixed(2) : null;
+    if (prev1) {
       prev1.style.display = 'block';
-      prev1.innerHTML = `
-        <span>📐 Marco: <strong>${m2Planta} m²/planta</strong> &bull; Densidad teórica: <strong>${densTeor.toLocaleString()} pl/Ha</strong>${areaOcupada ? ` &bull; Área necesaria: <strong>${areaOcupada} Ha</strong>` : ''}</span>
-      `;
-    } else {
-      prev1.style.display = 'none';
+      prev1.innerHTML = '<span>📐 Marco: <strong>' + m2Planta + ' m²/pl</strong> &bull; Densidad teórica: <strong>' + densTeor1.toLocaleString() + ' pl/Ha</strong>' + (areaOcupada ? ' &bull; Área necesaria: <strong>' + areaOcupada + ' Ha</strong>' : '') + '</span>';
     }
+    if (prev1Mini) prev1Mini.textContent = densTeor1.toLocaleString() + ' pl/Ha teórica';
+  } else {
+    if (prev1) prev1.style.display = 'none';
+    if (prev1Mini) prev1Mini.textContent = '';
   }
 
   // Cultivo 2 preview
   const prev2 = document.getElementById("calc-preview-2");
-  if (prev2) {
-    if (surco2 > 0 && planta2 > 0) {
-      const densTeor2 = Math.round(10000 / (surco2 * planta2));
-      const m2Planta2 = (surco2 * planta2).toFixed(2);
-      const areaOcupada2 = arboles2 > 0 ? (arboles2 / densTeor2).toFixed(2) : null;
+  const prev2Mini = document.getElementById("calc-preview-2-mini");
+  let densTeor2 = 0;
+  if (surco2 > 0 && planta2 > 0) {
+    densTeor2 = Math.round(10000 / (surco2 * planta2));
+    const m2Planta2 = (surco2 * planta2).toFixed(2);
+    const areaOcupada2 = arboles2 > 0 ? (arboles2 / densTeor2).toFixed(2) : null;
+    if (prev2) {
       prev2.style.display = 'block';
-      prev2.innerHTML = `
-        <span>📐 Marco: <strong>${m2Planta2} m²/planta</strong> &bull; Densidad teórica: <strong>${densTeor2.toLocaleString()} pl/Ha</strong>${areaOcupada2 ? ` &bull; Área necesaria: <strong>${areaOcupada2} Ha</strong>` : ''}</span>
-      `;
-    } else {
-      prev2.style.display = 'none';
+      prev2.innerHTML = '<span>📐 Marco: <strong>' + m2Planta2 + ' m²/pl</strong> &bull; Densidad teórica: <strong>' + densTeor2.toLocaleString() + ' pl/Ha</strong>' + (areaOcupada2 ? ' &bull; Área necesaria: <strong>' + areaOcupada2 + ' Ha</strong>' : '') + '</span>';
     }
+    if (prev2Mini) prev2Mini.textContent = densTeor2.toLocaleString() + ' pl/Ha teórica';
+  } else {
+    if (prev2) prev2.style.display = 'none';
+    if (prev2Mini) prev2Mini.textContent = '';
   }
 
-  // Resumen del Lote
+  // Cultivo 3 preview
+  const prev3 = document.getElementById("calc-preview-3");
+  const prev3Mini = document.getElementById("calc-preview-3-mini");
+  let densTeor3 = 0;
+  if (surco3 > 0 && planta3 > 0) {
+    densTeor3 = Math.round(10000 / (surco3 * planta3));
+    const m2Planta3 = (surco3 * planta3).toFixed(2);
+    const areaOcupada3 = arboles3 > 0 ? (arboles3 / densTeor3).toFixed(2) : null;
+    if (prev3) {
+      prev3.style.display = 'block';
+      prev3.innerHTML = '<span>📐 Marco: <strong>' + m2Planta3 + ' m²/pl</strong> &bull; Densidad teórica: <strong>' + densTeor3.toLocaleString() + ' pl/Ha</strong>' + (areaOcupada3 ? ' &bull; Área necesaria: <strong>' + areaOcupada3 + ' Ha</strong>' : '') + '</span>';
+    }
+    if (prev3Mini) prev3Mini.textContent = densTeor3.toLocaleString() + ' pl/Ha teórica';
+  } else {
+    if (prev3) prev3.style.display = 'none';
+    if (prev3Mini) prev3Mini.textContent = '';
+  }
+
+  // Resumen del Lote BI: Capacidad Instalada vs Teórica
   const summary = document.getElementById("lote-densidad-summary");
   if (summary) {
-    let items = [];
-    if (area > 0) {
-      if (arboles1 > 0) {
-        const densReal1 = Math.round(arboles1 / area);
-        items.push(`<div style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 6px 10px;">
-          <div style="color: var(--text-muted); font-size: 0.7rem;">Densidad Real C1</div>
-          <strong style="color: #34d399;">${densReal1.toLocaleString()} pl/Ha</strong>
-        </div>`);
-      }
-      if (arboles2 > 0) {
-        const densReal2 = Math.round(arboles2 / area);
-        items.push(`<div style="background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 8px; padding: 6px 10px;">
-          <div style="color: var(--text-muted); font-size: 0.7rem;">Densidad Real C2</div>
-          <strong style="color: #60a5fa;">${densReal2.toLocaleString()} pl/Ha</strong>
-        </div>`);
-      }
-      const totalArboles = arboles1 + arboles2;
-      if (totalArboles > 0) {
-        items.push(`<div style="background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 10px;">
-          <div style="color: var(--text-muted); font-size: 0.7rem;">Total Plantas Lote</div>
-          <strong style="color: #fbbf24;">${totalArboles.toLocaleString()} arb.</strong>
-        </div>`);
-      }
-    }
-    summary.innerHTML = items.join('');
+    const totalArbolesActuales = arboles1 + arboles2 + arboles3;
+    const totalProyectado = totalArbolesActuales + pendientesGlobal;
+
+    let densTeorDominante = densTeor1 > 0 ? densTeor1 : (densTeor2 > 0 ? densTeor2 : (densTeor3 > 0 ? densTeor3 : 0));
+    let capacidadTeorica = (densTeorDominante > 0 && area > 0) ? Math.round(densTeorDominante * area) : 0;
+
+    let pctInstalada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalArbolesActuales / capacidadTeorica) * 100)) : 0;
+    let pctProyectada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalProyectado / capacidadTeorica) * 100)) : 0;
+    let pctPendiente = Math.max(0, pctProyectada - pctInstalada);
+    let espacioLibre = capacidadTeorica > totalProyectado ? (capacidadTeorica - totalProyectado) : 0;
+
+    let summaryHtml = `
+      <div style="background: rgba(0,0,0,0.35); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.82rem;">
+          <span style="font-weight: 700; color: #fff;">Diagnóstico de Capacidad del Lote:</span>
+          <span style="font-weight: 700; color: ${pctInstalada >= 80 ? '#10b981' : '#f59e0b'};">
+            ${capacidadTeorica > 0 ? pctInstalada + '% Capacidad Instalada' : 'Parametriza distancias y área'}
+          </span>
+        </div>
+
+        ${capacidadTeorica > 0 ? `
+        <div class="lote-capacity-bar-container" style="height: 10px; margin: 8px 0;">
+          <div class="lote-capacity-installed" style="width: ${pctInstalada}%;"></div>
+          <div class="lote-capacity-pending" style="width: ${pctPendiente}%;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; font-size: 0.76rem;">
+          <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 6px 10px;">
+            <div style="color: var(--text-muted); font-size: 0.7rem;">Árboles Actuales</div>
+            <strong style="color: #34d399; font-size: 0.9rem;">${totalArbolesActuales.toLocaleString()} arb.</strong>
+            <div style="font-size: 0.68rem; color: #a7f3d0;">${pctInstalada}% de capacidad</div>
+          </div>
+
+          <div style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 10px;">
+            <div style="color: var(--text-muted); font-size: 0.7rem;">Árboles Pendientes</div>
+            <strong style="color: #fbbf24; font-size: 0.9rem;">+${pendientesGlobal.toLocaleString()} arb.</strong>
+            <div style="font-size: 0.68rem; color: #fde68a;">${pctPendiente}% por sembrar</div>
+          </div>
+
+          <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); border-radius: 8px; padding: 6px 10px;">
+            <div style="color: var(--text-muted); font-size: 0.7rem;">Capacidad Teórica Máx.</div>
+            <strong style="color: #60a5fa; font-size: 0.9rem;">${capacidadTeorica.toLocaleString()} arb.</strong>
+            <div style="font-size: 0.68rem; color: #93c5fd;">${area} Ha @ ${densTeorDominante} pl/Ha</div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 10px;">
+            <div style="color: var(--text-muted); font-size: 0.7rem;">Espacio Disponible</div>
+            <strong style="color: ${espacioLibre > 0 ? '#fff' : '#ef4444'}; font-size: 0.9rem;">${espacioLibre > 0 ? espacioLibre.toLocaleString() + ' arb.' : 'Lote Completo'}</strong>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">Proyectado: ${pctProyectada}%</div>
+          </div>
+        </div>
+        ` : ''}
+      </div>
+    `;
+    summary.innerHTML = summaryHtml;
   }
 }
 
@@ -704,29 +875,25 @@ function calcularAreaAutomatica() {
   const surco2 = parseFloat(document.getElementById("lote-form-surco2")?.value) || 0;
   const planta2 = parseFloat(document.getElementById("lote-form-planta2")?.value) || 0;
 
-  let area1 = 0;
-  if (arboles1 > 0 && surco1 > 0 && planta1 > 0) {
-    area1 = (arboles1 * surco1 * planta1) / 10000;
-  }
+  const arboles3 = parseInt(document.getElementById("lote-form-arboles3")?.value) || 0;
+  const surco3 = parseFloat(document.getElementById("lote-form-surco3")?.value) || 0;
+  const planta3 = parseFloat(document.getElementById("lote-form-planta3")?.value) || 0;
 
-  let area2 = 0;
-  if (arboles2 > 0 && surco2 > 0 && planta2 > 0) {
-    area2 = (arboles2 * surco2 * planta2) / 10000;
-  }
+  const pend1 = parseInt(document.getElementById("lote-form-pendientes1")?.value) || 0;
+  const pend2 = parseInt(document.getElementById("lote-form-pendientes2")?.value) || 0;
+  const pend3 = parseInt(document.getElementById("lote-form-pendientes3")?.value) || 0;
 
-  // En policultivos intercalados el área dominante suele ser el cultivo principal
-  let areaFinal = 0;
-  if (area1 > 0 && area2 > 0) {
-    areaFinal = Math.max(area1, area2);
-  } else {
-    areaFinal = area1 || area2;
-  }
+  let area1 = (surco1 > 0 && planta1 > 0) ? ((arboles1 + pend1) * surco1 * planta1) / 10000 : 0;
+  let area2 = (surco2 > 0 && planta2 > 0) ? ((arboles2 + pend2) * surco2 * planta2) / 10000 : 0;
+  let area3 = (surco3 > 0 && planta3 > 0) ? ((arboles3 + pend3) * surco3 * planta3) / 10000 : 0;
+
+  let areaFinal = Math.max(area1, area2, area3);
 
   if (areaFinal > 0) {
     const areaRedondeada = (Math.round(areaFinal * 100) / 100).toFixed(2);
     document.getElementById("lote-form-area").value = areaRedondeada;
     actualizarCalculosModalLote();
-    showToast(`Área estimada calculada: ${areaRedondeada} Ha`);
+    showToast("Área estimada calculada: " + areaRedondeada + " Ha");
   } else {
     alert("Para auto-calcular el área, ingresa el Nº de árboles y las distancias entre surcos y plantas.");
   }
@@ -737,15 +904,37 @@ function estimarArbolesSegunArea() {
   const area = parseFloat(document.getElementById("lote-form-area")?.value) || 0;
   const surco1 = parseFloat(document.getElementById("lote-form-surco1")?.value) || 0;
   const planta1 = parseFloat(document.getElementById("lote-form-planta1")?.value) || 0;
+  const arboles1 = parseInt(document.getElementById("lote-form-arboles1")?.value) || 0;
 
   if (area > 0 && surco1 > 0 && planta1 > 0) {
     const densTeor = 10000 / (surco1 * planta1);
-    const arbolesEstimados = Math.round(area * densTeor);
-    document.getElementById("lote-form-arboles1").value = arbolesEstimados;
+    const arbolesTeoricosTotales = Math.round(area * densTeor);
+    
+    if (arboles1 > 0 && arbolesTeoricosTotales > arboles1) {
+      const faltantes = arbolesTeoricosTotales - arboles1;
+      document.getElementById("lote-form-pendientes1").value = faltantes;
+      document.getElementById("lote-form-pendientes").value = faltantes;
+      showToast("Capacidad: " + arbolesTeoricosTotales.toLocaleString() + " árboles. Se estimaron " + faltantes.toLocaleString() + " árboles pendientes por sembrar.");
+    } else {
+      document.getElementById("lote-form-arboles1").value = arbolesTeoricosTotales;
+      showToast("Estimados " + arbolesTeoricosTotales.toLocaleString() + " árboles teóricos (" + area + " Ha a " + surco1 + "m × " + planta1 + "m)");
+    }
     actualizarCalculosModalLote();
-    showToast(`Estimados ${arbolesEstimados.toLocaleString()} árboles para Cultivo Principal (${area} Ha a ${surco1}m × ${planta1}m)`);
   } else {
-    alert("Para estimar árboles, ingresa el Área (Ha) y las distancias entre surcos y plantas del Cultivo Principal.");
+    alert("Para estimar árboles, ingresa el Área (Ha) y las distancias entre surcos y plantas de la Siembra 1.");
+  }
+}
+
+function toggleSiembra3() {
+  const sec = document.getElementById("sec-siembra-3");
+  const lbl = document.getElementById("btn-toggle-siembra3-lbl");
+  if (!sec) return;
+  if (sec.style.display === "none" || !sec.style.display) {
+    sec.style.display = "block";
+    if (lbl) lbl.textContent = "Ocultar 3ª Siembra";
+  } else {
+    sec.style.display = "none";
+    if (lbl) lbl.textContent = "+ Agregar 3ª Siembra / Policultivo";
   }
 }
 
@@ -755,17 +944,34 @@ function abrirModalLote() {
   document.getElementById("lote-form-nombre").value = "";
   document.getElementById("lote-form-cultivo").value = "";
   document.getElementById("lote-form-cultivo2").value = "";
+  document.getElementById("lote-form-cultivo3").value = "";
   document.getElementById("lote-form-area").value = "";
   document.getElementById("lote-form-etapa").value = "Siembra";
   document.getElementById("lote-form-fecha").value = HOY;
   document.getElementById("lote-form-fecha2").value = "";
+  document.getElementById("lote-form-fecha3").value = "";
 
   document.getElementById("lote-form-arboles1").value = "";
+  document.getElementById("lote-form-pendientes1").value = "";
   document.getElementById("lote-form-surco1").value = "";
   document.getElementById("lote-form-planta1").value = "";
+
   document.getElementById("lote-form-arboles2").value = "";
+  document.getElementById("lote-form-pendientes2").value = "";
   document.getElementById("lote-form-surco2").value = "";
   document.getElementById("lote-form-planta2").value = "";
+
+  document.getElementById("lote-form-arboles3").value = "";
+  document.getElementById("lote-form-pendientes3").value = "";
+  document.getElementById("lote-form-surco3").value = "";
+  document.getElementById("lote-form-planta3").value = "";
+
+  document.getElementById("lote-form-pendientes").value = "";
+
+  const sec3 = document.getElementById("sec-siembra-3");
+  if (sec3) sec3.style.display = "none";
+  const lbl3 = document.getElementById("btn-toggle-siembra3-lbl");
+  if (lbl3) lbl3.textContent = "+ Agregar 3ª Siembra / Policultivo";
 
   actualizarCalculosModalLote();
   document.getElementById("lote-modal").classList.add("active");
@@ -781,17 +987,39 @@ function editarLote(id) {
   document.getElementById("lote-form-nombre").value = lote.nombre;
   document.getElementById("lote-form-cultivo").value = lote.cultivo;
   document.getElementById("lote-form-cultivo2").value = lote.cultivo2 || "";
+  document.getElementById("lote-form-cultivo3").value = lote.cultivo3 || "";
   document.getElementById("lote-form-area").value = lote.area;
   document.getElementById("lote-form-etapa").value = lote.etapa;
   document.getElementById("lote-form-fecha").value = lote.fechaSiembra || "";
   document.getElementById("lote-form-fecha2").value = lote.fechaSiembra2 || "";
+  document.getElementById("lote-form-fecha3").value = lote.fechaSiembra3 || "";
 
   document.getElementById("lote-form-arboles1").value = lote.arboles1 || "";
+  document.getElementById("lote-form-pendientes1").value = lote.arbolesPendientes1 || "";
   document.getElementById("lote-form-surco1").value = lote.distanciaSurco1 || "";
   document.getElementById("lote-form-planta1").value = lote.distanciaPlanta1 || "";
+
   document.getElementById("lote-form-arboles2").value = lote.arboles2 || "";
+  document.getElementById("lote-form-pendientes2").value = lote.arbolesPendientes2 || "";
   document.getElementById("lote-form-surco2").value = lote.distanciaSurco2 || "";
   document.getElementById("lote-form-planta2").value = lote.distanciaPlanta2 || "";
+
+  document.getElementById("lote-form-arboles3").value = lote.arboles3 || "";
+  document.getElementById("lote-form-pendientes3").value = lote.arbolesPendientes3 || "";
+  document.getElementById("lote-form-surco3").value = lote.distanciaSurco3 || "";
+  document.getElementById("lote-form-planta3").value = lote.distanciaPlanta3 || "";
+
+  document.getElementById("lote-form-pendientes").value = lote.arbolesPendientes || "";
+
+  const sec3 = document.getElementById("sec-siembra-3");
+  const lbl3 = document.getElementById("btn-toggle-siembra3-lbl");
+  if (lote.cultivo3 || Number(lote.arboles3) > 0) {
+    if (sec3) sec3.style.display = "block";
+    if (lbl3) lbl3.textContent = "Ocultar 3ª Siembra";
+  } else {
+    if (sec3) sec3.style.display = "none";
+    if (lbl3) lbl3.textContent = "+ Agregar 3ª Siembra / Policultivo";
+  }
 
   actualizarCalculosModalLote();
   document.getElementById("lote-modal").classList.add("active");
@@ -801,7 +1029,7 @@ function editarLote(id) {
 async function eliminarLote(id) {
   if (confirm("¿Estás seguro de eliminar este lote? Esto desasociará sus actividades de la vista general.")) {
     try {
-      const response = await fetch(`/api/lotes/${id}`, { method: 'DELETE' });
+      const response = await fetch('/api/lotes/' + id, { method: 'DELETE' });
       if (!response.ok) throw new Error("Error al eliminar lote");
       showToast("Lote y datos asociados eliminados.");
       await saveState();
@@ -880,11 +1108,17 @@ function actualizarSelectorLoteRapido() {
   const sel = document.getElementById("quick-act-lote");
   if (!sel) return;
   const curr = sel.value;
-  sel.innerHTML = "";
+  sel.innerHTML = '<option value="" disabled ' + (!curr ? 'selected' : '') + '>-- Selecciona un Lote --</option>';
   STATE.lotes.forEach(l => {
-    sel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + ' (' + escapeHtml(l.cultivo) + ')</option>';
+    const totalArb = (Number(l.arboles1 || 0) + Number(l.arboles2 || 0) + Number(l.arboles3 || 0));
+    const arbText = totalArb > 0 ? ' (' + totalArb.toLocaleString() + ' arb.)' : '';
+    sel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + ' [' + escapeHtml(l.cultivo) + (l.cultivo2 ? ' + ' + escapeHtml(l.cultivo2) : '') + '] - ' + l.area + ' Ha' + arbText + '</option>';
   });
-  if (curr && STATE.lotes.some(l => l.id === curr)) sel.value = curr;
+  if (curr && STATE.lotes.some(l => l.id === curr)) {
+    sel.value = curr;
+  } else if (STATE.lotes.length > 0) {
+    sel.value = STATE.lotes[0].id;
+  }
 }
 
 function duplicarActividad(id) {
@@ -1208,7 +1442,7 @@ function actualizarSelectoresActividad() {
   const originalLoteVal = loteSel.value;
   loteSel.innerHTML = "";
   STATE.lotes.forEach(l => {
-    loteSel.innerHTML += `<option value="${l.id}">${l.nombre} (${l.cultivo})</option>`;
+    loteSel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + ' (' + escapeHtml(l.cultivo) + ')</option>';
   });
 
   if (originalLoteVal && STATE.lotes.some(l => l.id === originalLoteVal)) {
@@ -1222,16 +1456,20 @@ function actualizarSelectoresActividad() {
   const objSel = document.getElementById("act-form-cultivo-objetivo");
   objSel.innerHTML = "";
   if (lote) {
-    objSel.innerHTML += `<option value="${escapeHtml(lote.cultivo)}">${escapeHtml(lote.cultivo)} (Principal)</option>`;
+    objSel.innerHTML += '<option value="' + escapeHtml(lote.cultivo) + '">' + escapeHtml(lote.cultivo) + ' (Principal)</option>';
     if (lote.cultivo2) {
-      objSel.innerHTML += `<option value="${escapeHtml(lote.cultivo2)}">${escapeHtml(lote.cultivo2)} (Secundario)</option>`;
-      objSel.innerHTML += `<option value="Ambos Cultivos">Ambos Cultivos</option>`;
+      objSel.innerHTML += '<option value="' + escapeHtml(lote.cultivo2) + '">' + escapeHtml(lote.cultivo2) + ' (Siembra 2)</option>';
+    }
+    if (lote.cultivo3) {
+      objSel.innerHTML += '<option value="' + escapeHtml(lote.cultivo3) + '">' + escapeHtml(lote.cultivo3) + ' (Siembra 3)</option>';
+    }
+    if (lote.cultivo2 || lote.cultivo3) {
+      objSel.innerHTML += '<option value="Ambos Cultivos">Todos los Cultivos</option>';
     }
   } else {
-    objSel.innerHTML = `<option value="">Seleccione Lote primero</option>`;
+    objSel.innerHTML = '<option value="">Seleccione Lote primero</option>';
   }
 }
-
 function editarActividad(id) {
   const act = STATE.actividades.find(a => a.id === id);
   if (!act) return;
@@ -1451,11 +1689,15 @@ function setupFormsAndModals() {
   document.getElementById("act-form-lote").addEventListener("change", actualizarSelectoresActividad);
 
   // Escuchar inputs del lote para cálculos en vivo de densidad y área
-  const inputsCalculosLote = [
-    "lote-form-arboles1", "lote-form-surco1", "lote-form-planta1",
-    "lote-form-arboles2", "lote-form-surco2", "lote-form-planta2",
-    "lote-form-area"
-  ];
+    const inputsCalculosLote = [
+      "lote-form-arboles1", "lote-form-surco1", "lote-form-planta1", "lote-form-pendientes1",
+      "lote-form-arboles2", "lote-form-surco2", "lote-form-planta2", "lote-form-pendientes2",
+      "lote-form-arboles3", "lote-form-surco3", "lote-form-planta3", "lote-form-pendientes3",
+      "lote-form-area", "lote-form-pendientes"
+    ];
+
+    const btnToggleS3 = document.getElementById("btn-toggle-siembra3");
+    if (btnToggleS3) btnToggleS3.addEventListener("click", toggleSiembra3);
   inputsCalculosLote.forEach(inpId => {
     const el = document.getElementById(inpId);
     if (el) el.addEventListener("input", actualizarCalculosModalLote);
@@ -1474,18 +1716,29 @@ function setupFormsAndModals() {
     const nombre = document.getElementById("lote-form-nombre").value.trim();
     const cultivo = document.getElementById("lote-form-cultivo").value.trim();
     const cultivo2 = document.getElementById("lote-form-cultivo2").value.trim();
+    const cultivo3 = document.getElementById("lote-form-cultivo3").value.trim();
     const area = parseFloat(document.getElementById("lote-form-area").value);
     const etapa = document.getElementById("lote-form-etapa").value;
     const fecha = document.getElementById("lote-form-fecha").value;
     const fecha2 = document.getElementById("lote-form-fecha2").value;
+    const fecha3 = document.getElementById("lote-form-fecha3").value;
 
     const arboles1 = parseInt(document.getElementById("lote-form-arboles1").value) || 0;
     const distanciaSurco1 = parseFloat(document.getElementById("lote-form-surco1").value) || 0;
     const distanciaPlanta1 = parseFloat(document.getElementById("lote-form-planta1").value) || 0;
+    const arbolesPendientes1 = parseInt(document.getElementById("lote-form-pendientes1").value) || 0;
 
     const arboles2 = parseInt(document.getElementById("lote-form-arboles2").value) || 0;
     const distanciaSurco2 = parseFloat(document.getElementById("lote-form-surco2").value) || 0;
     const distanciaPlanta2 = parseFloat(document.getElementById("lote-form-planta2").value) || 0;
+    const arbolesPendientes2 = parseInt(document.getElementById("lote-form-pendientes2").value) || 0;
+
+    const arboles3 = parseInt(document.getElementById("lote-form-arboles3").value) || 0;
+    const distanciaSurco3 = parseFloat(document.getElementById("lote-form-surco3").value) || 0;
+    const distanciaPlanta3 = parseFloat(document.getElementById("lote-form-planta3").value) || 0;
+    const arbolesPendientes3 = parseInt(document.getElementById("lote-form-pendientes3").value) || 0;
+
+    const arbolesPendientes = parseInt(document.getElementById("lote-form-pendientes").value) || (arbolesPendientes1 + arbolesPendientes2 + arbolesPendientes3);
 
     if (!nombre || !cultivo || !area) {
       alert("Por favor completa los campos obligatorios (Nombre, Cultivo Principal y Área).");
@@ -1493,22 +1746,24 @@ function setupFormsAndModals() {
     }
 
     const payload = {
-      nombre, cultivo, cultivo2, area, etapa,
-      fechaSiembra: fecha, fechaSiembra2: fecha2,
-      arboles1, distanciaSurco1, distanciaPlanta1,
-      arboles2, distanciaSurco2, distanciaPlanta2
+      nombre, cultivo, cultivo2, cultivo3, area, etapa,
+      fechaSiembra: fecha, fechaSiembra2: fecha2, fechaSiembra3: fecha3,
+      arboles1, distanciaSurco1, distanciaPlanta1, arbolesPendientes1,
+      arboles2, distanciaSurco2, distanciaPlanta2, arbolesPendientes2,
+      arboles3, distanciaSurco3, distanciaPlanta3, arbolesPendientes3,
+      arbolesPendientes
     };
 
     try {
       if (id) {
-        const response = await fetch(`/api/lotes/${id}`, {
+        const response = await fetch('/api/lotes/' + id, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         if (!response.ok) throw new Error("Error al actualizar lote");
       } else {
-        const nuevoId = `lote-${Date.now()}`;
+        const nuevoId = 'lote-' + Date.now();
         const response = await fetch('/api/lotes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1519,13 +1774,13 @@ function setupFormsAndModals() {
 
       document.getElementById("lote-modal").classList.remove("active");
       await saveState();
+      actualizarSelectorLoteRapido();
       showToast("Lote de cultivo guardado correctamente.");
     } catch (err) {
       console.error(err);
       alert("Error al guardar el lote.");
     }
   });
-
   // Submit Actividad
   document.getElementById("act-form").addEventListener("submit", async (e) => {
     e.preventDefault();

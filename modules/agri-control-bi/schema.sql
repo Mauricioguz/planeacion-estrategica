@@ -6,16 +6,26 @@ CREATE TABLE IF NOT EXISTS lotes (
   nombre VARCHAR(100) NOT NULL,
   cultivo VARCHAR(100) NOT NULL,
   cultivo2 VARCHAR(100),
+  cultivo3 VARCHAR(100),
   area NUMERIC(5,2) NOT NULL,
   etapa VARCHAR(50) NOT NULL,
+  etapa3 VARCHAR(50),
   fecha_siembra VARCHAR(20),
   fecha_siembra2 VARCHAR(20),
+  fecha_siembra3 VARCHAR(20),
   arboles1 INTEGER DEFAULT 0,
   distancia_surco1 NUMERIC(5,2) DEFAULT 0,
   distancia_planta1 NUMERIC(5,2) DEFAULT 0,
   arboles2 INTEGER DEFAULT 0,
   distancia_surco2 NUMERIC(5,2) DEFAULT 0,
-  distancia_planta2 NUMERIC(5,2) DEFAULT 0
+  distancia_planta2 NUMERIC(5,2) DEFAULT 0,
+  arboles3 INTEGER DEFAULT 0,
+  distancia_surco3 NUMERIC(5,2) DEFAULT 0,
+  distancia_planta3 NUMERIC(5,2) DEFAULT 0,
+  arboles_pendientes INTEGER DEFAULT 0,
+  arboles_pendientes1 INTEGER DEFAULT 0,
+  arboles_pendientes2 INTEGER DEFAULT 0,
+  arboles_pendientes3 INTEGER DEFAULT 0
 );
 
 -- Tabla de Actividades
