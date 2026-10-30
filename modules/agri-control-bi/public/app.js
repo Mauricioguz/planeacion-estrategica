@@ -815,21 +815,122 @@ async function eliminarLote(id) {
 /* ==========================================================================
    AGENDA DE ACTIVIDADES & DOSIFICACIÓN INTELIGENTE
    ========================================================================== */
+
+/* ==========================================================================
+   GESTIÓN DINÁMICA DE AGENDA: VISTAS (TARJETAS / TABLA) & AGENDADO EXPRÉS
+   ========================================================================== */
+let currentAgendaView = 'cards';
+
+function switchAgendaView(mode) {
+  currentAgendaView = mode;
+  const cardsContainer = document.getElementById("agenda-cards-container");
+  const tableWrapper = document.getElementById("agenda-table-wrapper");
+  const btnCards = document.getElementById("btn-view-cards");
+  const btnTable = document.getElementById("btn-view-table");
+
+  if (!cardsContainer || !tableWrapper) return;
+
+  if (mode === 'cards') {
+    cardsContainer.style.display = 'grid';
+    tableWrapper.style.display = 'none';
+    if (btnCards) {
+      btnCards.style.background = 'rgba(16, 185, 129, 0.2)';
+      btnCards.style.color = '#34d399';
+    }
+    if (btnTable) {
+      btnTable.style.background = 'transparent';
+      btnTable.style.color = 'var(--text-muted)';
+    }
+  } else {
+    cardsContainer.style.display = 'none';
+    tableWrapper.style.display = 'block';
+    if (btnTable) {
+      btnTable.style.background = 'rgba(16, 185, 129, 0.2)';
+      btnTable.style.color = '#34d399';
+    }
+    if (btnCards) {
+      btnCards.style.background = 'transparent';
+      btnCards.style.color = 'var(--text-muted)';
+    }
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function selectQuickLabor(labor, cultivo, etapa) {
+  const inpTipo = document.getElementById("quick-act-tipo");
+  if (inpTipo) inpTipo.value = labor;
+  const loteSel = document.getElementById("quick-act-lote");
+  if (loteSel && !loteSel.value && loteSel.options.length > 0) {
+    loteSel.selectedIndex = 0;
+  }
+  showToast('Labor rápida "' + labor + '" seleccionada.');
+}
+
+function fillModalLabor(labor, cultivo, etapa) {
+  const tipoInp = document.getElementById("act-form-tipo");
+  if (tipoInp) tipoInp.value = labor;
+  if (etapa) {
+    const etapaSel = document.getElementById("act-form-etapa");
+    if (etapaSel) etapaSel.value = etapa;
+  }
+  showToast('Labor "' + labor + '" autocompletada.');
+}
+
+function actualizarSelectorLoteRapido() {
+  const sel = document.getElementById("quick-act-lote");
+  if (!sel) return;
+  const curr = sel.value;
+  sel.innerHTML = "";
+  STATE.lotes.forEach(l => {
+    sel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + ' (' + escapeHtml(l.cultivo) + ')</option>';
+  });
+  if (curr && STATE.lotes.some(l => l.id === curr)) sel.value = curr;
+}
+
+function duplicarActividad(id) {
+  const act = STATE.actividades.find(a => a.id === id);
+  if (!act) return;
+
+  document.getElementById("act-modal-title").textContent = "Duplicar Actividad / Programar Siguiente";
+  document.getElementById("act-form-id").value = "";
+  document.getElementById("act-form-lote").value = act.loteId;
+  actualizarSelectoresActividad();
+  document.getElementById("act-form-cultivo-objetivo").value = act.cultivoObjetivo || "";
+  document.getElementById("act-form-tipo").value = act.tipo;
+  document.getElementById("act-form-producto").value = act.productoNombre || "";
+  document.getElementById("act-form-fecha").value = HOY;
+  document.getElementById("act-form-personal").value = act.personal;
+  document.getElementById("act-form-etapa").value = act.etapa;
+  document.getElementById("act-form-dosificacion").value = act.dosificacion || "";
+  document.getElementById("act-form-metodo").value = act.metodo || "Foliar";
+  document.getElementById("act-form-cantidad").value = act.cantidad || "";
+  document.getElementById("act-form-unidad").value = act.unidad || "Kg";
+  document.getElementById("act-form-notas").value = act.notas || "";
+
+  const rNo = document.getElementById("act-form-cumplida-no");
+  if (rNo) rNo.checked = true;
+
+  document.getElementById("act-modal").classList.add("active");
+  showToast("📋 Datos copiados. Ajusta la fecha u operario y guarda con 1 clic.");
+}
+
 function renderAgendaTable() {
   const tbody = document.getElementById("agenda-table-body");
-  tbody.innerHTML = "";
+  const cardsContainer = document.getElementById("agenda-cards-container");
+  if (tbody) tbody.innerHTML = "";
+  if (cardsContainer) cardsContainer.innerHTML = "";
 
-  const filterLote = document.getElementById("filter-lote").value;
-  const filterCumplida = document.getElementById("filter-cumplida").value;
-  const searchQuery = document.getElementById("search-activity").value.toLowerCase();
+  const filterLote = document.getElementById("filter-lote")?.value || "";
+  const filterCumplida = document.getElementById("filter-cumplida")?.value || "";
+  const searchQuery = (document.getElementById("search-activity")?.value || "").toLowerCase();
 
   const filtradas = STATE.actividades.filter(a => {
     const loteObj = STATE.lotes.find(l => l.id === a.loteId);
     const loteNombre = loteObj ? loteObj.nombre.toLowerCase() : "";
     const notesText = a.notas ? a.notas.toLowerCase() : "";
-    const tipoText = a.tipo.toLowerCase();
-    const personalText = a.personal.toLowerCase();
-    const prodText = a.productoNombre ? a.productoNombre.toLowerCase() : "";
+    const tipoText = (a.tipo || "").toLowerCase();
+    const personalText = (a.personal || "").toLowerCase();
+    const prodText = (a.productoNombre || "").toLowerCase();
 
     if (filterLote && a.loteId !== filterLote) return false;
     
@@ -852,88 +953,173 @@ function renderAgendaTable() {
   filtradas.sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   if (filtradas.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-center" style="padding:40px 0;">
-          <div class="empty-state">
-            <i data-lucide="calendar-x"></i>
-            <p>No se encontraron actividades planificadas.</p>
-          </div>
-        </td>
-      </tr>
-    `;
+    const emptyMsg = '<div class="empty-state" style="padding:40px 20px; text-align:center;"><i data-lucide="calendar-x" style="width:40px; height:40px; color:var(--text-muted); margin-bottom:12px;"></i><p style="color:var(--text-muted);">No se encontraron actividades planificadas con los filtros seleccionados.</p></div>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center">' + emptyMsg + '</td></tr>';
+    if (cardsContainer) cardsContainer.innerHTML = '<div style="grid-column: 1 / -1;">' + emptyMsg + '</div>';
     if (window.lucide) lucide.createIcons();
     return;
   }
 
   filtradas.forEach(a => {
     const lote = STATE.lotes.find(l => l.id === a.loteId);
-    const loteNombre = lote ? lote.nombre : "Lote Desconocido";
-    
+    const loteNombre = lote ? lote.nombre : "Lote";
+    const esAtrasada = !a.cumplida && a.fecha < HOY;
+    const esHoy = a.fecha === HOY;
+
     let badgeClass = "badge-pendiente";
     let badgeText = "Pendiente";
     if (a.cumplida) {
       badgeClass = "badge-cumplida";
       badgeText = "Cumplida";
-    } else if (a.fecha < HOY) {
+    } else if (esAtrasada) {
       badgeClass = "badge-atrasada";
       badgeText = "Atrasada";
     }
 
-    // Formatear dosificación e insumo
+    // Insumos formateados
     let insumosHtml = '<span class="text-muted" style="font-size:0.8rem">N/A</span>';
     if (a.productoNombre) {
-      insumosHtml = `
-        <div><strong>${a.productoNombre}</strong></div>
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-          Aplicación: ${a.metodo} | Dosis: ${a.dosificacion || 'Sin especificar'}
-        </div>
-        ${a.cantidad > 0 ? `<div style="font-size:0.7rem; opacity:0.8; color:var(--primary);">Volumen Total: ${a.cantidad} ${a.unidad}</div>` : ""}
-      `;
+      insumosHtml = '<div><strong>' + escapeHtml(a.productoNombre) + '</strong></div>' +
+        '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' +
+        'Aplicación: ' + escapeHtml(a.metodo || 'Foliar') + ' | Dosis: ' + escapeHtml(a.dosificacion || 'Sin especificar') +
+        '</div>' +
+        (a.cantidad > 0 ? '<div style="font-size:0.7rem; opacity:0.8; color:var(--primary);">Volumen Total: ' + a.cantidad + ' ' + escapeHtml(a.unidad || 'Kg') + '</div>' : '');
     }
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="text-align: center; vertical-align: middle;">
-        <button class="btn-icon-only" onclick="toggleActivityStatus('${a.id}')" title="Cambiar estado de cumplimiento" style="background: none; border: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">
-          <i data-lucide="${a.cumplida ? 'check-circle' : 'circle'}" style="color: ${a.cumplida ? 'var(--primary)' : 'rgba(255,255,255,0.25)'}; width: 22px; height: 22px;"></i>
-        </button>
-      </td>
-      <td>
-        <strong>${a.tipo}</strong> <span style="font-size:0.72rem; color:var(--accent-gold); font-weight:600; margin-left:4px;">(${a.cultivoObjetivo || 'Ambos'})</span>
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Lote: ${loteNombre}</div>
-      </td>
-      <td><span class="badge stage-badge">${a.etapa}</span></td>
-      <td>${insumosHtml}</td>
-      <td>
-        <div style="font-weight: 500; ${!a.cumplida && a.fecha < HOY ? 'color: var(--danger)' : ''}">${a.fecha}</div>
-        <div style="font-size:0.75rem; color:var(--text-muted);">${a.personal}</div>
-      </td>
-      <td>
-        <span class="badge ${badgeClass}" onclick="toggleActivityStatus('${a.id}')" style="cursor: pointer;" title="Haga clic para cambiar estado">${badgeText}</span>
-      </td>
-      <td>
-        <div class="action-controls">
-          <button class="btn-icon-only" onclick="reprogramarDias('${a.id}', -2)" title="Adelantar 2 días"><i data-lucide="chevron-left"></i></button>
-          <button class="btn-icon-only" onclick="reprogramarDias('${a.id}', 2)" title="Postergar 2 días"><i data-lucide="chevron-right"></i></button>
-          <button class="btn-icon-only" onclick="editarActividad('${a.id}')" title="Editar"><i data-lucide="edit-2"></i></button>
-          <button class="btn-icon-only text-danger" onclick="eliminarActividad('${a.id}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+    // 1. RENDERIZADO EN TARJETA VISUAL (VISTA PRINCIPAL)
+    if (cardsContainer) {
+      const card = document.createElement("div");
+      card.className = 'actividad-card' + (a.cumplida ? ' is-cumplida' : (esAtrasada ? ' is-atrasada' : ''));
+      card.innerHTML = `
+        <div class="actividad-card-header">
+          <div style="flex: 1; min-width: 0;">
+            <div class="actividad-card-title" title="${escapeHtml(a.tipo)}">${escapeHtml(a.tipo)}</div>
+            <div class="actividad-card-badges">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 600;">
+                <i data-lucide="layers" style="width:12px; height:12px; vertical-align:middle; margin-right:3px;"></i> ${escapeHtml(loteNombre)}
+              </span>
+              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 600;">
+                ${escapeHtml(a.cultivoObjetivo || 'General')}
+              </span>
+              <span class="badge stage-badge">${escapeHtml(a.etapa || 'Crecimiento')}</span>
+            </div>
+          </div>
+          <div>
+            <button type="button" class="btn-status-toggle ${a.cumplida ? 'is-cumplida' : 'is-pendiente'}" onclick="toggleActivityStatus('${a.id}')" title="Haga 1 clic para cambiar estado al instante">
+              <i data-lucide="${a.cumplida ? 'check-circle-2' : 'circle'}"></i>
+              <span>${a.cumplida ? 'CUMPLIDA' : 'Marcar CUMPLIDA'}</span>
+            </button>
+          </div>
         </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
+
+        <div class="actividad-card-body">
+          <div class="actividad-card-meta">
+            <div class="meta-item">
+              <i data-lucide="calendar"></i>
+              <div>
+                <span class="meta-label">Fecha Programada</span>
+                <span class="meta-val" style="${esAtrasada ? 'color: var(--danger); font-weight: 700;' : (esHoy ? 'color: #38bdf8; font-weight: 700;' : '')}">
+                  ${a.fecha} ${esHoy ? '(HOY)' : (esAtrasada ? '(Atrasada)' : '')}
+                </span>
+              </div>
+            </div>
+            <div class="meta-item">
+              <i data-lucide="user"></i>
+              <div>
+                <span class="meta-label">Responsable</span>
+                <span class="meta-val">${escapeHtml(a.personal || 'Sin asignar')}</span>
+              </div>
+            </div>
+            ${a.productoNombre ? `
+            <div class="meta-item" style="grid-column: 1 / -1;">
+              <i data-lucide="flask-conical"></i>
+              <div>
+                <span class="meta-label">Insumo & Dosificación</span>
+                <span class="meta-val">${escapeHtml(a.productoNombre)} — ${escapeHtml(a.dosificacion || 'Dosis regular')} (${escapeHtml(a.metodo || 'Foliar')})</span>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+
+          ${a.notas ? `
+          <div class="actividad-card-notes" title="Observaciones de campo">
+            <i data-lucide="message-square" style="width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0; margin-top: 2px;"></i>
+            <span>"${escapeHtml(a.notas)}"</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="actividad-card-footer">
+          <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+            <span>Estado: <strong style="color: ${a.cumplida ? '#10b981' : (esAtrasada ? '#ef4444' : '#f59e0b')}">${badgeText}</strong></span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-secondary" onclick="duplicarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Duplicar o Clonar labor">
+              <i data-lucide="copy"></i> Duplicar
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="editarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Editar">
+              <i data-lucide="edit-2"></i>
+            </button>
+            <button type="button" class="btn btn-secondary text-danger" onclick="eliminarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Eliminar">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      cardsContainer.appendChild(card);
+    }
+
+    // 2. RENDERIZADO EN TABLA
+    if (tbody) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="text-align: center; vertical-align: middle;">
+          <button type="button" class="btn-status-toggle ${a.cumplida ? 'is-cumplida' : 'is-pendiente'}" onclick="toggleActivityStatus('${a.id}')" style="font-size: 0.74rem; padding: 4px 8px; width: 100%; justify-content: center;" title="Haga 1 clic para cambiar estado">
+            <i data-lucide="${a.cumplida ? 'check-circle-2' : 'circle'}"></i>
+            <span>${a.cumplida ? 'Cumplida' : 'Pendiente'}</span>
+          </button>
+        </td>
+        <td>
+          <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">${escapeHtml(a.tipo)}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+            Lote: <strong style="color:#34d399">${escapeHtml(loteNombre)}</strong> | Cultivo: <span style="color:var(--accent-gold)">${escapeHtml(a.cultivoObjetivo || 'Ambos')}</span>
+          </div>
+        </td>
+        <td><span class="badge stage-badge">${escapeHtml(a.etapa || 'Crecimiento')}</span></td>
+        <td>${insumosHtml}</td>
+        <td>
+          <div style="font-weight: 600; ${esAtrasada ? 'color: var(--danger)' : (esHoy ? 'color: #38bdf8' : '')}">${a.fecha}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(a.personal)}</div>
+        </td>
+        <td style="max-width: 220px;">
+          ${a.notas ? '<div style="font-size:0.78rem; color:#cbd5e1; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escapeHtml(a.notas) + '">"' + escapeHtml(a.notas) + '"</div>' : '<span class="text-muted" style="font-size:0.75rem;">-</span>'}
+        </td>
+        <td>
+          <div class="action-controls">
+            <button class="btn-icon-only" onclick="duplicarActividad('${a.id}')" title="Duplicar"><i data-lucide="copy"></i></button>
+            <button class="btn-icon-only" onclick="editarActividad('${a.id}')" title="Editar"><i data-lucide="edit-2"></i></button>
+            <button class="btn-icon-only text-danger" onclick="eliminarActividad('${a.id}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
   });
+
   if (window.lucide) lucide.createIcons();
 }
 
 function applyFilters() {
   const filterLoteSel = document.getElementById("filter-lote");
-  const actVal = filterLoteSel.value;
-  filterLoteSel.innerHTML = '<option value="">Todos los Lotes</option>';
-  STATE.lotes.forEach(l => {
-    filterLoteSel.innerHTML += `<option value="${l.id}">${l.nombre}</option>`;
-  });
-  filterLoteSel.value = actVal;
+  const actVal = filterLoteSel ? filterLoteSel.value : "";
+  if (filterLoteSel) {
+    filterLoteSel.innerHTML = '<option value="">Todos los Lotes</option>';
+    STATE.lotes.forEach(l => {
+      filterLoteSel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + '</option>';
+    });
+    filterLoteSel.value = actVal;
+  }
 
   renderAgendaTable();
   updateDashboard();
@@ -941,21 +1127,31 @@ function applyFilters() {
 
 async function toggleActivityStatus(id) {
   const act = STATE.actividades.find(a => a.id === id);
-  if (act) {
-    const updatedAct = { ...act, cumplida: !act.cumplida };
-    try {
-      const response = await fetch(`/api/actividades/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedAct)
-      });
-      if (!response.ok) throw new Error("Error al cambiar estado");
-      showToast(`Actividad marcada como ${updatedAct.cumplida ? 'CUMPLIDA' : 'PENDIENTE'}.`);
-      await saveState();
-    } catch (err) {
-      console.error(err);
-      alert("Error al actualizar el estado de la actividad.");
-    }
+  if (!act) return;
+
+  // Actualización optimista instantánea (0 milisegundos de espera)
+  act.cumplida = !act.cumplida;
+  const nuevoEstado = act.cumplida;
+
+  renderAgendaTable();
+  updateDashboard();
+  showToast(nuevoEstado ? "✔ ¡Labor marcada como CUMPLIDA!" : "⏳ Labor marcada como PENDIENTE");
+
+  // Enviar a la base de datos en segundo plano
+  try {
+    const response = await fetch('/api/actividades/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...act, cumplida: nuevoEstado })
+    });
+    if (!response.ok) throw new Error("Error al cambiar estado en servidor");
+  } catch (err) {
+    console.error(err);
+    // Revertir cambio local si falló
+    act.cumplida = !nuevoEstado;
+    renderAgendaTable();
+    updateDashboard();
+    alert("Hubo un problema de conexión al guardar el cambio de estado. Se ha revertido.");
   }
 }
 
@@ -1557,4 +1753,67 @@ async function eliminarPersonal(name) {
       alert("Error al eliminar al operario.");
     }
   }
+}
+
+
+function setupQuickActivityForm() {
+  const form = document.getElementById("quick-act-form");
+  if (!form) return;
+
+  const fechaInp = document.getElementById("quick-act-fecha");
+  if (fechaInp && !fechaInp.value) fechaInp.value = HOY;
+
+  actualizarSelectorLoteRapido();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const loteId = document.getElementById("quick-act-lote").value;
+    const tipo = document.getElementById("quick-act-tipo").value.trim();
+    const fecha = document.getElementById("quick-act-fecha").value;
+    const personal = document.getElementById("quick-act-personal").value.trim();
+
+    if (!loteId || !tipo || !fecha || !personal) {
+      alert("Por favor completa los campos del agendado rápido.");
+      return;
+    }
+
+    const lote = STATE.lotes.find(l => l.id === loteId);
+    const cultivoObjetivo = lote ? lote.cultivo : "General";
+    const etapa = lote ? lote.etapa : "Crecimiento";
+
+    const nuevoId = 'act-' + Date.now();
+    const nuevaAct = {
+      id: nuevoId,
+      loteId,
+      cultivoObjetivo,
+      tipo,
+      productoNombre: "",
+      cantidad: 0,
+      unidad: "Kg",
+      fecha,
+      personal,
+      etapa,
+      dosificacion: "",
+      metodo: "Campo / Manual",
+      cumplida: false,
+      notas: "Programada desde barra exprés"
+    };
+
+    STATE.actividades.unshift(nuevaAct);
+    renderAgendaTable();
+    updateDashboard();
+    showToast('⚡ Labor "' + tipo + '" agendada exitosamente en 1 clic!');
+
+    document.getElementById("quick-act-tipo").value = "";
+
+    try {
+      await fetch('/api/actividades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevaAct)
+      });
+    } catch (err) {
+      console.error("Error al guardar en segundo plano:", err);
+    }
+  });
 }

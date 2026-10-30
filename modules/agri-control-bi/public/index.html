@@ -232,19 +232,70 @@
            SECTION 3: AGENDA DE ACTIVIDADES
            ========================================================================== -->
       <section id="agenda-section" class="app-section">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <div>
             <h2 style="color:white; font-size:1.5rem;">Bitácora de Labores</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem;">Planifica las labores de la finca, dosifica adecuadamente, y reprograma de forma ágil.</p>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Planifica las labores de la finca, márcalas como cumplidas en 1 clic y programa rápido.</p>
           </div>
-          <div style="display:flex; gap:12px;">
-            <button class="btn btn-secondary" onclick="abrirModalPersonal()">
-              <i data-lucide="users"></i> Administrar Operarios
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:3px;">
+              <button type="button" id="btn-view-cards" class="btn btn-secondary" onclick="switchAgendaView('cards')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; background:rgba(16,185,129,0.2); color:#34d399; border:none;">
+                <i data-lucide="layout-grid"></i> Tarjetas
+              </button>
+              <button type="button" id="btn-view-table" class="btn btn-secondary" onclick="switchAgendaView('table')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; border:none; color:var(--text-muted);">
+                <i data-lucide="table"></i> Tabla
+              </button>
+            </div>
+            <button class="btn btn-secondary" onclick="abrirModalPersonal()" title="Gestionar Operarios">
+              <i data-lucide="users"></i> Operarios
             </button>
             <button class="btn btn-primary" onclick="abrirModalActividad()">
-              <i data-lucide="calendar-plus"></i> Programar Actividad
+              <i data-lucide="calendar-plus"></i> Programar Detallado
             </button>
           </div>
+        </div>
+
+        <!-- BARRA DE PROGRAMACIÓN RÁPIDA (EXPRÉS) -->
+        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="zap" style="width: 17px; height: 17px; color: #fbbf24;"></i>
+              <span>Programación Exprés (Agendado Rápido en 1 Clic)</span>
+            </div>
+            <!-- Sugerencias de Labores frecuentes -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Plateo para café', 'Café', 'Crecimiento')">🌱 Plateo</button>
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Guadaña general', 'Ambos Cultivos', 'Crecimiento')">🚜 Guadaña</button>
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Deschuponada de café', 'Café', 'Fructificación')">🌿 Deschuponada</button>
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Control de Plagas', 'Aguacate', 'Floración')">💊 Control Plagas</button>
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Fertilización Foliar', 'Café', 'Crecimiento')">🧪 Fert. Foliar</button>
+              <button type="button" class="chip-labor" onclick="selectQuickLabor('Fertilización Suelo', 'Café', 'Siembra')">🌾 Fert. Suelo</button>
+            </div>
+          </div>
+
+          <form id="quick-act-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 10px; align-items: flex-end;">
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Lote *</label>
+              <select id="quick-act-lote" class="form-control" required style="font-size: 0.85rem; padding: 7px 10px;"></select>
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Labor a Realizar *</label>
+              <input type="text" id="quick-act-tipo" class="form-control" list="labor-suggestions" placeholder="Ej. Plateo para café nuevo" required style="font-size: 0.85rem; padding: 7px 10px;">
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Fecha *</label>
+              <input type="date" id="quick-act-fecha" class="form-control" required style="font-size: 0.85rem; padding: 7px 10px;">
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Operario *</label>
+              <input type="text" id="quick-act-personal" class="form-control" list="personal-suggestions" placeholder="Ej. Henry" required style="font-size: 0.85rem; padding: 7px 10px;">
+            </div>
+            <div>
+              <button type="submit" class="btn btn-primary" style="white-space: nowrap; height: 38px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                <i data-lucide="plus"></i> Agendar
+              </button>
+            </div>
+          </form>
         </div>
 
         <!-- Filter and Search Bar -->
@@ -255,29 +306,34 @@
             </select>
             <select id="filter-cumplida" class="filter-select" onchange="applyFilters()">
               <option value="">Todos los Estados</option>
-              <option value="completadas">Cumplidas</option>
               <option value="pendientes">Pendientes a futuro</option>
               <option value="atrasadas">Atrasadas</option>
+              <option value="completadas">Cumplidas</option>
             </select>
-            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por operario, notas..." oninput="applyFilters()">
+            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por labor, operario, notas..." oninput="applyFilters()">
           </div>
           <button class="btn btn-secondary" onclick="document.getElementById('search-activity').value=''; document.getElementById('filter-lote').value=''; document.getElementById('filter-cumplida').value=''; applyFilters();">
             Limpiar Filtros
           </button>
         </div>
 
-        <!-- Activities Log Table -->
-        <div class="table-responsive">
+        <!-- VISTA 1: TARJETAS VISUALES DE LABORES (Por Defecto) -->
+        <div id="agenda-cards-container" class="actividades-cards-grid">
+          <!-- Inyectado desde app.js -->
+        </div>
+
+        <!-- VISTA 2: TABLA DE LABORES -->
+        <div class="table-responsive" id="agenda-table-wrapper" style="display: none;">
           <table>
             <thead>
               <tr>
-                <th style="width: 40px;">Ok</th>
-                <th>Actividad</th>
+                <th style="width: 140px;">Estado</th>
+                <th>Labor / Actividad</th>
                 <th>Etapa</th>
                 <th>Insumo, Dosificación & Aplicación</th>
                 <th>Fecha & Responsable</th>
-                <th>Estado</th>
-                <th style="width: 180px; text-align: right;">Acciones</th>
+                <th>Notas de Campo</th>
+                <th style="width: 140px; text-align: right;">Acciones</th>
               </tr>
             </thead>
             <tbody id="agenda-table-body">
@@ -506,6 +562,19 @@
           </div>
         </div>
 
+        <!-- Chips Rápidos de Labores -->
+        <div style="margin-bottom: 12px;">
+          <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">Sugerencias Rápidas de Labor (1 Clic para autocompletar):</label>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Plateo para café', 'Café', 'Crecimiento')">🌱 Plateo</button>
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Guadaña general', 'Ambos Cultivos', 'Crecimiento')">🚜 Guadaña</button>
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Deschuponada de café', 'Café', 'Fructificación')">🌿 Deschuponada</button>
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Control de Plagas', 'Aguacate', 'Floración')">💊 Control Plagas</button>
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Fertilización Foliar', 'Café', 'Crecimiento')">🧪 Fert. Foliar</button>
+            <button type="button" class="chip-labor" onclick="fillModalLabor('Fertilización Suelo', 'Café', 'Siembra')">🌾 Fert. Suelo</button>
+          </div>
+        </div>
+
         <div class="form-row-2">
           <div class="form-group">
             <label for="act-form-tipo">Tipo de Labor *</label>
@@ -585,9 +654,32 @@
           <textarea id="act-form-notas" class="form-control" rows="3" placeholder="Registre incidencias (maleza, plagas, deficiencias encontradas) o notas de aplicación..."></textarea>
         </div>
 
-        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
-          <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Agendar Actividad</button>
+        <!-- Selector de Estado de Cumplimiento -->
+        <div class="form-group" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+          <label style="font-weight: 700; color: #fff; margin-bottom: 8px; display: block; font-size: 0.88rem;">
+            <i data-lucide="check-circle-2" style="width:16px; height:16px; color:#10b981; vertical-align:middle; margin-right:4px;"></i>
+            Estado de la Labor
+          </label>
+          <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f59e0b; font-weight: 600; font-size: 0.88rem;">
+              <input type="radio" name="act-form-cumplida" id="act-form-cumplida-no" value="false" checked style="accent-color: #f59e0b; width: 17px; height: 17px;">
+              <span>⏳ Pendiente por Realizar</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #10b981; font-weight: 600; font-size: 0.88rem;">
+              <input type="radio" name="act-form-cumplida" id="act-form-cumplida-si" value="true" style="accent-color: #10b981; width: 17px; height: 17px;">
+              <span>✔ Cumplida / Ya Ejecutada</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary" id="btn-act-save-and-another" style="display:flex; align-items:center; gap:6px; border-color: rgba(16, 185, 129, 0.4); color: #34d399;">
+            <i data-lucide="plus-circle"></i> Guardar y Otra
+          </button>
+          <div style="display:flex; gap:12px;">
+            <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-act-submit">Agendar Actividad</button>
+          </div>
         </div>
       </form>
     </div>
