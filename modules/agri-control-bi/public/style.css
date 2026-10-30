@@ -690,15 +690,18 @@ tr:hover td {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
-  z-index: 100;
+  z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding: 20px 14px;
+  overflow-y: auto;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal);
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-overlay.active {
@@ -1180,4 +1183,39 @@ select.form-control option:checked {
   background: linear-gradient(90deg, #d97706, #fbbf24);
   height: 100%;
   transition: width 0.3s ease;
+}
+
+.modal-header-sticky {
+  position: sticky;
+  top: 0;
+  background: #09110c;
+  z-index: 10;
+  padding: 16px 20px;
+  margin: -24px -24px 16px -24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.modal-body-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+.modal-footer-sticky {
+  position: sticky;
+  bottom: 0;
+  background: #09110c;
+  z-index: 10;
+  padding: 16px 20px;
+  margin: 16px -24px -24px -24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }

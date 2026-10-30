@@ -1144,7 +1144,12 @@ function duplicarActividad(id) {
   const rNo = document.getElementById("act-form-cumplida-no");
   if (rNo) rNo.checked = true;
 
-  document.getElementById("act-modal").classList.add("active");
+  const actModal = document.getElementById("act-modal");
+  actModal.classList.add("active");
+  actModal.scrollTop = 0;
+  const modalBody = actModal.querySelector(".modal-body-scroll");
+  if (modalBody) modalBody.scrollTop = 0;
+  if (window.lucide) lucide.createIcons();
   showToast("📋 Datos copiados. Ajusta la fecha u operario y guarda con 1 clic.");
 }
 
@@ -1434,7 +1439,12 @@ function abrirModalActividad() {
   document.getElementById("act-form-unidad").value = "Kg";
   document.getElementById("act-form-notas").value = "";
 
-  document.getElementById("act-modal").classList.add("active");
+  const actModal = document.getElementById("act-modal");
+  actModal.classList.add("active");
+  actModal.scrollTop = 0;
+  const modalBody = actModal.querySelector(".modal-body-scroll");
+  if (modalBody) modalBody.scrollTop = 0;
+  if (window.lucide) lucide.createIcons();
 }
 
 function actualizarSelectoresActividad() {
@@ -1492,7 +1502,12 @@ function editarActividad(id) {
   document.getElementById("act-form-unidad").value = act.unidad || "Kg";
   document.getElementById("act-form-notas").value = act.notas || "";
 
-  document.getElementById("act-modal").classList.add("active");
+  const actModal = document.getElementById("act-modal");
+  actModal.classList.add("active");
+  actModal.scrollTop = 0;
+  const modalBody = actModal.querySelector(".modal-body-scroll");
+  if (modalBody) modalBody.scrollTop = 0;
+  if (window.lucide) lucide.createIcons();
 }
 
 async function eliminarActividad(id) {
