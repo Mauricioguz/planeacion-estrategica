@@ -1652,7 +1652,7 @@ function switchErpModule(moduleId) {
   } else if (moduleId === 'erp-hub-view') {
     // Portal de Aplicaciones
   } else if (moduleId === 'erp-agricontrol-view') {
-    ensureIframeLoaded('agriIframe', '/modules/agri-control-bi/index.html');
+    ensureIframeLoaded('agriIframe', 'https://agri-control-bi.onrender.com');
   } else if (moduleId === 'erp-harvest-view') {
     ensureIframeLoaded('harvestIframe', 'https://control-productividad-app.onrender.com');
   } else if (moduleId === 'erp-ghalocafe-view') {
@@ -1831,9 +1831,21 @@ function toggleWebSimulator() {
 
 function initSavedIframeUrls() {
   // URLs oficiales de la suite
+  const defaultAgriUrl = 'https://agri-control-bi.onrender.com';
   const defaultHarvestUrl = 'https://control-productividad-app.onrender.com';
   const defaultGhaloUrl = 'https://sistema-ghalocafe.onrender.com';
   const defaultInvUrl = 'https://ghaloinv-app.onrender.com';
+
+  let agriUrl = localStorage.getItem('FINCA_AGRI_URL') || defaultAgriUrl;
+  if (agriUrl.startsWith('/modules/agri-control-bi')) {
+    agriUrl = defaultAgriUrl;
+    localStorage.setItem('FINCA_AGRI_URL', agriUrl);
+  }
+  const agriFrame = document.getElementById('agriIframe');
+  if (agriFrame) {
+    agriFrame.dataset.src = agriUrl;
+    if (isAppSuiteUnlocked) agriFrame.src = agriUrl;
+  }
 
   let harvestUrl = localStorage.getItem('FINCA_HARVEST_URL') || defaultHarvestUrl;
   if (harvestUrl.startsWith('/modules/control-productividad')) {
@@ -3007,7 +3019,7 @@ function unlockAppSuite() {
 
   // Cargar y precalentar de forma segura los iframes oficiales originales
   const iframes = [
-    { id: 'agriIframe', defaultUrl: '/modules/agri-control-bi/index.html' },
+    { id: 'agriIframe', defaultUrl: 'https://agri-control-bi.onrender.com' },
     { id: 'harvestIframe', defaultUrl: 'https://control-productividad-app.onrender.com' },
     { id: 'ghaloIframe', defaultUrl: 'https://sistema-ghalocafe.onrender.com' },
     { id: 'invIframe', defaultUrl: 'https://ghaloinv-app.onrender.com' }
