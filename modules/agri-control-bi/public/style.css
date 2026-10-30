@@ -1219,3 +1219,220 @@ select.form-control option:checked {
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* ==========================================================================
+   GRAN INDICADOR EJECUTIVO: CAPACIDAD GLOBAL FINCA LA LEONORA
+   ========================================================================== */
+.finca-grand-card {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.45) 0%, rgba(9, 17, 12, 0.95) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 20px;
+  padding: 22px 26px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.finca-grand-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow: 0 12px 36px rgba(16, 185, 129, 0.22);
+}
+
+.finca-grand-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.finca-grand-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  flex-shrink: 0;
+}
+
+.finca-grand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+
+.finca-grand-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 3px 0 0 0;
+}
+
+.finca-grand-btn {
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.finca-lowest-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 11px 16px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.finca-lowest-alert:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.pulse-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  box-shadow: 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: pulse-red 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.finca-click-hint {
+  color: #34d399;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.finca-grand-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.finca-metric-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.finca-metric-lbl {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+  letter-spacing: 0.4px;
+}
+
+.finca-metric-val {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.finca-metric-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: block;
+  margin-top: 3px;
+}
+
+.finca-grand-bar-wrapper {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.finca-grand-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.finca-progress-track {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+}
+
+.finca-progress-sembrados {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.finca-progress-pendientes {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+/* Items del ranking modal */
+.ranking-lot-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.ranking-lot-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.ranking-lot-row.is-lowest {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+@keyframes flash-highlight {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); border-color: #34d399; }
+  50% { box-shadow: 0 0 25px 5px rgba(52, 211, 153, 0.9); border-color: #10b981; }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); border-color: var(--border-color); }
+}
+
+.lote-highlight-pulse {
+  animation: flash-highlight 2.5s ease;
+}

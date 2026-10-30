@@ -100,6 +100,88 @@
       <section id="dashboard-section" class="app-section active">
         <div class="dashboard-grid">
           
+          <!-- GRAN INDICADOR EJECUTIVO: CAPACIDAD GLOBAL FINCA LA LEONORA -->
+          <div class="finca-grand-card" id="finca-grand-card" onclick="abrirModalRankingCapacidad()" title="Haz clic para ver el ranking detallado y el lote más rezagado">
+            <div class="finca-grand-top">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div class="finca-grand-icon">
+                  <i data-lucide="trees"></i>
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <h2 class="finca-grand-title">Capacidad Total de la Finca (Teórica vs. Instalada)</h2>
+                    <span class="badge" style="background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.4); font-size:0.75rem;">
+                      <i data-lucide="check-circle-2" style="width:12px; height:12px; vertical-align:middle;"></i> Global Finca
+                    </span>
+                  </div>
+                  <p class="finca-grand-subtitle">Balance agronómico consolidado: árboles sembrados, pendientes y densidad de siembra en 12.30 Ha</p>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary finca-grand-btn" onclick="event.stopPropagation(); abrirModalRankingCapacidad();">
+                <i data-lucide="bar-chart-2"></i> Ver Lote Más Bajo &amp; Ranking
+              </button>
+            </div>
+
+            <!-- Banner Alerta de Lote Más Bajo / Rezagado -->
+            <div class="finca-lowest-alert" id="finca-lowest-alert">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span class="pulse-indicator"></span>
+                <span style="font-size:0.88rem; color:#f1f5f9;">
+                  ⚠️ <strong>Lote con menor avance: <span id="finca-lote-bajo-nombre" style="color: #f87171; font-weight: 700;">Encanto</span></strong>
+                  — Tiene solo el <strong id="finca-lote-bajo-pct" style="color:#fbbf24;">56.9%</strong> instalado y <strong id="finca-lote-bajo-faltante" style="color:#f87171;">5.600 árboles pendientes</strong> por sembrar.
+                </span>
+              </div>
+              <span class="finca-click-hint">Ver Análisis &amp; Ranking Completo ➔</span>
+            </div>
+
+            <!-- Fila de Métricas Principales Consolidadas -->
+            <div class="finca-grand-metrics-grid">
+              <div class="finca-metric-box">
+                <span class="finca-metric-lbl">Capacidad Instalada (Sembrados)</span>
+                <div class="finca-metric-val" style="color: #34d399;">
+                  <span id="finca-sembrados-val">58.614</span> <small style="font-size:0.85rem; color:#a7f3d0;">arb.</small>
+                </div>
+                <span class="finca-metric-sub" id="finca-pct-instalada-sub">82.1% de capacidad teórica</span>
+              </div>
+
+              <div class="finca-metric-box">
+                <span class="finca-metric-lbl">Árboles Pendientes de Siembra</span>
+                <div class="finca-metric-val" style="color: #fbbf24;">
+                  <span id="finca-pendientes-val">+11.380</span> <small style="font-size:0.85rem; color:#fde68a;">arb.</small>
+                </div>
+                <span class="finca-metric-sub" id="finca-pendientes-sub">15.9% pendiente por sembrar</span>
+              </div>
+
+              <div class="finca-metric-box">
+                <span class="finca-metric-lbl">Capacidad Teórica Máxima</span>
+                <div class="finca-metric-val" style="color: #60a5fa;">
+                  <span id="finca-teorica-val">71.394</span> <small style="font-size:0.85rem; color:#bfdbfe;">arb.</small>
+                </div>
+                <span class="finca-metric-sub" id="finca-proyectado-sub">69.994 arb. meta proyectada</span>
+              </div>
+
+              <div class="finca-metric-box">
+                <span class="finca-metric-lbl">Área Productiva Total</span>
+                <div class="finca-metric-val" style="color: #e2e8f0;">
+                  <span id="finca-area-val">12.30</span> <small style="font-size:0.85rem; color:#94a3b8;">Ha</small>
+                </div>
+                <span class="finca-metric-sub">Distribuida en 6 lotes</span>
+              </div>
+            </div>
+
+            <!-- Gran Barra de Progreso Global -->
+            <div class="finca-grand-bar-wrapper">
+              <div class="finca-grand-bar-labels">
+                <span style="color:#a7f3d0; font-weight:600;"><i data-lucide="sprout" style="width:13px; height:13px; vertical-align:middle;"></i> Avance Global de la Finca</span>
+                <span id="finca-bar-pct-text" style="color:#fff; font-weight:700;">82.1% Instalado • +15.9% Pendiente • 98.0% Proyectado</span>
+              </div>
+              <div class="finca-progress-track">
+                <div id="finca-bar-sembrados" class="finca-progress-sembrados" style="width: 82.1%;" title="Sembrados"></div>
+                <div id="finca-bar-pendientes" class="finca-progress-pendientes" style="width: 15.9%;" title="Pendientes"></div>
+              </div>
+            </div>
+          </div>
+
           <!-- KPI Row -->
           <div class="kpi-row">
             <div class="kpi-card kpi-cumplimiento">
@@ -875,6 +957,65 @@
       <div style="display:flex; justify-content:flex-end; margin-top:20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top:15px;">
         <button type="button" class="btn btn-secondary modal-close">Cerrar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ranking de Capacidad de Lotes (Sembrados vs Pendientes) -->
+  <div class="modal-overlay" id="ranking-modal">
+    <div class="modal-content" style="width: 820px; max-width: 95vw; max-height: calc(100vh - 40px); display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+      
+      <!-- Header Fijo -->
+      <div class="modal-header modal-header-sticky" style="margin: 0; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); background: #0c1811; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #34d399;">
+            <i data-lucide="bar-chart-2" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" style="margin: 0; font-size: 1.25rem;">Ranking de Capacidad &amp; Lote Más Rezagado</h3>
+            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">Comparativa de avance de siembra: árboles sembrados vs. pendientes de cada lote</p>
+          </div>
+        </div>
+        <button class="modal-close" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- Cuerpo con Scroll Interno -->
+      <div class="modal-body-scroll" style="overflow-y: auto; padding: 20px 24px; flex: 1;">
+        
+        <!-- Tarjeta Hero: Lote más bajo / prioritario -->
+        <div id="ranking-hero-lote-bajo" style="margin-bottom: 22px;">
+          <!-- Inyectado dinámicamente -->
+        </div>
+
+        <!-- Tabla / Lista del Ranking Completo de Lotes -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #f1f5f9; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="list-ordered" style="width:16px; height:16px; color:#10b981;"></i>
+            Ranking de Todos los Lotes (Ordenados de Menor a Mayor Avance)
+          </h4>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">
+            🟢 &gt;90% Óptimo | 🟡 70-90% En Proceso | 🔴 &lt;70% Prioridad de Siembra
+          </span>
+        </div>
+
+        <div id="ranking-lotes-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Inyectado dinámicamente -->
+        </div>
+
+      </div>
+
+      <!-- Footer Fijo -->
+      <div class="modal-footer modal-footer-sticky" style="margin: 0; padding: 14px 24px; border-top: 1px solid rgba(255,255,255,0.08); background: #0c1811; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);" id="ranking-modal-footer-stats">
+          Total Finca: <strong>58.614 sembrados</strong> | <strong>11.380 pendientes</strong>
+        </span>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn btn-secondary modal-cancel">Cerrar</button>
+          <button type="button" class="btn btn-primary" onclick="irASeccionLotes()">
+            <i data-lucide="layers" style="width:16px; height:16px;"></i> Ir a Gestión de Lotes
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 

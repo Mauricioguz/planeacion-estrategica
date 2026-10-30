@@ -178,6 +178,9 @@ function poblarDatalist(id, lista) {
 function updateDashboard() {
   const kpis = calcularKPIs(STATE.lotes, STATE.actividades, STATE.clima, STATE.estudiosSuelo);
 
+  // Actualizar Gran Indicador Ejecutivo de Capacidad Finca
+  updateFincaGrandKPI();
+
   // Renderizar números en KPIs
   document.getElementById("kpi-cumplimiento-val").textContent = `${kpis.tasaCumplimiento}%`;
   document.getElementById("kpi-lotes-val").textContent = kpis.totalLotes;
@@ -511,6 +514,7 @@ function renderLotesGrid() {
 
     const card = document.createElement("div");
     card.className = "lote-card";
+    card.id = `lote-card-${l.id}`;
     
     // Tags de cultivos presentes
     let cropsHtml = `<span class="lote-crop">${escapeHtml(l.cultivo)}</span>`;
@@ -2087,4 +2091,348 @@ function setupQuickActivityForm() {
       console.error("Error al guardar en segundo plano:", err);
     }
   });
+}
+
+/* ==========================================================================
+   GRAN INDICADOR EJECUTIVO & RANKING DE CAPACIDAD FINCA LA LEONORA
+   ========================================================================== */
+function calcularMetricasCapacidadFinca() {
+  const lotes = STATE.lotes || [];
+  let totalAreaFinca = 0;
+  let totalSembradosFinca = 0;
+  let totalPendientesFinca = 0;
+  let totalTeoricaFinca = 0;
+
+  const ranking = lotes.map(l => {
+    const area = parseFloat(l.area) || 0;
+    totalAreaFinca += area;
+
+    const a1 = parseInt(l.arboles1) || 0;
+    const a2 = parseInt(l.arboles2) || 0;
+    const a3 = parseInt(l.arboles3) || 0;
+    const sembrados = a1 + a2 + a3;
+
+    const p1 = parseInt(l.arbolesPendientes1 || l.arboles_pendientes1) || 0;
+    const p2 = parseInt(l.arbolesPendientes2 || l.arboles_pendientes2) || 0;
+    const p3 = parseInt(l.arbolesPendientes3 || l.arboles_pendientes3) || 0;
+    const pendientes = parseInt(l.arbolesPendientes || l.arboles_pendientes) || (p1 + p2 + p3);
+    const proyectado = sembrados + pendientes;
+
+    const s1 = parseFloat(l.distanciaSurco1 || l.distancia_surco1) || 0;
+    const pl1 = parseFloat(l.distanciaPlanta1 || l.distancia_planta1) || 0;
+    const densTeor1 = (s1 > 0 && pl1 > 0) ? Math.round(10000 / (s1 * pl1)) : 0;
+
+    const s2 = parseFloat(l.distanciaSurco2 || l.distancia_surco2) || 0;
+    const pl2 = parseFloat(l.distanciaPlanta2 || l.distancia_planta2) || 0;
+    const densTeor2 = (s2 > 0 && pl2 > 0) ? Math.round(10000 / (s2 * pl2)) : 0;
+
+    const s3 = parseFloat(l.distanciaSurco3 || l.distancia_surco3) || 0;
+    const pl3 = parseFloat(l.distanciaPlanta3 || l.distancia_planta3) || 0;
+    const densTeor3 = (s3 > 0 && pl3 > 0) ? Math.round(10000 / (s3 * pl3)) : 0;
+
+    let densDominante = densTeor1 > 0 ? densTeor1 : (densTeor2 > 0 ? densTeor2 : densTeor3);
+    let teorica = densDominante > 0 && area > 0 ? Math.round(densDominante * area) : proyectado;
+    const capacidadBase = Math.max(teorica, proyectado);
+
+    totalSembradosFinca += sembrados;
+    totalPendientesFinca += pendientes;
+    totalTeoricaFinca += capacidadBase;
+
+    const pctAvanceSiembra = proyectado > 0 ? ((sembrados / proyectado) * 100) : 0;
+    const pctCapacidadInstalada = capacidadBase > 0 ? ((sembrados / capacidadBase) * 100) : 0;
+
+    // Detalle de siembras para mostrar en el modal
+    const siembrasDetalle = [];
+    if (l.cultivo) {
+      siembrasDetalle.push({
+        nombre: l.cultivo,
+        sembrados: a1,
+        pendientes: p1,
+        marco: (s1 > 0 && pl1 > 0) ? `${s1}m × ${pl1}m` : 'N/D'
+      });
+    }
+    if (l.cultivo2) {
+      siembrasDetalle.push({
+        nombre: l.cultivo2,
+        sembrados: a2,
+        pendientes: p2,
+        marco: (s2 > 0 && pl2 > 0) ? `${s2}m × ${pl2}m` : 'N/D'
+      });
+    }
+    if (l.cultivo3) {
+      siembrasDetalle.push({
+        nombre: l.cultivo3,
+        sembrados: a3,
+        pendientes: p3,
+        marco: (s3 > 0 && pl3 > 0) ? `${s3}m × ${pl3}m` : 'N/D'
+      });
+    }
+
+    return {
+      id: l.id,
+      nombre: l.nombre,
+      cultivo: l.cultivo,
+      cultivo2: l.cultivo2,
+      cultivo3: l.cultivo3,
+      area,
+      sembrados,
+      pendientes,
+      proyectado,
+      capacidadBase,
+      pctAvanceSiembra: pctAvanceSiembra,
+      pctCapacidadInstalada: pctCapacidadInstalada,
+      siembrasDetalle
+    };
+  });
+
+  // Ordenar de menor a mayor avance (el lote más rezagado primero)
+  ranking.sort((a, b) => a.pctAvanceSiembra - b.pctAvanceSiembra);
+
+  const pctGlobalFinca = totalTeoricaFinca > 0 ? ((totalSembradosFinca / totalTeoricaFinca) * 100) : 0;
+  const pctAvanceGlobal = (totalSembradosFinca + totalPendientesFinca) > 0 
+    ? ((totalSembradosFinca / (totalSembradosFinca + totalPendientesFinca)) * 100) 
+    : 0;
+
+  return {
+    totalAreaFinca: totalAreaFinca.toFixed(2),
+    totalSembradosFinca,
+    totalPendientesFinca,
+    totalProyectadoFinca: totalSembradosFinca + totalPendientesFinca,
+    totalTeoricaFinca,
+    pctGlobalFinca: pctGlobalFinca.toFixed(1),
+    pctAvanceGlobal: pctAvanceGlobal.toFixed(1),
+    loteMasBajo: ranking[0] || null,
+    ranking
+  };
+}
+
+function updateFincaGrandKPI() {
+  const data = calcularMetricasCapacidadFinca();
+  
+  const elSembrados = document.getElementById("finca-sembrados-val");
+  if (!elSembrados) return;
+
+  elSembrados.textContent = data.totalSembradosFinca.toLocaleString();
+  const subInstalada = document.getElementById("finca-pct-instalada-sub");
+  if (subInstalada) subInstalada.textContent = `${data.pctGlobalFinca}% de capacidad teórica (${data.pctAvanceGlobal}% de meta)`;
+  
+  const elPendientes = document.getElementById("finca-pendientes-val");
+  if (elPendientes) elPendientes.textContent = `+${data.totalPendientesFinca.toLocaleString()}`;
+  
+  const pctPend = data.totalTeoricaFinca > 0 ? ((data.totalPendientesFinca / data.totalTeoricaFinca) * 100).toFixed(1) : "0";
+  const subPend = document.getElementById("finca-pendientes-sub");
+  if (subPend) subPend.textContent = `${pctPend}% pendiente por sembrar`;
+
+  const elTeorica = document.getElementById("finca-teorica-val");
+  if (elTeorica) elTeorica.textContent = data.totalTeoricaFinca.toLocaleString();
+  
+  const subProy = document.getElementById("finca-proyectado-sub");
+  if (subProy) subProy.textContent = `${data.totalProyectadoFinca.toLocaleString()} arb. meta proyectada`;
+
+  const elArea = document.getElementById("finca-area-val");
+  if (elArea) elArea.textContent = data.totalAreaFinca;
+
+  // Lote más bajo
+  if (data.loteMasBajo) {
+    const elLbNombre = document.getElementById("finca-lote-bajo-nombre");
+    if (elLbNombre) elLbNombre.textContent = data.loteMasBajo.nombre;
+    const elLbPct = document.getElementById("finca-lote-bajo-pct");
+    if (elLbPct) elLbPct.textContent = `${data.loteMasBajo.pctAvanceSiembra.toFixed(1)}%`;
+    const elLbFalt = document.getElementById("finca-lote-bajo-faltante");
+    if (elLbFalt) elLbFalt.textContent = `${data.loteMasBajo.pendientes.toLocaleString()} árboles`;
+  }
+
+  // Barra de progreso global
+  const barSembrados = document.getElementById("finca-bar-sembrados");
+  const barPendientes = document.getElementById("finca-bar-pendientes");
+  const barText = document.getElementById("finca-bar-pct-text");
+  
+  if (barSembrados && barPendientes && barText) {
+    const wSembrados = Math.min(100, parseFloat(data.pctGlobalFinca) || 0);
+    const wPendientes = Math.min(100 - wSembrados, parseFloat(pctPend) || 0);
+    barSembrados.style.width = `${wSembrados}%`;
+    barPendientes.style.width = `${wPendientes}%`;
+    barText.textContent = `${wSembrados}% Instalado • +${wPendientes}% Pendiente • ${(wSembrados + wPendientes).toFixed(1)}% Proyectado`;
+  }
+}
+
+function abrirModalRankingCapacidad() {
+  const data = calcularMetricasCapacidadFinca();
+  const modal = document.getElementById("ranking-modal");
+  if (!modal) return;
+
+  const heroContainer = document.getElementById("ranking-hero-lote-bajo");
+  const listContainer = document.getElementById("ranking-lotes-list");
+
+  // Renderizar Hero Lote Más Bajo
+  if (data.loteMasBajo && heroContainer) {
+    const lb = data.loteMasBajo;
+    const faltantePct = (100 - lb.pctAvanceSiembra).toFixed(1);
+    
+    // Cultivos y pendientes desglosados
+    const detalleCultivos = lb.siembrasDetalle.map(s => {
+      return `<span style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; font-size: 0.8rem;">
+        <strong>${escapeHtml(s.nombre)}:</strong> ${s.sembrados.toLocaleString()} sembrados ${s.pendientes > 0 ? `<span style="color:#fbbf24; font-weight:700;">(+${s.pendientes.toLocaleString()} pend.)</span>` : ''}
+      </span>`;
+    }).join(" ");
+
+    heroContainer.innerHTML = `
+      <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(127, 29, 29, 0.3) 100%); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.5); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #f87171;">
+              <i data-lucide="alert-circle" style="width: 22px; height: 22px;"></i>
+            </div>
+            <div>
+              <span style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.5px; color: #fca5a5; font-weight: 700;">⚠️ LOTE CON MENOR AVANCE (PRIORIDAD DE SIEMBRA)</span>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin: 2px 0 0 0;">Lote ${escapeHtml(lb.nombre)}</h3>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="irASeccionLotes('${lb.id}')" style="border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 700; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="external-link" style="width:15px; height:15px;"></i> Ir al Lote ${escapeHtml(lb.nombre)}
+          </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px;">
+          <div style="background: rgba(0,0,0,0.35); padding: 10px 12px; border-radius: 10px; border-left: 3px solid #ef4444;">
+            <span style="font-size: 0.72rem; color: #94a3b8; display:block;">% Avance de Siembra</span>
+            <span style="font-size: 1.35rem; font-weight: 800; color: #f87171;">${lb.pctAvanceSiembra.toFixed(1)}%</span>
+            <small style="font-size: 0.7rem; color: #fca5a5; display:block;">Falta el ${faltantePct}%</small>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 10px 12px; border-radius: 10px;">
+            <span style="font-size: 0.72rem; color: #94a3b8; display:block;">Sembrados Actuales</span>
+            <span style="font-size: 1.35rem; font-weight: 800; color: #34d399;">${lb.sembrados.toLocaleString()}</span>
+            <small style="font-size: 0.7rem; color: #a7f3d0; display:block;">en ${lb.area} Ha</small>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 10px 12px; border-radius: 10px; border-left: 3px solid #f59e0b;">
+            <span style="font-size: 0.72rem; color: #94a3b8; display:block;">Árboles Pendientes</span>
+            <span style="font-size: 1.35rem; font-weight: 800; color: #fbbf24;">+${lb.pendientes.toLocaleString()}</span>
+            <small style="font-size: 0.7rem; color: #fde68a; display:block;">por sembrar</small>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 10px 12px; border-radius: 10px;">
+            <span style="font-size: 0.72rem; color: #94a3b8; display:block;">Capacidad Teórica</span>
+            <span style="font-size: 1.35rem; font-weight: 800; color: #60a5fa;">${lb.capacidadBase.toLocaleString()}</span>
+            <small style="font-size: 0.7rem; color: #bfdbfe; display:block;">árboles teóricos</small>
+          </div>
+        </div>
+
+        <div style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 8px;">
+          <strong>Desglose por Cultivo en ${escapeHtml(lb.nombre)}:</strong>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          ${detalleCultivos}
+        </div>
+      </div>
+    `;
+  }
+
+  // Renderizar Ranking Completo
+  if (listContainer) {
+    listContainer.innerHTML = "";
+    data.ranking.forEach((r, idx) => {
+      const isLowest = idx === 0;
+      const pct = r.pctAvanceSiembra;
+      let badgeColor = "#10b981";
+      let badgeBg = "rgba(16,185,129,0.15)";
+      let badgeText = "Óptimo";
+
+      if (pct < 70) {
+        badgeColor = "#ef4444";
+        badgeBg = "rgba(239,68,68,0.18)";
+        badgeText = "Prioridad de Siembra";
+      } else if (pct < 90) {
+        badgeColor = "#f59e0b";
+        badgeBg = "rgba(245,158,11,0.15)";
+        badgeText = "En Proceso";
+      }
+
+      const row = document.createElement("div");
+      row.className = `ranking-lot-row ${isLowest ? 'is-lowest' : ''}`;
+      
+      row.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="background: ${isLowest ? '#ef4444' : 'rgba(255,255,255,0.1)'}; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+              ${idx + 1}
+            </span>
+            <div>
+              <span style="font-weight: 700; font-size: 1.05rem; color: #fff;">${escapeHtml(r.nombre)}</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); margin-left: 8px;">(${r.area} Ha • ${escapeHtml([r.cultivo, r.cultivo2, r.cultivo3].filter(Boolean).join(" + "))})</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor}40; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+              ${badgeText}
+            </span>
+            <button type="button" class="btn btn-secondary" onclick="irASeccionLotes('${r.id}')" style="padding: 5px 12px; font-size: 0.78rem; display:flex; align-items:center; gap:5px;">
+              <i data-lucide="eye" style="width:13px; height:13px;"></i> Ver Lote
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de progreso individual -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 5px;">
+            <span style="color: #cbd5e1;">
+              <strong style="color: #34d399;">${r.sembrados.toLocaleString()}</strong> sembrados 
+              ${r.pendientes > 0 ? `<span style="color:#fbbf24; font-weight:600;">(+${r.pendientes.toLocaleString()} pendientes)</span>` : '<span style="color:#a7f3d0;">(Sin pendientes)</span>'}
+            </span>
+            <span style="font-weight: 800; color: ${badgeColor};">
+              ${pct.toFixed(1)}% Avance (${r.capacidadBase.toLocaleString()} Teórica)
+            </span>
+          </div>
+          <div class="finca-progress-track" style="height: 10px;">
+            <div class="finca-progress-sembrados" style="width: ${Math.min(100, pct)}%;"></div>
+            <div class="finca-progress-pendientes" style="width: ${Math.min(100 - pct, (r.pendientes / r.capacidadBase) * 100)}%;"></div>
+          </div>
+        </div>
+      `;
+
+      listContainer.appendChild(row);
+    });
+  }
+
+  // Footer text
+  const footerStats = document.getElementById("ranking-modal-footer-stats");
+  if (footerStats) {
+    footerStats.innerHTML = `Total Finca: <strong style="color:#34d399;">${data.totalSembradosFinca.toLocaleString()} sembrados</strong> | <strong style="color:#fbbf24;">+${data.totalPendientesFinca.toLocaleString()} pendientes</strong> | <strong>${data.totalTeoricaFinca.toLocaleString()} teórica máx.</strong> (${data.totalAreaFinca} Ha)`;
+  }
+
+  modal.classList.add("active");
+  modal.scrollTop = 0;
+  const modalBody = modal.querySelector(".modal-body-scroll");
+  if (modalBody) modalBody.scrollTop = 0;
+  if (window.lucide) lucide.createIcons();
+}
+
+function irASeccionLotes(loteId) {
+  // Cerrar modal
+  const rankingModal = document.getElementById("ranking-modal");
+  if (rankingModal) rankingModal.classList.remove("active");
+
+  // Navegar a seccion lotes
+  const navLotes = document.querySelector('.nav-item[data-section="lotes"]');
+  if (navLotes) {
+    navLotes.click();
+  }
+
+  if (loteId) {
+    setTimeout(() => {
+      destacarLoteEnGrid(loteId);
+    }, 250);
+  }
+}
+
+function destacarLoteEnGrid(loteId) {
+  const card = document.getElementById(`lote-card-${loteId}`);
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.remove("lote-highlight-pulse");
+    void card.offsetWidth; // trigger reflow
+    card.classList.add("lote-highlight-pulse");
+    setTimeout(() => {
+      card.classList.remove("lote-highlight-pulse");
+    }, 2800);
+  }
 }
