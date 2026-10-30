@@ -1738,7 +1738,8 @@ function setupFormsAndModals() {
     const distanciaPlanta3 = parseFloat(document.getElementById("lote-form-planta3").value) || 0;
     const arbolesPendientes3 = parseInt(document.getElementById("lote-form-pendientes3").value) || 0;
 
-    const arbolesPendientes = parseInt(document.getElementById("lote-form-pendientes").value) || (arbolesPendientes1 + arbolesPendientes2 + arbolesPendientes3);
+    const sumaPendientesForm = arbolesPendientes1 + arbolesPendientes2 + arbolesPendientes3;
+    const arbolesPendientes = sumaPendientesForm > 0 ? sumaPendientesForm : (parseInt(document.getElementById("lote-form-pendientes").value) || 0);
 
     if (!nombre || !cultivo || !area) {
       alert("Por favor completa los campos obligatorios (Nombre, Cultivo Principal y Área).");
