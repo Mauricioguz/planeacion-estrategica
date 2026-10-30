@@ -790,6 +790,27 @@ select.form-control option {
   gap: 16px;
 }
 
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+#lote-modal .modal-content {
+  width: 660px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+@media (max-width: 600px) {
+  .form-row-2,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Empty State Widget */
 .empty-state {
   text-align: center;

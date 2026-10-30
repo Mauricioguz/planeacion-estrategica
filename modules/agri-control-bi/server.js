@@ -40,8 +40,14 @@ app.get('/api/lotes', async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, nombre, cultivo, cultivo2, area::float, etapa, 
-              fecha_siembra AS "fechaSiembra", fecha_siembra2 AS "fechaSiembra2" 
-       FROM lotes`
+              fecha_siembra AS "fechaSiembra", fecha_siembra2 AS "fechaSiembra2",
+              COALESCE(arboles1, 0)::int AS "arboles1",
+              COALESCE(distancia_surco1, 0)::float AS "distanciaSurco1",
+              COALESCE(distancia_planta1, 0)::float AS "distanciaPlanta1",
+              COALESCE(arboles2, 0)::int AS "arboles2",
+              COALESCE(distancia_surco2, 0)::float AS "distanciaSurco2",
+              COALESCE(distancia_planta2, 0)::float AS "distanciaPlanta2"
+       FROM lotes ORDER BY nombre ASC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -50,12 +56,27 @@ app.get('/api/lotes', async (req, res) => {
 });
 
 app.post('/api/lotes', async (req, res) => {
-  const { id, nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2 } = req.body;
+  const { 
+    id, nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2,
+    arboles1 = 0, distanciaSurco1 = 0, distanciaPlanta1 = 0,
+    arboles2 = 0, distanciaSurco2 = 0, distanciaPlanta2 = 0
+  } = req.body;
   try {
     const result = await db.query(
-      `INSERT INTO lotes(id, nombre, cultivo, cultivo2, area, etapa, fecha_siembra, fecha_siembra2) 
-       VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [id, nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2]
+      `INSERT INTO lotes(
+        id, nombre, cultivo, cultivo2, area, etapa, fecha_siembra, fecha_siembra2,
+        arboles1, distancia_surco1, distancia_planta1, arboles2, distancia_surco2, distancia_planta2
+      ) 
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+      RETURNING *,
+        fecha_siembra AS "fechaSiembra", fecha_siembra2 AS "fechaSiembra2",
+        arboles1, distancia_surco1 AS "distanciaSurco1", distancia_planta1 AS "distanciaPlanta1",
+        arboles2, distancia_surco2 AS "distanciaSurco2", distancia_planta2 AS "distanciaPlanta2"`,
+      [
+        id, nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2,
+        parseInt(arboles1) || 0, parseFloat(distanciaSurco1) || 0, parseFloat(distanciaPlanta1) || 0,
+        parseInt(arboles2) || 0, parseFloat(distanciaSurco2) || 0, parseFloat(distanciaPlanta2) || 0
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -65,13 +86,28 @@ app.post('/api/lotes', async (req, res) => {
 
 app.put('/api/lotes/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2 } = req.body;
+  const { 
+    nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2,
+    arboles1 = 0, distanciaSurco1 = 0, distanciaPlanta1 = 0,
+    arboles2 = 0, distanciaSurco2 = 0, distanciaPlanta2 = 0
+  } = req.body;
   try {
     const result = await db.query(
       `UPDATE lotes 
-       SET nombre=$1, cultivo=$2, cultivo2=$3, area=$4, etapa=$5, fecha_siembra=$6, fecha_siembra2=$7 
-       WHERE id=$8 RETURNING *`,
-      [nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2, id]
+       SET nombre=$1, cultivo=$2, cultivo2=$3, area=$4, etapa=$5, fecha_siembra=$6, fecha_siembra2=$7,
+           arboles1=$8, distancia_surco1=$9, distancia_planta1=$10,
+           arboles2=$11, distancia_surco2=$12, distancia_planta2=$13
+       WHERE id=$14 
+       RETURNING *,
+         fecha_siembra AS "fechaSiembra", fecha_siembra2 AS "fechaSiembra2",
+         arboles1, distancia_surco1 AS "distanciaSurco1", distancia_planta1 AS "distanciaPlanta1",
+         arboles2, distancia_surco2 AS "distanciaSurco2", distancia_planta2 AS "distanciaPlanta2"`,
+      [
+        nombre, cultivo, cultivo2, area, etapa, fechaSiembra, fechaSiembra2,
+        parseInt(arboles1) || 0, parseFloat(distanciaSurco1) || 0, parseFloat(distanciaPlanta1) || 0,
+        parseInt(arboles2) || 0, parseFloat(distanciaSurco2) || 0, parseFloat(distanciaPlanta2) || 0,
+        id
+      ]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Lote no encontrado' });
