@@ -1,6 +1,13 @@
 // Motor de Inteligencia de Negocio y Recomendaciones Agrícolas - Finca La Leonora
 
-const HOY = "2026-05-25";
+function getFechaHoy() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+const HOY = getFechaHoy();
 
 /**
  * Calcula las métricas clave (KPIs) del estado actual de la finca
@@ -10,11 +17,10 @@ function calcularKPIs(lotes, actividades, clima, estudiosSuelo) {
   const totalActividades = actividades.length;
   
   const completadas = actividades.filter(a => a.cumplida).length;
-  const pendientes = actividades.filter(a => !a.cumplida).length;
-  
-  const atrasadas = actividades.filter(a => {
-    return !a.cumplida && a.fecha < HOY;
-  }).length;
+  // Atrasadas: SOLO labores que NO han sido cumplidas y cuya fecha ya venció
+  const atrasadas = actividades.filter(a => !a.cumplida && a.fecha < HOY).length;
+  // Pendientes vigentes o a futuro: que no estén cumplidas y fecha sea hoy o posterior
+  const pendientes = actividades.filter(a => !a.cumplida && a.fecha >= HOY).length;
   
   const tasaCumplimiento = totalActividades > 0 
     ? Math.round((completadas / totalActividades) * 100) 
@@ -245,6 +251,15 @@ function analizarObservaciones(actividades, lotes) {
 function obtenerFechaDiasAtras(dias) {
   const current = new Date(HOY);
   current.setDate(current.getDate() - dias);
+  const yyyy = current.getFullYear();
+  const mm = String(current.getMonth() + 1).padStart(2, '0');
+  const dd = String(current.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function obtenerFechaDiasAdelante(dias) {
+  const current = new Date();
+  current.setDate(current.getDate() + dias);
   const yyyy = current.getFullYear();
   const mm = String(current.getMonth() + 1).padStart(2, '0');
   const dd = String(current.getDate()).padStart(2, '0');

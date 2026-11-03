@@ -1157,6 +1157,46 @@ function duplicarActividad(id) {
   showToast("📋 Datos copiados. Ajusta la fecha u operario y guarda con 1 clic.");
 }
 
+function setAgendaFilterMode(mode) {
+  const sel = document.getElementById("filter-cumplida");
+  if (sel) sel.value = mode;
+
+  // Actualizar estilos de los 3 botones de pestañas
+  const tabFresh = document.getElementById("tab-agenda-fresh");
+  const tabPending = document.getElementById("tab-agenda-pending");
+  const tabHistory = document.getElementById("tab-agenda-history");
+
+  if (tabFresh && tabPending && tabHistory) {
+    tabFresh.style.background = "transparent";
+    tabFresh.style.color = "var(--text-muted)";
+    tabFresh.style.borderColor = "rgba(255,255,255,0.1)";
+
+    tabPending.style.background = "transparent";
+    tabPending.style.color = "var(--text-muted)";
+    tabPending.style.borderColor = "rgba(255,255,255,0.1)";
+
+    tabHistory.style.background = "transparent";
+    tabHistory.style.color = "var(--text-muted)";
+    tabHistory.style.borderColor = "rgba(255,255,255,0.1)";
+
+    if (mode === "fresco") {
+      tabFresh.style.background = "rgba(16,185,129,0.2)";
+      tabFresh.style.color = "#34d399";
+      tabFresh.style.borderColor = "#10b981";
+    } else if (mode === "pendientes" || mode === "atrasadas") {
+      tabPending.style.background = "rgba(245,158,11,0.2)";
+      tabPending.style.color = "#fbbf24";
+      tabPending.style.borderColor = "#f59e0b";
+    } else {
+      tabHistory.style.background = "rgba(255,255,255,0.12)";
+      tabHistory.style.color = "#fff";
+      tabHistory.style.borderColor = "rgba(255,255,255,0.3)";
+    }
+  }
+
+  applyFilters();
+}
+
 function renderAgendaTable() {
   const tbody = document.getElementById("agenda-table-body");
   const cardsContainer = document.getElementById("agenda-cards-container");
@@ -1164,8 +1204,16 @@ function renderAgendaTable() {
   if (cardsContainer) cardsContainer.innerHTML = "";
 
   const filterLote = document.getElementById("filter-lote")?.value || "";
-  const filterCumplida = document.getElementById("filter-cumplida")?.value || "";
+  const filterCumplida = document.getElementById("filter-cumplida")?.value || "fresco";
   const searchQuery = (document.getElementById("search-activity")?.value || "").toLowerCase();
+
+  // Fechas clave para filtrado inteligente
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const primerDiaMesVigente = new Date(year, month, 1).toISOString().split('T')[0];
+  const ultimoDiaProximoMes = new Date(year, month + 2, 0).toISOString().split('T')[0];
+  const limiteReciente30d = obtenerFechaDiasAtras(30);
 
   const filtradas = STATE.actividades.filter(a => {
     const loteObj = STATE.lotes.find(l => l.id === a.loteId);
@@ -1176,10 +1224,29 @@ function renderAgendaTable() {
     const prodText = (a.productoNombre || "").toLowerCase();
 
     if (filterLote && a.loteId !== filterLote) return false;
-    
-    if (filterCumplida === "completadas" && !a.cumplida) return false;
-    if (filterCumplida === "pendientes" && (a.cumplida || a.fecha < HOY)) return false;
-    if (filterCumplida === "atrasadas" && (a.cumplida || a.fecha >= HOY)) return false;
+
+    const esCumplida = !!a.cumplida;
+    const esAtrasada = !esCumplida && a.fecha < HOY;
+    const esPendiente = !esCumplida;
+
+    if (filterCumplida === "fresco") {
+      // VISTA FRESCA OPERATIVA (Por defecto):
+      // 1. Muestra todas las tareas pendientes por ejecutar (lo que hay que hacer).
+      // 2. Muestra tareas cumplidas recientes (del mes vigente o de los últimos 30 días).
+      // Oculta tareas viejas cumplidas de meses pasados (ej. julio) para no saturar la vista.
+      const esRecienteOCorriente = (a.fecha >= primerDiaMesVigente && a.fecha <= ultimoDiaProximoMes) || (a.fecha >= limiteReciente30d);
+      if (esCumplida && !esRecienteOCorriente) {
+        return false;
+      }
+    } else if (filterCumplida === "pendientes") {
+      if (!esPendiente) return false;
+    } else if (filterCumplida === "atrasadas") {
+      // Regla estricta: solo es atrasada si NO ha sido cumplida y venció su fecha
+      if (!esAtrasada) return false;
+    } else if (filterCumplida === "completadas") {
+      if (!esCumplida) return false;
+    }
+    // "todas": muestra absolutamente todo el historial
 
     if (searchQuery) {
       const match = loteNombre.includes(searchQuery) ||
@@ -1193,10 +1260,33 @@ function renderAgendaTable() {
     return true;
   });
 
-  filtradas.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  // Actualizar badge de conteo en la interfaz
+  const countBadge = document.getElementById("agenda-count-badge");
+  if (countBadge) {
+    let modeText = "labores frescas (Mes vigente & pendientes)";
+    if (filterCumplida === "pendientes") modeText = "labores pendientes por ejecutar";
+    else if (filterCumplida === "atrasadas") modeText = "labores atrasadas pendientes";
+    else if (filterCumplida === "completadas") modeText = "labores cumplidas ejecutadas";
+    else if (filterCumplida === "todas") modeText = "labores en historial central";
+    countBadge.textContent = `Mostrando ${filtradas.length} ${modeText}`;
+  }
+
+  // Ordenamiento operativo prioritario:
+  // 1. Tareas pendientes ordenadas cronológicamente (las que vencen primero van arriba)
+  // 2. Tareas cumplidas ordenadas por fecha descendente (lo último ejecutado arriba)
+  filtradas.sort((a, b) => {
+    if (a.cumplida !== b.cumplida) {
+      return a.cumplida ? 1 : -1;
+    }
+    if (!a.cumplida) {
+      return a.fecha.localeCompare(b.fecha);
+    } else {
+      return b.fecha.localeCompare(a.fecha);
+    }
+  });
 
   if (filtradas.length === 0) {
-    const emptyMsg = '<div class="empty-state" style="padding:40px 20px; text-align:center;"><i data-lucide="calendar-x" style="width:40px; height:40px; color:var(--text-muted); margin-bottom:12px;"></i><p style="color:var(--text-muted);">No se encontraron actividades planificadas con los filtros seleccionados.</p></div>';
+    const emptyMsg = '<div class="empty-state" style="padding:40px 20px; text-align:center;"><i data-lucide="calendar-x" style="width:40px; height:40px; color:var(--text-muted); margin-bottom:12px;"></i><p style="color:var(--text-muted);">No se encontraron actividades en esta vista fresca. Si deseas consultar labores ejecutadas de meses anteriores, pulsa "Historial Completo".</p></div>';
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center">' + emptyMsg + '</td></tr>';
     if (cardsContainer) cardsContainer.innerHTML = '<div style="grid-column: 1 / -1;">' + emptyMsg + '</div>';
     if (window.lucide) lucide.createIcons();
@@ -1229,121 +1319,100 @@ function renderAgendaTable() {
         (a.cantidad > 0 ? '<div style="font-size:0.7rem; opacity:0.8; color:var(--primary);">Volumen Total: ' + a.cantidad + ' ' + escapeHtml(a.unidad || 'Kg') + '</div>' : '');
     }
 
-    // 1. RENDERIZADO EN TARJETA VISUAL (VISTA PRINCIPAL)
+    // RENDER VISTA 1: TARJETA
     if (cardsContainer) {
       const card = document.createElement("div");
-      card.className = 'actividad-card' + (a.cumplida ? ' is-cumplida' : (esAtrasada ? ' is-atrasada' : ''));
+      card.className = "actividad-card " + (a.cumplida ? "cumplida is-cumplida" : (esAtrasada ? "atrasada is-atrasada" : "pendiente"));
       card.innerHTML = `
         <div class="actividad-card-header">
-          <div style="flex: 1; min-width: 0;">
-            <div class="actividad-card-title" title="${escapeHtml(a.tipo)}">${escapeHtml(a.tipo)}</div>
-            <div class="actividad-card-badges">
-              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 600;">
-                <i data-lucide="layers" style="width:12px; height:12px; vertical-align:middle; margin-right:3px;"></i> ${escapeHtml(loteNombre)}
-              </span>
-              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 600;">
-                ${escapeHtml(a.cultivoObjetivo || 'General')}
-              </span>
-              <span class="badge stage-badge">${escapeHtml(a.etapa || 'Crecimiento')}</span>
-            </div>
-          </div>
           <div>
-            <button type="button" class="btn-status-toggle ${a.cumplida ? 'is-cumplida' : 'is-pendiente'}" onclick="toggleActivityStatus('${a.id}')" title="Haga 1 clic para cambiar estado al instante">
-              <i data-lucide="${a.cumplida ? 'check-circle-2' : 'circle'}"></i>
-              <span>${a.cumplida ? 'CUMPLIDA' : 'Marcar CUMPLIDA'}</span>
-            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge ${badgeClass}">${badgeText}</span>
+              <span style="font-size:0.78rem; font-weight:700; color:var(--primary);">${escapeHtml(loteNombre)}</span>
+            </div>
+            <h4 class="actividad-card-title">${escapeHtml(a.tipo)}</h4>
+          </div>
+          <button class="btn-check-toggle" onclick="toggleActivityStatus('${a.id}')" title="${a.cumplida ? 'Reabrir / Marcar pendiente' : 'Marcar como CUMPLIDA en 1 clic'}">
+            <i data-lucide="${a.cumplida ? 'check-circle-2' : 'circle'}"></i>
+          </button>
+        </div>
+
+        <div class="actividad-card-meta">
+          <div class="meta-item">
+            <span class="meta-label">Cultivo Objetivo</span>
+            <span class="meta-val">${escapeHtml(a.cultivoObjetivo || 'General')}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Fecha Programada</span>
+            <span class="meta-val" style="${esAtrasada ? 'color: var(--danger); font-weight:700;' : (esHoy ? 'color: var(--accent-gold); font-weight:700;' : '')}">
+              ${a.fecha} ${esHoy ? ' (HOY)' : (esAtrasada ? ' (Atrasada)' : '')}
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Responsable</span>
+            <span class="meta-val">${escapeHtml(a.personal || 'Sin asignar')}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Insumo / Método</span>
+            <span class="meta-val">${escapeHtml(a.productoNombre || 'Manual')} ${a.metodo ? '(' + escapeHtml(a.metodo) + ')' : ''}</span>
           </div>
         </div>
 
-        <div class="actividad-card-body">
-          <div class="actividad-card-meta">
-            <div class="meta-item">
-              <i data-lucide="calendar"></i>
-              <div>
-                <span class="meta-label">Fecha Programada</span>
-                <span class="meta-val" style="${esAtrasada ? 'color: var(--danger); font-weight: 700;' : (esHoy ? 'color: #38bdf8; font-weight: 700;' : '')}">
-                  ${a.fecha} ${esHoy ? '(HOY)' : (esAtrasada ? '(Atrasada)' : '')}
-                </span>
-              </div>
-            </div>
-            <div class="meta-item">
-              <i data-lucide="user"></i>
-              <div>
-                <span class="meta-label">Responsable</span>
-                <span class="meta-val">${escapeHtml(a.personal || 'Sin asignar')}</span>
-              </div>
-            </div>
-            ${a.productoNombre ? `
-            <div class="meta-item" style="grid-column: 1 / -1;">
-              <i data-lucide="flask-conical"></i>
-              <div>
-                <span class="meta-label">Insumo & Dosificación</span>
-                <span class="meta-val">${escapeHtml(a.productoNombre)} — ${escapeHtml(a.dosificacion || 'Dosis regular')} (${escapeHtml(a.metodo || 'Foliar')})</span>
-              </div>
-            </div>
-            ` : ''}
+        ${a.notas ? `
+          <div class="actividad-card-notes">
+            <i data-lucide="message-square" style="width:13px; height:13px; color:var(--text-muted); flex-shrink:0;"></i>
+            <span>${escapeHtml(a.notas)}</span>
           </div>
+        ` : ''}
 
-          ${a.notas ? `
-          <div class="actividad-card-notes" title="Observaciones de campo">
-            <i data-lucide="message-square" style="width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0; margin-top: 2px;"></i>
-            <span>"${escapeHtml(a.notas)}"</span>
-          </div>
-          ` : ''}
-        </div>
-
-        <div class="actividad-card-footer">
-          <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
-            <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-            <span>Estado: <strong style="color: ${a.cumplida ? '#10b981' : (esAtrasada ? '#ef4444' : '#f59e0b')}">${badgeText}</strong></span>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <button type="button" class="btn btn-secondary" onclick="duplicarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Duplicar o Clonar labor">
-              <i data-lucide="copy"></i> Duplicar
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="editarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Editar">
-              <i data-lucide="edit-2"></i>
-            </button>
-            <button type="button" class="btn btn-secondary text-danger" onclick="eliminarActividad('${a.id}')" style="font-size: 0.76rem; padding: 5px 9px;" title="Eliminar">
-              <i data-lucide="trash-2"></i>
-            </button>
-          </div>
+        <div class="actividad-card-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="duplicarActividad('${a.id}')" title="Copiar datos y agendar la siguiente con 1 clic">
+            <i data-lucide="copy"></i> Duplicar
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="editarActividad('${a.id}')" title="Modificar datos de la labor">
+            <i data-lucide="edit-2"></i> Editar
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="eliminarActividad('${a.id}')" style="color:var(--danger); border-color:rgba(239,68,68,0.3);" title="Eliminar labor">
+            <i data-lucide="trash-2"></i>
+          </button>
         </div>
       `;
       cardsContainer.appendChild(card);
     }
 
-    // 2. RENDERIZADO EN TABLA
+    // RENDER VISTA 2: TABLA
     if (tbody) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="text-align: center; vertical-align: middle;">
-          <button type="button" class="btn-status-toggle ${a.cumplida ? 'is-cumplida' : 'is-pendiente'}" onclick="toggleActivityStatus('${a.id}')" style="font-size: 0.74rem; padding: 4px 8px; width: 100%; justify-content: center;" title="Haga 1 clic para cambiar estado">
-            <i data-lucide="${a.cumplida ? 'check-circle-2' : 'circle'}"></i>
-            <span>${a.cumplida ? 'Cumplida' : 'Pendiente'}</span>
-          </button>
-        </td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td>
-          <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">${escapeHtml(a.tipo)}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-            Lote: <strong style="color:#34d399">${escapeHtml(loteNombre)}</strong> | Cultivo: <span style="color:var(--accent-gold)">${escapeHtml(a.cultivoObjetivo || 'Ambos')}</span>
-          </div>
+          <div style="font-weight: 600; color: white;">${escapeHtml(a.tipo)}</div>
+          <div style="font-size: 0.8rem; color: var(--primary);">${escapeHtml(loteNombre)} (${escapeHtml(a.cultivoObjetivo || 'General')})</div>
         </td>
-        <td><span class="badge stage-badge">${escapeHtml(a.etapa || 'Crecimiento')}</span></td>
+        <td><span class="stage-tag">${escapeHtml(a.etapa || 'General')}</span></td>
         <td>${insumosHtml}</td>
         <td>
-          <div style="font-weight: 600; ${esAtrasada ? 'color: var(--danger)' : (esHoy ? 'color: #38bdf8' : '')}">${a.fecha}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(a.personal)}</div>
-        </td>
-        <td style="max-width: 220px;">
-          ${a.notas ? '<div style="font-size:0.78rem; color:#cbd5e1; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + escapeHtml(a.notas) + '">"' + escapeHtml(a.notas) + '"</div>' : '<span class="text-muted" style="font-size:0.75rem;">-</span>'}
+          <div style="font-weight: 600; ${esAtrasada ? 'color: var(--danger); font-weight:700;' : ''}">${a.fecha}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(a.personal || 'Sin asignar')}</div>
         </td>
         <td>
-          <div class="action-controls">
-            <button class="btn-icon-only" onclick="duplicarActividad('${a.id}')" title="Duplicar"><i data-lucide="copy"></i></button>
-            <button class="btn-icon-only" onclick="editarActividad('${a.id}')" title="Editar"><i data-lucide="edit-2"></i></button>
-            <button class="btn-icon-only text-danger" onclick="eliminarActividad('${a.id}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+          <div style="max-width: 250px; font-size: 0.85rem; color: #cbd5e1; white-space: normal; word-break: break-word;">
+            ${escapeHtml(a.notas || '-')}
           </div>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn btn-icon" onclick="toggleActivityStatus('${a.id}')" title="${a.cumplida ? 'Marcar Pendiente' : 'Marcar Cumplida'}">
+            <i data-lucide="${a.cumplida ? 'check-circle' : 'circle'}"></i>
+          </button>
+          <button class="btn btn-icon" onclick="duplicarActividad('${a.id}')" title="Duplicar">
+            <i data-lucide="copy"></i>
+          </button>
+          <button class="btn btn-icon" onclick="editarActividad('${a.id}')" title="Editar">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button class="btn btn-icon text-danger" onclick="eliminarActividad('${a.id}')" title="Eliminar">
+            <i data-lucide="trash-2"></i>
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -1480,6 +1549,7 @@ function actualizarSelectoresActividad() {
     if (lote.cultivo2 || lote.cultivo3) {
       objSel.innerHTML += '<option value="Ambos Cultivos">Todos los Cultivos</option>';
     }
+    objSel.value = lote.cultivo;
   } else {
     objSel.innerHTML = '<option value="">Seleccione Lote primero</option>';
   }
@@ -1505,6 +1575,14 @@ function editarActividad(id) {
   document.getElementById("act-form-cantidad").value = act.cantidad || "";
   document.getElementById("act-form-unidad").value = act.unidad || "Kg";
   document.getElementById("act-form-notas").value = act.notas || "";
+
+  const rSi = document.getElementById("act-form-cumplida-si");
+  const rNo = document.getElementById("act-form-cumplida-no");
+  if (act.cumplida) {
+    if (rSi) rSi.checked = true;
+  } else {
+    if (rNo) rNo.checked = true;
+  }
 
   const actModal = document.getElementById("act-modal");
   actModal.classList.add("active");
@@ -1801,9 +1879,8 @@ function setupFormsAndModals() {
       alert("Error al guardar el lote.");
     }
   });
-  // Submit Actividad
-  document.getElementById("act-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  // Función para guardar actividad (reutilizada por submit normal y Guardar y Otra)
+  async function guardarActividadDesdeModal(cerrarModalAlFinal = true) {
     const id = document.getElementById("act-form-id").value;
     const loteId = document.getElementById("act-form-lote").value;
     const cultivoObjetivo = document.getElementById("act-form-cultivo-objetivo").value;
@@ -1818,10 +1895,17 @@ function setupFormsAndModals() {
     const unidad = document.getElementById("act-form-unidad").value;
     const notesActualVal = document.getElementById("act-form-notas").value.trim();
 
-    if (!loteId || !tipo || !fecha || !personal || !cultivoObjetivo) {
-      alert("Por favor completa los campos obligatorios del registro.");
-      return;
+    // Leer el radio button de cumplimiento real seleccionado por el usuario:
+    const cumplidaRadio = document.querySelector('input[name="act-form-cumplida"]:checked');
+    const cumplida = cumplidaRadio ? (cumplidaRadio.value === "true") : false;
+
+    if (!loteId || !tipo || !fecha || !personal) {
+      alert("Por favor completa los campos obligatorios: Lote, Tipo de Labor, Fecha y Responsable.");
+      return false;
     }
+
+    const loteObj = STATE.lotes.find(l => l.id === loteId);
+    const cultivoFinal = cultivoObjetivo || (loteObj ? loteObj.cultivo : "General");
 
     try {
       if (productoNombre && dosificacion) {
@@ -1833,12 +1917,24 @@ function setupFormsAndModals() {
       }
 
       if (id) {
-        const actPrev = STATE.actividades.find(a => a.id === id);
-        const cum = actPrev ? actPrev.cumplida : false;
         const response = await fetch(`/api/actividades/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ loteId, cultivoObjetivo, tipo, productoNombre, cantidad, unidad, fecha, personal, etapa, dosificacion, metodo, cumplida: cum, notas: notesActualVal })
+          body: JSON.stringify({
+            loteId,
+            cultivoObjetivo: cultivoFinal,
+            tipo,
+            productoNombre,
+            cantidad,
+            unidad,
+            fecha,
+            personal,
+            etapa,
+            dosificacion,
+            metodo,
+            cumplida,
+            notas: notesActualVal
+          })
         });
         if (!response.ok) throw new Error("Error al actualizar actividad");
       } else {
@@ -1846,19 +1942,67 @@ function setupFormsAndModals() {
         const response = await fetch('/api/actividades', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: nuevoId, loteId, cultivoObjetivo, tipo, productoNombre, cantidad, unidad, fecha, personal, etapa, dosificacion, metodo, cumplida: false, notas: notesActualVal })
+          body: JSON.stringify({
+            id: nuevoId,
+            loteId,
+            cultivoObjetivo: cultivoFinal,
+            tipo,
+            productoNombre,
+            cantidad,
+            unidad,
+            fecha,
+            personal,
+            etapa,
+            dosificacion,
+            metodo,
+            cumplida,
+            notas: notesActualVal
+          })
         });
         if (!response.ok) throw new Error("Error al crear actividad");
       }
 
-      document.getElementById("act-modal").classList.remove("active");
       await saveState();
-      showToast("Actividad agrícola registrada en agenda.");
+      showToast(cumplida ? "✔ Actividad guardada como CUMPLIDA." : "📅 Actividad programada en agenda.");
+
+      if (cerrarModalAlFinal) {
+        document.getElementById("act-modal").classList.remove("active");
+      } else {
+        // Limpiar para registrar otra labor pero conservando lote, fecha y personal
+        document.getElementById("act-form-id").value = "";
+        document.getElementById("act-form-tipo").value = "";
+        document.getElementById("act-form-producto").value = "";
+        document.getElementById("act-form-dosificacion").value = "";
+        document.getElementById("act-form-cantidad").value = "";
+        document.getElementById("act-form-notas").value = "";
+        const rNo = document.getElementById("act-form-cumplida-no");
+        if (rNo) rNo.checked = true;
+        const tipoInput = document.getElementById("act-form-tipo");
+        if (tipoInput) tipoInput.focus();
+        showToast("Listo para registrar otra actividad en este lote.");
+      }
+      return true;
     } catch (err) {
       console.error(err);
-      alert("Error al registrar la actividad.");
+      alert("Error al guardar la actividad: " + err.message);
+      return false;
     }
+  }
+
+  // Submit normal del formulario
+  document.getElementById("act-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await guardarActividadDesdeModal(true);
   });
+
+  // Botón "Guardar y Otra"
+  const btnSaveAnother = document.getElementById("btn-act-save-and-another");
+  if (btnSaveAnother) {
+    btnSaveAnother.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await guardarActividadDesdeModal(false);
+    });
+  }
 
   // Submit Análisis de Suelo (Procesamiento Base64)
   document.getElementById("suelo-form").addEventListener("submit", (e) => {

@@ -380,6 +380,24 @@
           </form>
         </div>
 
+        <!-- Pestañas de Vista Rápida de Agenda -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+          <div class="agenda-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="tab-agenda-fresh" class="btn btn-secondary active-agenda-tab" onclick="setAgendaFilterMode('fresco')" style="display:flex; align-items:center; gap:6px; font-weight:700; border-radius:10px; font-size:0.82rem; padding:7px 14px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #10b981;">
+              <i data-lucide="sparkles" style="width:14px; height:14px;"></i> Mes Vigente &amp; Próximas (Labores Activas)
+            </button>
+            <button type="button" id="tab-agenda-pending" class="btn btn-secondary" onclick="setAgendaFilterMode('pendientes')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#fbbf24; border:1px solid rgba(245,158,11,0.3);">
+              <i data-lucide="clock" style="width:14px; height:14px;"></i> Solo Pendientes por Realizar
+            </button>
+            <button type="button" id="tab-agenda-history" class="btn btn-secondary" onclick="setAgendaFilterMode('todas')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#cbd5e1; border:1px solid rgba(255,255,255,0.1);">
+              <i data-lucide="archive" style="width:14px; height:14px;"></i> Historial Completo / Bitácora Central
+            </button>
+          </div>
+          <span id="agenda-count-badge" style="font-size:0.78rem; color:#a7f3d0; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:4px 12px; border-radius:12px; font-weight:600;">
+            Mostrando labores
+          </span>
+        </div>
+
         <!-- Filter and Search Bar -->
         <div class="filter-bar">
           <div class="filter-controls">
@@ -387,15 +405,16 @@
               <option value="">Todos los Lotes</option>
             </select>
             <select id="filter-cumplida" class="filter-select" onchange="applyFilters()">
-              <option value="">Todos los Estados</option>
-              <option value="pendientes">Pendientes a futuro</option>
-              <option value="atrasadas">Atrasadas</option>
-              <option value="completadas">Cumplidas</option>
+              <option value="fresco" selected>🌱 Vista Fresca (Mes Vigente &amp; Próximas)</option>
+              <option value="pendientes">⏳ Solo Pendientes por Realizar</option>
+              <option value="atrasadas">⚠️ Solo Atrasadas (Pendientes Vencidas)</option>
+              <option value="completadas">✔ Solo Cumplidas / Historial Ejecutado</option>
+              <option value="todas">📚 Todas las Labores (Historial Completo)</option>
             </select>
-            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por labor, operario, notas..." oninput="applyFilters()">
+            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por labor, operario, insumo, notas..." oninput="applyFilters()">
           </div>
-          <button class="btn btn-secondary" onclick="document.getElementById('search-activity').value=''; document.getElementById('filter-lote').value=''; document.getElementById('filter-cumplida').value=''; applyFilters();">
-            Limpiar Filtros
+          <button class="btn btn-secondary" onclick="document.getElementById('search-activity').value=''; document.getElementById('filter-lote').value=''; document.getElementById('filter-cumplida').value='fresco'; setAgendaFilterMode('fresco');">
+            Restablecer Vista
           </button>
         </div>
 
