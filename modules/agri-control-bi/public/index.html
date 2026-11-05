@@ -383,17 +383,20 @@
         <!-- Pestañas de Vista Rápida de Agenda -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
           <div class="agenda-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" id="tab-agenda-fresh" class="btn btn-secondary active-agenda-tab" onclick="setAgendaFilterMode('fresco')" style="display:flex; align-items:center; gap:6px; font-weight:700; border-radius:10px; font-size:0.82rem; padding:7px 14px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #10b981;">
-              <i data-lucide="sparkles" style="width:14px; height:14px;"></i> Mes Vigente &amp; Próximas (Labores Activas)
+            <button type="button" id="tab-agenda-all" class="btn btn-secondary active-agenda-tab" onclick="setAgendaFilterMode('todas')" style="display:flex; align-items:center; gap:6px; font-weight:700; border-radius:10px; font-size:0.82rem; padding:7px 14px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #10b981;">
+              <i data-lucide="layers" style="width:14px; height:14px;"></i> 🔄 Todas (Realizadas y Futuras)
             </button>
             <button type="button" id="tab-agenda-pending" class="btn btn-secondary" onclick="setAgendaFilterMode('pendientes')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#fbbf24; border:1px solid rgba(245,158,11,0.3);">
-              <i data-lucide="clock" style="width:14px; height:14px;"></i> Solo Pendientes por Realizar
+              <i data-lucide="clock" style="width:14px; height:14px;"></i> ⏳ Solo Futuras / Pendientes
             </button>
-            <button type="button" id="tab-agenda-history" class="btn btn-secondary" onclick="setAgendaFilterMode('todas')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#cbd5e1; border:1px solid rgba(255,255,255,0.1);">
-              <i data-lucide="archive" style="width:14px; height:14px;"></i> Historial Completo / Bitácora Central
+            <button type="button" id="tab-agenda-completed" class="btn btn-secondary" onclick="setAgendaFilterMode('completadas')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#6ee7b7; border:1px solid rgba(16,185,129,0.3);">
+              <i data-lucide="check-circle-2" style="width:14px; height:14px;"></i> ✔ Solo Realizadas / Historial
+            </button>
+            <button type="button" id="tab-agenda-fresh" class="btn btn-secondary" onclick="setAgendaFilterMode('fresco')" style="display:flex; align-items:center; gap:6px; font-weight:600; border-radius:10px; font-size:0.82rem; padding:7px 14px; color:#cbd5e1; border:1px solid rgba(255,255,255,0.1);">
+              <i data-lucide="sparkles" style="width:14px; height:14px;"></i> 🌱 Mes Vigente &amp; Próximas
             </button>
           </div>
-          <span id="agenda-count-badge" style="font-size:0.78rem; color:#a7f3d0; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:4px 12px; border-radius:12px; font-weight:600;">
+          <span id="agenda-count-badge" style="font-size:0.8rem; color:#a7f3d0; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:6px 14px; border-radius:12px; font-weight:600;">
             Mostrando labores
           </span>
         </div>
@@ -401,20 +404,54 @@
         <!-- Filter and Search Bar -->
         <div class="filter-bar">
           <div class="filter-controls">
-            <select id="filter-lote" class="filter-select" onchange="applyFilters()">
-              <option value="">Todos los Lotes</option>
+            <!-- Selector de Lote -->
+            <select id="filter-lote" class="filter-select" onchange="applyFilters()" title="Filtrar por lote específico">
+              <option value="">🌾 Todos los Lotes</option>
             </select>
-            <select id="filter-cumplida" class="filter-select" onchange="applyFilters()">
-              <option value="fresco" selected>🌱 Vista Fresca (Mes Vigente &amp; Próximas)</option>
-              <option value="pendientes">⏳ Solo Pendientes por Realizar</option>
+            <!-- Selector de Estado de la Labor -->
+            <select id="filter-cumplida" class="filter-select" onchange="applyFilters()" title="Filtrar por estado">
+              <option value="todas" selected>🔄 Todas (Realizadas y Futuras)</option>
+              <option value="pendientes">⏳ Solo Futuras / Pendientes por Realizar</option>
+              <option value="completadas">✔ Solo Realizadas / Ya Cumplidas</option>
               <option value="atrasadas">⚠️ Solo Atrasadas (Pendientes Vencidas)</option>
-              <option value="completadas">✔ Solo Cumplidas / Historial Ejecutado</option>
-              <option value="todas">📚 Todas las Labores (Historial Completo)</option>
+              <option value="fresco">🌱 Mes Vigente &amp; Próximas</option>
             </select>
-            <input type="text" id="search-activity" class="search-input" placeholder="Buscar por labor, operario, insumo, notas..." oninput="applyFilters()">
+            <!-- Selector de Año -->
+            <select id="filter-anio" class="filter-select" onchange="applyFilters()" title="Filtrar por año">
+              <option value="">📅 Todos los Años</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+            <!-- Selector de Mes -->
+            <select id="filter-mes" class="filter-select" onchange="applyFilters()" title="Filtrar por mes específico">
+              <option value="">🗓️ Todos los Meses</option>
+              <option value="01">01 - Enero</option>
+              <option value="02">02 - Febrero</option>
+              <option value="03">03 - Marzo</option>
+              <option value="04">04 - Abril</option>
+              <option value="05">05 - Mayo</option>
+              <option value="06">06 - Junio</option>
+              <option value="07">07 - Julio</option>
+              <option value="08">08 - Agosto</option>
+              <option value="09">09 - Septiembre</option>
+              <option value="10">10 - Octubre</option>
+              <option value="11">11 - Noviembre</option>
+              <option value="12">12 - Diciembre</option>
+            </select>
+            <!-- Rango Específico de Fechas (Desde / Hasta) -->
+            <div class="filter-dates-wrapper" title="Rango exacto de fechas">
+              <span style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+                <i data-lucide="calendar" style="width:13px; height:13px; color:var(--primary);"></i> Desde:
+              </span>
+              <input type="date" id="filter-fecha-desde" class="filter-input-date" onchange="applyFilters()" title="Fecha Desde">
+              <span style="font-size:0.75rem; color:var(--text-muted);">Hasta:</span>
+              <input type="date" id="filter-fecha-hasta" class="filter-input-date" onchange="applyFilters()" title="Fecha Hasta">
+            </div>
+            <!-- Búsqueda por texto libre -->
+            <input type="text" id="search-activity" class="search-input" placeholder="Buscar labor, operario, insumo, notas..." oninput="applyFilters()">
           </div>
-          <button class="btn btn-secondary" onclick="document.getElementById('search-activity').value=''; document.getElementById('filter-lote').value=''; document.getElementById('filter-cumplida').value='fresco'; setAgendaFilterMode('fresco');">
-            Restablecer Vista
+          <button type="button" class="btn btn-secondary" onclick="resetearTodosFiltrosAgenda()" style="white-space:nowrap; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="rotate-ccw" style="width:14px; height:14px;"></i> Limpiar Filtros
           </button>
         </div>
 

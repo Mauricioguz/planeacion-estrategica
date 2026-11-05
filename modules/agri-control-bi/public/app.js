@@ -509,7 +509,10 @@ function renderLotesGrid() {
   }
 
   STATE.lotes.forEach(l => {
-    const actsLote = STATE.actividades.filter(a => a.loteId === l.id && a.cumplida && a.productoNombre);
+    const actsTotalLote = STATE.actividades.filter(a => a.loteId === l.id);
+    const actsRealizadasLote = actsTotalLote.filter(a => a.cumplida).length;
+    const actsPendientesLote = actsTotalLote.filter(a => !a.cumplida).length;
+    const actsLote = actsTotalLote.filter(a => a.cumplida && a.productoNombre);
     const prodNombres = [...new Set(actsLote.map(a => a.productoNombre))];
 
     const card = document.createElement("div");
@@ -717,9 +720,15 @@ function renderLotesGrid() {
         </div>
       </div>
 
-      <div class="lote-actions" style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
-        <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote"><i data-lucide="edit-2"></i></button>
-        <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash-2"></i></button>
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="verActividadesDeLote('${l.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; font-weight: 600; font-size: 0.8rem; padding: 7px 10px; background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; cursor: pointer;" title="Ver todas las labores realizadas y futuras de este lote">
+          <i data-lucide="calendar" style="width: 15px; height: 15px;"></i>
+          <span>Ver Actividades (${actsTotalLote.length} tot: ${actsRealizadasLote} ✔, ${actsPendientesLote} ⏳)</span>
+        </button>
+        <div class="lote-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash-2"></i></button>
+        </div>
       </div>
     `;
     grid.appendChild(card);
@@ -1157,41 +1166,131 @@ function duplicarActividad(id) {
   showToast("📋 Datos copiados. Ajusta la fecha u operario y guarda con 1 clic.");
 }
 
+// Navegación directa a Agenda filtrada por Lote específico
+function verActividadesDeLote(loteId) {
+  // Navegar a sección de Agenda
+  const navItem = document.querySelector('.nav-item[data-section="agenda"]');
+  if (navItem) navItem.click();
+
+  // Establecer filtro de lote
+  const filterLoteSel = document.getElementById("filter-lote");
+  if (filterLoteSel) filterLoteSel.value = loteId;
+
+  // Limpiar filtros temporales para mostrar todo el historial (realizadas y futuras)
+  const fAnio = document.getElementById("filter-anio");
+  if (fAnio) fAnio.value = "";
+  const fMes = document.getElementById("filter-mes");
+  if (fMes) fMes.value = "";
+  const fDesde = document.getElementById("filter-fecha-desde");
+  if (fDesde) fDesde.value = "";
+  const fHasta = document.getElementById("filter-fecha-hasta");
+  if (fHasta) fHasta.value = "";
+  const fSearch = document.getElementById("search-activity");
+  if (fSearch) fSearch.value = "";
+
+  // Activar modo 'todas' para ver simultáneamente realizadas y futuras
+  setAgendaFilterMode('todas');
+
+  const lote = STATE.lotes.find(l => l.id === loteId);
+  const nombreLote = lote ? lote.nombre : "Lote";
+  showToast(`📅 Mostrando todas las actividades del Lote ${nombreLote} (Realizadas y Futuras)`);
+
+  setTimeout(() => {
+    const target = document.getElementById("agenda-cards-container") || document.getElementById("agenda-section");
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
+}
+
+// Restablecer todos los filtros de la Agenda
+function resetearTodosFiltrosAgenda() {
+  const fLote = document.getElementById('filter-lote');
+  if (fLote) fLote.value = '';
+  const fSearch = document.getElementById('search-activity');
+  if (fSearch) fSearch.value = '';
+  const fAnio = document.getElementById('filter-anio');
+  if (fAnio) fAnio.value = '';
+  const fMes = document.getElementById('filter-mes');
+  if (fMes) fMes.value = '';
+  const fDesde = document.getElementById('filter-fecha-desde');
+  if (fDesde) fDesde.value = '';
+  const fHasta = document.getElementById('filter-fecha-hasta');
+  if (fHasta) fHasta.value = '';
+
+  setAgendaFilterMode('todas');
+}
+
+// Poblar dinámicamente los selectores de Lotes y Años según los datos
+function poblarSelectoresFiltro() {
+  const filterLoteSel = document.getElementById("filter-lote");
+  if (filterLoteSel) {
+    const actVal = filterLoteSel.value;
+    filterLoteSel.innerHTML = '<option value="">🌾 Todos los Lotes</option>';
+    STATE.lotes.forEach(l => {
+      const actsLote = STATE.actividades.filter(a => a.loteId === l.id);
+      const r = actsLote.filter(a => a.cumplida).length;
+      const p = actsLote.filter(a => !a.cumplida).length;
+      filterLoteSel.innerHTML += `<option value="${l.id}">${escapeHtml(l.nombre)} (${actsLote.length} tot: ${r} ✔, ${p} ⏳)</option>`;
+    });
+    filterLoteSel.value = actVal;
+  }
+
+  const filterAnioSel = document.getElementById("filter-anio");
+  if (filterAnioSel) {
+    const actAnio = filterAnioSel.value;
+    const aniosSet = new Set();
+    const anioActual = new Date().getFullYear();
+    aniosSet.add(anioActual);
+    aniosSet.add(2026);
+    STATE.actividades.forEach(a => {
+      if (a.fecha && a.fecha.length >= 4) {
+        const y = parseInt(a.fecha.substring(0, 4));
+        if (!isNaN(y)) aniosSet.add(y);
+      }
+    });
+    const aniosOrd = Array.from(aniosSet).sort((a, b) => b - a);
+    filterAnioSel.innerHTML = '<option value="">📅 Todos los Años</option>';
+    aniosOrd.forEach(yr => {
+      filterAnioSel.innerHTML += `<option value="${yr}">${yr}</option>`;
+    });
+    filterAnioSel.value = actAnio;
+  }
+}
+
+// Modo de filtrado rápido por pestañas superiores
 function setAgendaFilterMode(mode) {
   const sel = document.getElementById("filter-cumplida");
   if (sel) sel.value = mode;
 
-  // Actualizar estilos de los 3 botones de pestañas
-  const tabFresh = document.getElementById("tab-agenda-fresh");
+  // Actualizar estilos visuales de las 4 pestañas superiores
+  const tabAll = document.getElementById("tab-agenda-all");
   const tabPending = document.getElementById("tab-agenda-pending");
-  const tabHistory = document.getElementById("tab-agenda-history");
+  const tabCompleted = document.getElementById("tab-agenda-completed");
+  const tabFresh = document.getElementById("tab-agenda-fresh");
 
-  if (tabFresh && tabPending && tabHistory) {
-    tabFresh.style.background = "transparent";
-    tabFresh.style.color = "var(--text-muted)";
-    tabFresh.style.borderColor = "rgba(255,255,255,0.1)";
-
-    tabPending.style.background = "transparent";
-    tabPending.style.color = "var(--text-muted)";
-    tabPending.style.borderColor = "rgba(255,255,255,0.1)";
-
-    tabHistory.style.background = "transparent";
-    tabHistory.style.color = "var(--text-muted)";
-    tabHistory.style.borderColor = "rgba(255,255,255,0.1)";
-
-    if (mode === "fresco") {
-      tabFresh.style.background = "rgba(16,185,129,0.2)";
-      tabFresh.style.color = "#34d399";
-      tabFresh.style.borderColor = "#10b981";
-    } else if (mode === "pendientes" || mode === "atrasadas") {
-      tabPending.style.background = "rgba(245,158,11,0.2)";
-      tabPending.style.color = "#fbbf24";
-      tabPending.style.borderColor = "#f59e0b";
-    } else {
-      tabHistory.style.background = "rgba(255,255,255,0.12)";
-      tabHistory.style.color = "#fff";
-      tabHistory.style.borderColor = "rgba(255,255,255,0.3)";
+  [tabAll, tabPending, tabCompleted, tabFresh].forEach(tab => {
+    if (tab) {
+      tab.style.background = "transparent";
+      tab.style.color = "var(--text-muted)";
+      tab.style.borderColor = "rgba(255,255,255,0.1)";
     }
+  });
+
+  if (mode === "todas" && tabAll) {
+    tabAll.style.background = "rgba(16,185,129,0.2)";
+    tabAll.style.color = "#34d399";
+    tabAll.style.borderColor = "#10b981";
+  } else if ((mode === "pendientes" || mode === "atrasadas") && tabPending) {
+    tabPending.style.background = "rgba(245,158,11,0.2)";
+    tabPending.style.color = "#fbbf24";
+    tabPending.style.borderColor = "#f59e0b";
+  } else if (mode === "completadas" && tabCompleted) {
+    tabCompleted.style.background = "rgba(16,185,129,0.15)";
+    tabCompleted.style.color = "#6ee7b7";
+    tabCompleted.style.borderColor = "rgba(16,185,129,0.4)";
+  } else if (mode === "fresco" && tabFresh) {
+    tabFresh.style.background = "rgba(59,130,246,0.18)";
+    tabFresh.style.color = "#60a5fa";
+    tabFresh.style.borderColor = "rgba(59,130,246,0.4)";
   }
 
   applyFilters();
@@ -1204,10 +1303,14 @@ function renderAgendaTable() {
   if (cardsContainer) cardsContainer.innerHTML = "";
 
   const filterLote = document.getElementById("filter-lote")?.value || "";
-  const filterCumplida = document.getElementById("filter-cumplida")?.value || "fresco";
+  const filterCumplida = document.getElementById("filter-cumplida")?.value || "todas";
+  const filterAnio = document.getElementById("filter-anio")?.value || "";
+  const filterMes = document.getElementById("filter-mes")?.value || "";
+  const filterFechaDesde = document.getElementById("filter-fecha-desde")?.value || "";
+  const filterFechaHasta = document.getElementById("filter-fecha-hasta")?.value || "";
   const searchQuery = (document.getElementById("search-activity")?.value || "").toLowerCase();
 
-  // Fechas clave para filtrado inteligente
+  // Fechas clave para vista fresca
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -1222,18 +1325,17 @@ function renderAgendaTable() {
     const tipoText = (a.tipo || "").toLowerCase();
     const personalText = (a.personal || "").toLowerCase();
     const prodText = (a.productoNombre || "").toLowerCase();
+    const cultivoText = (a.cultivoObjetivo || "").toLowerCase();
 
+    // 1. Filtro por Lote
     if (filterLote && a.loteId !== filterLote) return false;
 
+    // 2. Filtro por Estado (Cumplida / Pendiente / Atrasada / Fresco)
     const esCumplida = !!a.cumplida;
     const esAtrasada = !esCumplida && a.fecha < HOY;
     const esPendiente = !esCumplida;
 
     if (filterCumplida === "fresco") {
-      // VISTA FRESCA OPERATIVA (Por defecto):
-      // 1. Muestra todas las tareas pendientes por ejecutar (lo que hay que hacer).
-      // 2. Muestra tareas cumplidas recientes (del mes vigente o de los últimos 30 días).
-      // Oculta tareas viejas cumplidas de meses pasados (ej. julio) para no saturar la vista.
       const esRecienteOCorriente = (a.fecha >= primerDiaMesVigente && a.fecha <= ultimoDiaProximoMes) || (a.fecha >= limiteReciente30d);
       if (esCumplida && !esRecienteOCorriente) {
         return false;
@@ -1241,18 +1343,35 @@ function renderAgendaTable() {
     } else if (filterCumplida === "pendientes") {
       if (!esPendiente) return false;
     } else if (filterCumplida === "atrasadas") {
-      // Regla estricta: solo es atrasada si NO ha sido cumplida y venció su fecha
       if (!esAtrasada) return false;
     } else if (filterCumplida === "completadas") {
       if (!esCumplida) return false;
     }
-    // "todas": muestra absolutamente todo el historial
+    // 'todas': incluye tanto cumplidas (realizadas) como pendientes (futuras)
 
+    // 3. Filtro por Año
+    if (filterAnio) {
+      const anioAct = (a.fecha || "").substring(0, 4);
+      if (anioAct !== filterAnio) return false;
+    }
+
+    // 4. Filtro por Mes (formato '01', '02', ...)
+    if (filterMes) {
+      const mesAct = (a.fecha || "").substring(5, 7);
+      if (mesAct !== filterMes) return false;
+    }
+
+    // 5. Filtro por Rango de Fechas (Desde / Hasta)
+    if (filterFechaDesde && a.fecha < filterFechaDesde) return false;
+    if (filterFechaHasta && a.fecha > filterFechaHasta) return false;
+
+    // 6. Búsqueda por texto libre
     if (searchQuery) {
       const match = loteNombre.includes(searchQuery) ||
                     prodText.includes(searchQuery) ||
                     tipoText.includes(searchQuery) ||
                     personalText.includes(searchQuery) ||
+                    cultivoText.includes(searchQuery) ||
                     notesText.includes(searchQuery);
       if (!match) return false;
     }
@@ -1260,20 +1379,36 @@ function renderAgendaTable() {
     return true;
   });
 
-  // Actualizar badge de conteo en la interfaz
+  // Actualizar badge de conteo e información detallada
   const countBadge = document.getElementById("agenda-count-badge");
   if (countBadge) {
-    let modeText = "labores frescas (Mes vigente & pendientes)";
-    if (filterCumplida === "pendientes") modeText = "labores pendientes por ejecutar";
-    else if (filterCumplida === "atrasadas") modeText = "labores atrasadas pendientes";
-    else if (filterCumplida === "completadas") modeText = "labores cumplidas ejecutadas";
-    else if (filterCumplida === "todas") modeText = "labores en historial central";
-    countBadge.textContent = `Mostrando ${filtradas.length} ${modeText}`;
+    const cumplidasCount = filtradas.filter(a => a.cumplida).length;
+    const pendientesCount = filtradas.filter(a => !a.cumplida).length;
+
+    let loteInfo = "";
+    if (filterLote) {
+      const lObj = STATE.lotes.find(l => l.id === filterLote);
+      loteInfo = lObj ? `📍 ${lObj.nombre} • ` : "";
+    }
+
+    let tiempoInfo = "";
+    const mesesNombres = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    if (filterAnio && filterMes) {
+      tiempoInfo = ` • ${mesesNombres[parseInt(filterMes)] || filterMes} ${filterAnio}`;
+    } else if (filterAnio) {
+      tiempoInfo = ` • Año ${filterAnio}`;
+    } else if (filterMes) {
+      tiempoInfo = ` • Mes ${mesesNombres[parseInt(filterMes)] || filterMes}`;
+    } else if (filterFechaDesde || filterFechaHasta) {
+      tiempoInfo = ` • ${filterFechaDesde || '...'} a ${filterFechaHasta || '...'}`;
+    }
+
+    countBadge.innerHTML = `${loteInfo}<strong>${filtradas.length}</strong> labores (<span style="color:#34d399">${cumplidasCount} Realizadas ✔</span> | <span style="color:#fbbf24">${pendientesCount} Futuras ⏳</span>)${tiempoInfo}`;
   }
 
   // Ordenamiento operativo prioritario:
-  // 1. Tareas pendientes ordenadas cronológicamente (las que vencen primero van arriba)
-  // 2. Tareas cumplidas ordenadas por fecha descendente (lo último ejecutado arriba)
+  // 1. Tareas pendientes / futuras (lo que hay por hacer primero por fecha)
+  // 2. Tareas cumplidas / realizadas (lo más recientemente ejecutado arriba)
   filtradas.sort((a, b) => {
     if (a.cumplida !== b.cumplida) {
       return a.cumplida ? 1 : -1;
@@ -1286,7 +1421,18 @@ function renderAgendaTable() {
   });
 
   if (filtradas.length === 0) {
-    const emptyMsg = '<div class="empty-state" style="padding:40px 20px; text-align:center;"><i data-lucide="calendar-x" style="width:40px; height:40px; color:var(--text-muted); margin-bottom:12px;"></i><p style="color:var(--text-muted);">No se encontraron actividades en esta vista fresca. Si deseas consultar labores ejecutadas de meses anteriores, pulsa "Historial Completo".</p></div>';
+    const emptyMsg = `
+      <div class="empty-state" style="padding:40px 20px; text-align:center;">
+        <i data-lucide="calendar-x" style="width:40px; height:40px; color:var(--text-muted); margin-bottom:12px;"></i>
+        <h4 style="color:#cbd5e1; margin-bottom:6px;">No se encontraron labores con estos filtros</h4>
+        <p style="color:var(--text-muted); font-size:0.85rem; max-width:480px; margin:0 auto 16px;">
+          Prueba cambiando el lote, año, mes o seleccionando "Todas las Labores", o restablece los filtros con un clic.
+        </p>
+        <button type="button" class="btn btn-secondary" onclick="resetearTodosFiltrosAgenda()" style="font-size:0.8rem; padding:6px 14px;">
+          <i data-lucide="rotate-ccw"></i> Restablecer Filtros
+        </button>
+      </div>
+    `;
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center">' + emptyMsg + '</td></tr>';
     if (cardsContainer) cardsContainer.innerHTML = '<div style="grid-column: 1 / -1;">' + emptyMsg + '</div>';
     if (window.lucide) lucide.createIcons();
@@ -1328,7 +1474,7 @@ function renderAgendaTable() {
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="badge ${badgeClass}">${badgeText}</span>
-              <span style="font-size:0.78rem; font-weight:700; color:var(--primary);">${escapeHtml(loteNombre)}</span>
+              <span style="font-size:0.78rem; font-weight:700; color:var(--primary); cursor:pointer;" onclick="verActividadesDeLote('${a.loteId}')" title="Filtrar solo este lote">${escapeHtml(loteNombre)}</span>
             </div>
             <h4 class="actividad-card-title">${escapeHtml(a.tipo)}</h4>
           </div>
@@ -1353,41 +1499,46 @@ function renderAgendaTable() {
             <span class="meta-val">${escapeHtml(a.personal || 'Sin asignar')}</span>
           </div>
           <div class="meta-item">
-            <span class="meta-label">Insumo / Método</span>
-            <span class="meta-val">${escapeHtml(a.productoNombre || 'Manual')} ${a.metodo ? '(' + escapeHtml(a.metodo) + ')' : ''}</span>
+            <span class="meta-label">Etapa Cultivo</span>
+            <span class="meta-val">${escapeHtml(a.etapa || 'General')}</span>
           </div>
         </div>
 
-        ${a.notas ? `
-          <div class="actividad-card-notes">
-            <i data-lucide="message-square" style="width:13px; height:13px; color:var(--text-muted); flex-shrink:0;"></i>
-            <span>${escapeHtml(a.notas)}</span>
-          </div>
-        ` : ''}
+        ${a.productoNombre ? `
+        <div class="actividad-card-insumos">
+          <div class="insumo-name"><i data-lucide="flask-conical" style="width:13px; height:13px; vertical-align:middle; margin-right:4px;"></i>${escapeHtml(a.productoNombre)}</div>
+          <div class="insumo-dosis">Dosis: ${escapeHtml(a.dosificacion || 'Sin especificar')} | ${escapeHtml(a.metodo || 'Foliar')} ${a.cantidad > 0 ? `(${a.cantidad} ${escapeHtml(a.unidad || 'Kg')})` : ''}</div>
+        </div>` : ''}
 
-        <div class="actividad-card-actions">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="duplicarActividad('${a.id}')" title="Copiar datos y agendar la siguiente con 1 clic">
-            <i data-lucide="copy"></i> Duplicar
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="editarActividad('${a.id}')" title="Modificar datos de la labor">
-            <i data-lucide="edit-2"></i> Editar
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="eliminarActividad('${a.id}')" style="color:var(--danger); border-color:rgba(239,68,68,0.3);" title="Eliminar labor">
-            <i data-lucide="trash-2"></i>
-          </button>
+        ${a.notas ? `
+        <div class="actividad-card-notes">
+          <i data-lucide="file-text" style="width:12px; height:12px; display:inline; margin-right:3px;"></i>${escapeHtml(a.notas)}
+        </div>` : ''}
+
+        <div class="actividad-card-footer">
+          <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+            <i data-lucide="${a.cumplida ? 'check' : 'clock'}" style="width:12px; height:12px;"></i>
+            ${a.cumplida ? 'Ejecutada' : (esAtrasada ? 'Vencida' : 'Programada')}
+          </div>
+          <div class="act-actions" style="display:flex; gap:6px;">
+            <button class="btn btn-icon btn-sm" onclick="duplicarActividad('${a.id}')" title="Duplicar labor"><i data-lucide="copy"></i></button>
+            <button class="btn btn-icon btn-sm" onclick="editarActividad('${a.id}')" title="Editar labor"><i data-lucide="edit-2"></i></button>
+            <button class="btn btn-icon btn-sm text-danger" onclick="eliminarActividad('${a.id}')" title="Eliminar labor"><i data-lucide="trash-2"></i></button>
+          </div>
         </div>
       `;
       cardsContainer.appendChild(card);
     }
 
-    // RENDER VISTA 2: TABLA
+    // RENDER VISTA 2: FILA DE TABLA
     if (tbody) {
       const tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
       tr.innerHTML = `
         <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td>
-          <div style="font-weight: 600; color: white;">${escapeHtml(a.tipo)}</div>
-          <div style="font-size: 0.8rem; color: var(--primary);">${escapeHtml(loteNombre)} (${escapeHtml(a.cultivoObjetivo || 'General')})</div>
+          <div style="font-weight: 700; color: #fff;">${escapeHtml(a.tipo)}</div>
+          <div style="font-size: 0.8rem; color: var(--primary); cursor:pointer;" onclick="verActividadesDeLote('${a.loteId}')" title="Filtrar solo este lote">${escapeHtml(loteNombre)} (${escapeHtml(a.cultivoObjetivo || 'General')})</div>
         </td>
         <td><span class="stage-tag">${escapeHtml(a.etapa || 'General')}</span></td>
         <td>${insumosHtml}</td>
@@ -1423,16 +1574,7 @@ function renderAgendaTable() {
 }
 
 function applyFilters() {
-  const filterLoteSel = document.getElementById("filter-lote");
-  const actVal = filterLoteSel ? filterLoteSel.value : "";
-  if (filterLoteSel) {
-    filterLoteSel.innerHTML = '<option value="">Todos los Lotes</option>';
-    STATE.lotes.forEach(l => {
-      filterLoteSel.innerHTML += '<option value="' + l.id + '">' + escapeHtml(l.nombre) + '</option>';
-    });
-    filterLoteSel.value = actVal;
-  }
-
+  poblarSelectoresFiltro();
   renderAgendaTable();
   updateDashboard();
 }
