@@ -1060,41 +1060,331 @@ async function eliminarLote(id) {
 /* ==========================================================================
    GESTIÓN DINÁMICA DE AGENDA: VISTAS (TARJETAS / TABLA) & AGENDADO EXPRÉS
    ========================================================================== */
-let currentAgendaView = 'cards';
+/* ==========================================================================
+   GESTIÓN DINÁMICA DE AGENDA: RESUMEN EJECUTIVO, GRÁFICOS, TARJETAS, TABLA & DETALLE
+   ========================================================================== */
+let currentAgendaView = 'summary'; // Por defecto inicia en la vista ejecutiva resumida
+let chartAgendaLotes = null;
+let chartAgendaTipos = null;
+let actividadSeleccionadaId = null;
 
 function switchAgendaView(mode) {
   currentAgendaView = mode;
+  const summaryView = document.getElementById("agenda-summary-view");
   const cardsContainer = document.getElementById("agenda-cards-container");
   const tableWrapper = document.getElementById("agenda-table-wrapper");
+  const btnSummary = document.getElementById("btn-view-summary");
   const btnCards = document.getElementById("btn-view-cards");
   const btnTable = document.getElementById("btn-view-table");
 
-  if (!cardsContainer || !tableWrapper) return;
+  if (summaryView) summaryView.style.display = (mode === 'summary') ? 'block' : 'none';
+  if (cardsContainer) cardsContainer.style.display = (mode === 'cards') ? 'grid' : 'none';
+  if (tableWrapper) tableWrapper.style.display = (mode === 'table') ? 'block' : 'none';
 
-  if (mode === 'cards') {
-    cardsContainer.style.display = 'grid';
-    tableWrapper.style.display = 'none';
-    if (btnCards) {
-      btnCards.style.background = 'rgba(16, 185, 129, 0.2)';
-      btnCards.style.color = '#34d399';
+  [btnSummary, btnCards, btnTable].forEach(btn => {
+    if (btn) {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text-muted)';
     }
-    if (btnTable) {
-      btnTable.style.background = 'transparent';
-      btnTable.style.color = 'var(--text-muted)';
+  });
+
+  if (mode === 'summary' && btnSummary) {
+    btnSummary.style.background = 'rgba(16, 185, 129, 0.2)';
+    btnSummary.style.color = '#34d399';
+  } else if (mode === 'cards' && btnCards) {
+    btnCards.style.background = 'rgba(16, 185, 129, 0.2)';
+    btnCards.style.color = '#34d399';
+  } else if (mode === 'table' && btnTable) {
+    btnTable.style.background = 'rgba(16, 185, 129, 0.2)';
+    btnTable.style.color = '#34d399';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Renderizado del Resumen Ejecutivo, KPIs y Gráficos
+function renderAgendaSummary(filtradas) {
+  const total = filtradas.length;
+  const cumplidas = filtradas.filter(a => a.cumplida).length;
+  const pendientes = filtradas.filter(a => !a.cumplida).length;
+  const atrasadas = filtradas.filter(a => !a.cumplida && a.fecha < HOY).length;
+  const pctAvance = total > 0 ? Math.round((cumplidas / total) * 100) : 0;
+
+  // Métodos de aplicación (Suelo/Piso vs Foliar)
+  let sueloCount = 0;
+  let foliarCount = 0;
+  let insumosTotalVol = 0;
+  const productosSet = new Set();
+
+  filtradas.forEach(a => {
+    const met = (a.metodo || "").toLowerCase();
+    const tip = (a.tipo || "").toLowerCase();
+    if (met.includes("suelo") || met.includes("piso") || tip.includes("suelo") || tip.includes("piso")) {
+      sueloCount++;
+    } else if (met.includes("foliar") || tip.includes("foliar")) {
+      foliarCount++;
     }
-  } else {
-    cardsContainer.style.display = 'none';
-    tableWrapper.style.display = 'block';
-    if (btnTable) {
-      btnTable.style.background = 'rgba(16, 185, 129, 0.2)';
-      btnTable.style.color = '#34d399';
+
+    if (a.productoNombre) {
+      productosSet.add(a.productoNombre);
     }
-    if (btnCards) {
-      btnCards.style.background = 'transparent';
-      btnCards.style.color = 'var(--text-muted)';
+    if (a.cantidad > 0) {
+      insumosTotalVol += parseFloat(a.cantidad) || 0;
+    }
+  });
+
+  // Actualizar Tarjetas KPI del Resumen
+  const kpiTot = document.getElementById("summary-kpi-total");
+  const kpiAvance = document.getElementById("summary-kpi-avance");
+  const kpiStatus = document.getElementById("summary-kpi-status");
+  const kpiAtrasadas = document.getElementById("summary-kpi-atrasadas");
+  const kpiMetodo = document.getElementById("summary-kpi-metodo");
+  const kpiInsumos = document.getElementById("summary-kpi-insumos");
+  const kpiProdsCount = document.getElementById("summary-kpi-prods-count");
+
+  if (kpiTot) kpiTot.textContent = total;
+  if (kpiAvance) kpiAvance.textContent = `${pctAvance}% Cumplimiento`;
+  if (kpiStatus) kpiStatus.innerHTML = `<span style="color:#34d399;">${cumplidas} ✔</span> <span style="color:var(--text-muted);">|</span> <span style="color:#fbbf24;">${pendientes} ⏳</span>`;
+  if (kpiAtrasadas) kpiAtrasadas.textContent = atrasadas > 0 ? `${atrasadas} Atrasadas ⚠️` : '0 Atrasadas';
+  if (kpiMetodo) kpiMetodo.textContent = `${sueloCount} Suelo | ${foliarCount} Foliar`;
+  if (kpiInsumos) kpiInsumos.textContent = `${insumosTotalVol.toLocaleString()} Kg/L`;
+  if (kpiProdsCount) kpiProdsCount.textContent = `${productosSet.size} insumos diferentes`;
+
+  // 1. Gráfico de Labores por Lote (Cumplidas vs Pendientes)
+  const lotesMap = {};
+  filtradas.forEach(a => {
+    const lote = STATE.lotes.find(l => l.id === a.loteId);
+    const nombre = lote ? lote.nombre : "Sin Lote";
+    if (!lotesMap[nombre]) lotesMap[nombre] = { cumplidas: 0, pendientes: 0, atrasadas: 0 };
+    if (a.cumplida) {
+      lotesMap[nombre].cumplidas++;
+    } else if (a.fecha < HOY) {
+      lotesMap[nombre].atrasadas++;
+    } else {
+      lotesMap[nombre].pendientes++;
+    }
+  });
+
+  const lotesLabels = Object.keys(lotesMap);
+  const dataCumplidas = lotesLabels.map(l => lotesMap[l].cumplidas);
+  const dataPendientes = lotesLabels.map(l => lotesMap[l].pendientes);
+  const dataAtrasadas = lotesLabels.map(l => lotesMap[l].atrasadas);
+
+  const canvasLotes = document.getElementById("chartAgendaLotes");
+  if (canvasLotes) {
+    if (chartAgendaLotes) chartAgendaLotes.destroy();
+    const ctx = canvasLotes.getContext("2d");
+    chartAgendaLotes = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: lotesLabels.length > 0 ? lotesLabels : ["Sin labores"],
+        datasets: [
+          { label: 'Cumplidas', data: dataCumplidas.length > 0 ? dataCumplidas : [0], backgroundColor: '#10b981', borderRadius: 4 },
+          { label: 'Pendientes', data: dataPendientes.length > 0 ? dataPendientes : [0], backgroundColor: '#f59e0b', borderRadius: 4 },
+          { label: 'Atrasadas', data: dataAtrasadas.length > 0 ? dataAtrasadas : [0], backgroundColor: '#ef4444', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { boxWidth: 10, color: '#9ca3af', font: { size: 10 } } }
+        },
+        scales: {
+          x: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+          y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { precision: 0, color: '#9ca3af', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // 2. Gráfico de Distribución por Tipo de Labor
+  const tiposMap = {};
+  filtradas.forEach(a => {
+    const tip = a.tipo || "General";
+    tiposMap[tip] = (tiposMap[tip] || 0) + 1;
+  });
+  const tiposLabels = Object.keys(tiposMap);
+  const tiposData = tiposLabels.map(t => tiposMap[t]);
+
+  const canvasTipos = document.getElementById("chartAgendaTipos");
+  if (canvasTipos) {
+    if (chartAgendaTipos) chartAgendaTipos.destroy();
+    const ctxTipos = canvasTipos.getContext("2d");
+    chartAgendaTipos = new Chart(ctxTipos, {
+      type: 'doughnut',
+      data: {
+        labels: tiposLabels.length > 0 ? tiposLabels : ["Sin actividades"],
+        datasets: [{
+          data: tiposData.length > 0 ? tiposData : [1],
+          backgroundColor: tiposLabels.length > 0
+            ? ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316']
+            : ['rgba(255,255,255,0.05)'],
+          borderWidth: 1,
+          borderColor: 'rgba(9, 17, 12, 0.8)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { boxWidth: 10, color: '#9ca3af', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // 3. Tabla Resumen Compacta (1 fila por labor con clic para abrir detalle)
+  const tbodySummary = document.getElementById("agenda-summary-tbody");
+  if (tbodySummary) {
+    tbodySummary.innerHTML = "";
+    if (filtradas.length === 0) {
+      tbodySummary.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);"><i data-lucide="calendar-x" style="width:28px; height:28px; margin-bottom:8px; opacity:0.6;"></i><br>No hay labores para el filtro seleccionado.</td></tr>';
+    } else {
+      filtradas.forEach(a => {
+        const lote = STATE.lotes.find(l => l.id === a.loteId);
+        const loteNombre = lote ? lote.nombre : "Lote";
+        const esAtrasada = !a.cumplida && a.fecha < HOY;
+
+        let badgeClass = "badge-pendiente";
+        let badgeText = "Pendiente";
+        if (a.cumplida) {
+          badgeClass = "badge-cumplida";
+          badgeText = "Cumplida";
+        } else if (esAtrasada) {
+          badgeClass = "badge-atrasada";
+          badgeText = "Atrasada";
+        }
+
+        const met = (a.metodo || "").toLowerCase();
+        const tip = (a.tipo || "").toLowerCase();
+        let metodoBadge = '<span class="badge-metodo badge-general">General</span>';
+        if (met.includes("suelo") || met.includes("piso") || tip.includes("suelo") || tip.includes("piso")) {
+          metodoBadge = '<span class="badge-metodo badge-suelo">🌱 Suelo / Piso</span>';
+        } else if (met.includes("foliar") || tip.includes("foliar")) {
+          metodoBadge = '<span class="badge-metodo badge-foliar">🌿 Foliar</span>';
+        }
+
+        const tr = document.createElement("tr");
+        tr.className = "summary-row";
+        tr.title = "Haz clic para ver la Ficha Técnica con detalle completo";
+        tr.onclick = () => abrirDetalleActividad(a.id);
+
+        tr.innerHTML = `
+          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          <td>
+            <div style="font-weight:700; color:#fff;">${escapeHtml(loteNombre)}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(a.cultivoObjetivo || 'General')}</div>
+          </td>
+          <td>
+            <strong style="color:#e2e8f0;">${escapeHtml(a.tipo)}</strong>
+          </td>
+          <td>${metodoBadge}</td>
+          <td>
+            ${a.productoNombre ? `<span style="color:#34d399; font-weight:600;">${escapeHtml(a.productoNombre)}</span>` : '<span style="color:var(--text-muted);">-</span>'}
+          </td>
+          <td>
+            ${a.cantidad > 0 ? `<span style="color:#fbbf24; font-weight:700;">${a.cantidad} ${escapeHtml(a.unidad || 'Kg')}</span>` : '<span style="color:var(--text-muted);">-</span>'}
+          </td>
+          <td>
+            <span style="${esAtrasada ? 'color:var(--danger); font-weight:700;' : ''}">${a.fecha}</span>
+          </td>
+          <td>
+            <span style="color:var(--text-muted);">${escapeHtml(a.personal || 'Sin asignar')}</span>
+          </td>
+          <td style="text-align: right;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); abrirDetalleActividad('${a.id}')" style="padding:4px 8px; font-size:0.75rem; border-color:rgba(16,185,129,0.3); color:#34d399;">
+              <i data-lucide="eye" style="width:13px; height:13px;"></i> Detalle
+            </button>
+          </td>
+        `;
+        tbodySummary.appendChild(tr);
+      });
     }
   }
+}
+
+// Abrir Ficha Técnica Detallada de la Labor
+function abrirDetalleActividad(actId) {
+  const act = STATE.actividades.find(a => a.id === actId);
+  if (!act) return;
+
+  actividadSeleccionadaId = actId;
+  const modal = document.getElementById("act-detail-modal");
+  if (!modal) return;
+
+  const lote = STATE.lotes.find(l => l.id === act.loteId);
+  const loteNombre = lote ? lote.nombre : "Lote";
+  const esAtrasada = !act.cumplida && act.fecha < HOY;
+
+  // Llenar campos del modal
+  document.getElementById("detail-act-tipo").textContent = act.tipo || "Labor Agrícola";
+  
+  const bEstado = document.getElementById("detail-badge-estado");
+  if (bEstado) {
+    bEstado.className = "badge " + (act.cumplida ? "badge-cumplida" : (esAtrasada ? "badge-atrasada" : "badge-pendiente"));
+    bEstado.textContent = act.cumplida ? "✔ Cumplida / Ejecutada" : (esAtrasada ? "⚠️ Atrasada (Vencida)" : "⏳ Pendiente por Realizar");
+  }
+
+  const bLote = document.getElementById("detail-badge-lote");
+  if (bLote) bLote.textContent = `📍 Lote: ${loteNombre}`;
+
+  const bCultivo = document.getElementById("detail-badge-cultivo");
+  if (bCultivo) bCultivo.textContent = `🌱 Cultivo: ${act.cultivoObjetivo || 'General'}`;
+
+  // Insumos y Suelo/Piso
+  const met = (act.metodo || "").toLowerCase();
+  const tip = (act.tipo || "").toLowerCase();
+  let metodoTexto = "Aplicación Foliar";
+  if (met.includes("suelo") || met.includes("piso") || tip.includes("suelo") || tip.includes("piso")) {
+    metodoTexto = "🌱 Suelo / Piso (Al Piso)";
+  } else if (met.includes("foliar") || tip.includes("foliar")) {
+    metodoTexto = "🌿 Aplicación Foliar (Hojas)";
+  } else if (act.metodo) {
+    metodoTexto = act.metodo;
+  }
+
+  document.getElementById("detail-act-metodo").textContent = metodoTexto;
+  document.getElementById("detail-act-producto").textContent = act.productoNombre || "Sin insumo químico / fertilizante";
+  document.getElementById("detail-act-dosis").textContent = act.dosificacion || "Sin dosificación especificada";
+  document.getElementById("detail-act-cantidad").textContent = act.cantidad > 0 ? `${act.cantidad} ${act.unidad || 'Kg'}` : "Sin volumen registrado";
+
+  document.getElementById("detail-act-fecha").textContent = act.fecha || "Sin fecha";
+  document.getElementById("detail-act-personal").textContent = act.personal || "Sin operario asignado";
+  document.getElementById("detail-act-etapa").textContent = act.etapa || "General";
+  document.getElementById("detail-act-notas").textContent = act.notas || "Sin observaciones ni notas de campo registradas.";
+
+  // Botón de alternar estado
+  const btnToggle = document.getElementById("detail-btn-toggle");
+  if (btnToggle) {
+    btnToggle.innerHTML = act.cumplida 
+      ? '<i data-lucide="rotate-ccw"></i> <span>Reabrir / Marcar Pendiente</span>'
+      : '<i data-lucide="check-circle-2"></i> <span>Marcar como Cumplida en 1 Clic</span>';
+    btnToggle.className = act.cumplida ? "btn btn-secondary" : "btn btn-primary";
+  }
+
+  modal.classList.add("active");
   if (window.lucide) lucide.createIcons();
+}
+
+function cerrarDetalleActividad() {
+  const modal = document.getElementById("act-detail-modal");
+  if (modal) modal.classList.remove("active");
+  actividadSeleccionadaId = null;
+}
+
+// Alternar estado directamente desde el modal de detalle
+async function toggleStatusDesdeDetalle() {
+  if (!actividadSeleccionadaId) return;
+  await toggleActivityStatus(actividadSeleccionadaId);
+  abrirDetalleActividad(actividadSeleccionadaId);
+}
+
+// Editar labor directamente desde el modal de detalle
+function editarDesdeDetalle() {
+  const id = actividadSeleccionadaId;
+  cerrarDetalleActividad();
+  if (id) editarActividad(id);
 }
 
 function selectQuickLabor(labor, cultivo, etapa) {
@@ -1190,6 +1480,7 @@ function verActividadesDeLote(loteId) {
 
   // Activar modo 'todas' para ver simultáneamente realizadas y futuras
   setAgendaFilterMode('todas');
+  switchAgendaView('summary');
 
   const lote = STATE.lotes.find(l => l.id === loteId);
   const nombreLote = lote ? lote.nombre : "Lote";
@@ -1379,6 +1670,8 @@ function renderAgendaTable() {
     return true;
   });
 
+  renderAgendaSummary(filtradas);
+
   // Actualizar badge de conteo e información detallada
   const countBadge = document.getElementById("agenda-count-badge");
   if (countBadge) {
@@ -1469,6 +1762,8 @@ function renderAgendaTable() {
     if (cardsContainer) {
       const card = document.createElement("div");
       card.className = "actividad-card " + (a.cumplida ? "cumplida is-cumplida" : (esAtrasada ? "atrasada is-atrasada" : "pendiente"));
+      card.style.cursor = "pointer";
+      card.onclick = (e) => { if (!e.target.closest("button")) abrirDetalleActividad(a.id); };
       card.innerHTML = `
         <div class="actividad-card-header">
           <div>
@@ -1534,6 +1829,7 @@ function renderAgendaTable() {
     if (tbody) {
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
+      tr.onclick = (e) => { if (!e.target.closest("button")) abrirDetalleActividad(a.id); };
       tr.innerHTML = `
         <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td>

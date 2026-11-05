@@ -321,11 +321,14 @@
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <div style="display:flex; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:3px;">
-              <button type="button" id="btn-view-cards" class="btn btn-secondary" onclick="switchAgendaView('cards')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; background:rgba(16,185,129,0.2); color:#34d399; border:none;">
+              <button type="button" id="btn-view-summary" class="btn btn-secondary" onclick="switchAgendaView('summary')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; background:rgba(16,185,129,0.2); color:#34d399; border:none; display:flex; align-items:center; gap:5px;">
+                <i data-lucide="bar-chart-3"></i> Resumen &amp; Gráficos
+              </button>
+              <button type="button" id="btn-view-cards" class="btn btn-secondary" onclick="switchAgendaView('cards')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; border:none; color:var(--text-muted); display:flex; align-items:center; gap:5px;">
                 <i data-lucide="layout-grid"></i> Tarjetas
               </button>
-              <button type="button" id="btn-view-table" class="btn btn-secondary" onclick="switchAgendaView('table')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; border:none; color:var(--text-muted);">
-                <i data-lucide="table"></i> Tabla
+              <button type="button" id="btn-view-table" class="btn btn-secondary" onclick="switchAgendaView('table')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; border:none; color:var(--text-muted); display:flex; align-items:center; gap:5px;">
+                <i data-lucide="table"></i> Tabla Detallada
               </button>
             </div>
             <button class="btn btn-secondary" onclick="abrirModalPersonal()" title="Gestionar Operarios">
@@ -455,8 +458,117 @@
           </button>
         </div>
 
+        
+        <!-- VISTA 0: RESUMEN EJECUTIVO & GRÁFICOS (Modo por Defecto) -->
+        <div id="agenda-summary-view" style="display: block;">
+          <!-- Tarjetas KPI Sintéticas del Filtro Actual -->
+          <div class="agenda-kpis-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div class="kpi-card" style="padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                <span>Total Labores Filtradas</span>
+                <i data-lucide="calendar" style="width: 16px; height: 16px; color: #10b981;"></i>
+              </div>
+              <div id="summary-kpi-total" style="font-size: 1.6rem; font-weight: 700; color: #fff; margin: 6px 0 2px;">0</div>
+              <div id="summary-kpi-avance" style="font-size: 0.75rem; color: #34d399; font-weight: 600;">0% Realizadas</div>
+            </div>
+
+            <div class="kpi-card" style="padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                <span>Realizadas vs Pendientes</span>
+                <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #34d399;"></i>
+              </div>
+              <div id="summary-kpi-status" style="font-size: 1.15rem; font-weight: 700; color: #fff; margin: 8px 0 2px; display: flex; gap: 8px; align-items: center;">
+                <span style="color: #34d399;">0 ✔</span> <span style="color: var(--text-muted);">|</span> <span style="color: #fbbf24;">0 ⏳</span>
+              </div>
+              <div id="summary-kpi-atrasadas" style="font-size: 0.75rem; color: var(--text-muted);">0 Atrasadas</div>
+            </div>
+
+            <div class="kpi-card" style="padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                <span>Método: Suelo/Piso vs Foliar</span>
+                <i data-lucide="layers" style="width: 16px; height: 16px; color: #60a5fa;"></i>
+              </div>
+              <div id="summary-kpi-metodo" style="font-size: 1.05rem; font-weight: 700; color: #60a5fa; margin: 8px 0 2px;">
+                0 Suelo | 0 Foliar
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Tipo de aplicación</div>
+            </div>
+
+            <div class="kpi-card" style="padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                <span>Insumos Totales Aplicados</span>
+                <i data-lucide="flask-conical" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+              </div>
+              <div id="summary-kpi-insumos" style="font-size: 1.3rem; font-weight: 700; color: #fbbf24; margin: 6px 0 2px;">0 Kg/L</div>
+              <div id="summary-kpi-prods-count" style="font-size: 0.75rem; color: var(--text-muted);">0 productos registrados</div>
+            </div>
+          </div>
+
+          <!-- Dos Gráficos Resumen Interactivos -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 22px;">
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; font-size: 0.92rem; color: #f3f4f6; display: flex; align-items: center; gap: 7px;">
+                  <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: #10b981;"></i>
+                  <span>Labores por Lote (Realizadas vs Pendientes)</span>
+                </h4>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Avance por sector</span>
+              </div>
+              <div style="height: 220px; position: relative;">
+                <canvas id="chartAgendaLotes"></canvas>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; font-size: 0.92rem; color: #f3f4f6; display: flex; align-items: center; gap: 7px;">
+                  <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+                  <span>Distribución de Labores y Aplicación</span>
+                </h4>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Suelo/Piso vs Foliar</span>
+              </div>
+              <div style="height: 220px; position: relative;">
+                <canvas id="chartAgendaTipos"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla Ejecutiva Sintética (1 línea por labor con clic para abrir detalle completo) -->
+          <div style="background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <h4 style="margin: 0; font-size: 0.92rem; color: #f3f4f6; display: flex; align-items: center; gap: 7px;">
+                <i data-lucide="list-checks" style="width: 16px; height: 16px; color: #34d399;"></i>
+                <span>Resumen Ejecutivo de Labores</span>
+              </h4>
+              <span style="font-size: 0.76rem; color: #34d399; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); padding: 4px 10px; border-radius: 8px;">
+                💡 Clic en cualquier labor para ver la Ficha Técnica (productos, cantidades, suelo/piso)
+              </span>
+            </div>
+            <div class="table-responsive">
+              <table class="table-summary-compact">
+                <thead>
+                  <tr>
+                    <th style="width: 100px;">Estado</th>
+                    <th>Lote &amp; Cultivo</th>
+                    <th>Tipo de Labor</th>
+                    <th>Aplicación</th>
+                    <th>Insumo / Producto</th>
+                    <th>Cantidad</th>
+                    <th>Fecha</th>
+                    <th>Responsable</th>
+                    <th style="text-align: right; width: 90px;">Ficha</th>
+                  </tr>
+                </thead>
+                <tbody id="agenda-summary-tbody">
+                  <!-- Inyectado dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- VISTA 1: TARJETAS VISUALES DE LABORES (Por Defecto) -->
-        <div id="agenda-cards-container" class="actividades-cards-grid">
+        <div id="agenda-cards-container" class="actividades-cards-grid" style="display: none;">
           <!-- Inyectado desde app.js -->
         </div>
 
@@ -1072,6 +1184,96 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  
+  <!-- Modal: Ficha Técnica Detallada de la Labor (Suelo/Piso, Productos, Cantidades, Notas) -->
+  <div class="modal-overlay" id="act-detail-modal">
+    <div class="modal-content" style="width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div class="modal-header" style="margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div id="detail-icon-wrapper" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #34d399; border: 1px solid rgba(16,185,129,0.3);">
+            <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <span style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Ficha Técnica de Labor</span>
+            <h3 class="modal-title" id="detail-act-tipo" style="margin: 2px 0 0 0; font-size: 1.25rem;">Labor Agrícola</h3>
+          </div>
+        </div>
+        <button class="modal-close" onclick="cerrarDetalleActividad()"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- Badges de Estado y Lote -->
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;">
+        <span id="detail-badge-estado" class="badge badge-cumplida" style="font-size: 0.85rem; padding: 5px 12px;">Cumplida</span>
+        <span id="detail-badge-lote" class="badge" style="background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); font-size: 0.85rem; padding: 5px 12px;">Lote</span>
+        <span id="detail-badge-cultivo" class="badge" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); font-size: 0.85rem; padding: 5px 12px;">Cultivo</span>
+      </div>
+
+      <!-- Tarjeta Destacada: Insumos, Suelo / Piso & Método de Aplicación -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <div style="font-size: 0.78rem; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="droplet" style="width: 15px; height: 15px;"></i> Insumos, Suelo / Piso &amp; Aplicación
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+          <div>
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block;">Método de Aplicación:</span>
+            <div id="detail-act-metodo" style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-top: 2px;">Suelo / Piso</div>
+          </div>
+          <div>
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block;">Producto / Insumo:</span>
+            <div id="detail-act-producto" style="font-size: 0.95rem; font-weight: 700; color: #34d399; margin-top: 2px;">25-4</div>
+          </div>
+          <div>
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block;">Dosificación Prescrita:</span>
+            <div id="detail-act-dosis" style="font-size: 0.9rem; color: #cbd5e1; margin-top: 2px;">200g/árbol</div>
+          </div>
+          <div>
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block;">Cantidad / Volumen Total:</span>
+            <div id="detail-act-cantidad" style="font-size: 0.92rem; font-weight: 700; color: #fbbf24; margin-top: 2px;">50 Kg</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos de Cronograma, Personal & Etapa -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Fecha:</span>
+          <strong id="detail-act-fecha" style="font-size: 0.88rem; color: #fff;">15/09/2026</strong>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Responsable:</span>
+          <strong id="detail-act-personal" style="font-size: 0.88rem; color: #fff;">Ezequiel</strong>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Etapa del Cultivo:</span>
+          <strong id="detail-act-etapa" style="font-size: 0.88rem; color: #cbd5e1;">Crecimiento</strong>
+        </div>
+      </div>
+
+      <!-- Notas de Campo & Observaciones -->
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+        <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-bottom: 6px;">
+          <i data-lucide="file-text" style="width: 14px; height: 14px; color: #10b981;"></i> Observaciones y Notas de Campo:
+        </span>
+        <p id="detail-act-notas" style="font-size: 0.88rem; color: #e2e8f0; line-height: 1.5; margin: 0; font-style: italic;">
+          Sin notas registradas.
+        </p>
+      </div>
+
+      <!-- Footer con Acciones Rápidas -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+        <button type="button" id="detail-btn-toggle" class="btn btn-primary" onclick="toggleStatusDesdeDetalle()" style="display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="check-circle-2"></i> <span>Marcar como Cumplida</span>
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="detail-btn-edit" class="btn btn-secondary" onclick="editarDesdeDetalle()" style="display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="edit-2"></i> Editar Labor
+          </button>
+          <button type="button" class="btn btn-secondary modal-cancel" onclick="cerrarDetalleActividad()">Cerrar</button>
+        </div>
+      </div>
     </div>
   </div>
 
