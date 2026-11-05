@@ -331,6 +331,9 @@
                 <i data-lucide="table"></i> Tabla Detallada
               </button>
             </div>
+            <button type="button" class="btn btn-secondary" id="btn-toggle-quick-act" onclick="toggleQuickActPanel()" title="Desplegar barra de programación rápida" style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="zap" style="color:#fbbf24; width:15px; height:15px;"></i> Programar Rápido
+            </button>
             <button class="btn btn-secondary" onclick="abrirModalPersonal()" title="Gestionar Operarios">
               <i data-lucide="users"></i> Operarios
             </button>
@@ -340,8 +343,8 @@
           </div>
         </div>
 
-        <!-- BARRA DE PROGRAMACIÓN RÁPIDA (EXPRÉS) -->
-        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;">
+        <!-- BARRA DE PROGRAMACIÓN RÁPIDA (EXPRÉS - COLAPSABLE) -->
+        <div id="quick-act-container" style="display: none; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
             <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="zap" style="width: 17px; height: 17px; color: #fbbf24;"></i>
@@ -1188,6 +1191,98 @@
   </div>
 
   
+  
+  <!-- Modal: Ficha Técnica Completa del Lote (Siembras, Densidades, Insumos, Capacidad) -->
+  <div class="modal-overlay" id="lote-detail-modal">
+    <div class="modal-content" style="width: 720px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      
+      <!-- Cabecera -->
+      <div class="modal-header" style="margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #34d399; border: 1px solid rgba(16,185,129,0.3);">
+            <i data-lucide="layers" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <span style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Ficha Técnica Agronómica</span>
+            <h3 class="modal-title" id="lote-detail-nombre" style="margin: 2px 0 0 0; font-size: 1.3rem;">Lote</h3>
+          </div>
+        </div>
+        <button class="modal-close" onclick="cerrarFichaTecnicaLote()"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- Badges de Estado y Cultivos -->
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;">
+        <span id="lote-detail-badge-etapa" class="badge stage-badge" style="font-size: 0.85rem; padding: 5px 12px;">Crecimiento</span>
+        <span id="lote-detail-badge-area" class="badge" style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-size: 0.85rem; padding: 5px 12px;">0 Ha</span>
+        <div id="lote-detail-crops-tags" style="display: flex; gap: 6px;"></div>
+      </div>
+
+      <!-- Bloque 1: Capacidad Instalada vs Teórica del Lote -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="gauge" style="width: 15px; height: 15px; color: #10b981;"></i> Capacidad Instalada vs. Teórica
+          </span>
+          <span id="lote-detail-cap-pct" style="font-weight: 700; font-size: 0.88rem; color: #10b981;">0% Instalada</span>
+        </div>
+        
+        <div id="lote-detail-cap-bar" class="lote-capacity-bar-container" style="height: 10px; border-radius: 6px; margin-bottom: 12px;">
+          <div id="lote-detail-bar-inst" class="lote-capacity-installed" style="width: 0%;"></div>
+          <div id="lote-detail-bar-pend" class="lote-capacity-pending" style="width: 0%;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+          <div style="background: rgba(16,185,129,0.1); padding: 8px; border-radius: 8px;">
+            <div id="lote-detail-stat-sembrados" style="color: #34d399; font-weight: 700; font-size: 1.05rem;">0</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted);">Árboles Sembrados</div>
+          </div>
+          <div style="background: rgba(245,158,11,0.1); padding: 8px; border-radius: 8px;">
+            <div id="lote-detail-stat-pendientes" style="color: #fbbf24; font-weight: 700; font-size: 1.05rem;">0</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted);">Árboles Pendientes</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px;">
+            <div id="lote-detail-stat-teorica" style="color: #fff; font-weight: 700; font-size: 1.05rem;">0</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted);">Capacidad Teórica Máx.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque 2: Desglose Detallado de Siembras y Policultivos -->
+      <div style="margin-bottom: 18px;">
+        <h4 style="margin: 0 0 10px 0; font-size: 0.88rem; color: #f3f4f6; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="sprout" style="width: 15px; height: 15px; color: #34d399;"></i> Desglose Agronómico por Cultivo / Siembra
+        </h4>
+        <div id="lote-detail-siembras-container">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Bloque 3: Insumos Aplicados en este Lote -->
+      <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+        <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <i data-lucide="flask-conical" style="width: 14px; height: 14px; color: #f59e0b;"></i> Insumos / Agroquímicos Registrados:
+        </span>
+        <div id="lote-detail-insumos-list" style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Footer con Acciones Directas -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+        <button type="button" id="lote-detail-btn-actividades" class="btn btn-primary" onclick="irAActividadesDesdeFichaLote()" style="display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="calendar"></i> <span>Ver Actividades de este Lote</span>
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="lote-detail-btn-edit" class="btn btn-secondary" onclick="editarDesdeFichaLote()" style="display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="edit-2"></i> Editar Lote
+          </button>
+          <button type="button" class="btn btn-secondary modal-cancel" onclick="cerrarFichaTecnicaLote()">Cerrar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Modal: Ficha Técnica Detallada de la Labor (Suelo/Piso, Productos, Cantidades, Notas) -->
   <div class="modal-overlay" id="act-detail-modal">
     <div class="modal-content" style="width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 24px;">

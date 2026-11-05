@@ -1534,3 +1534,22 @@ select.form-control option:checked {
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+
+/* Estilos para Tarjeta de Lote Limpia y Ejecutiva */
+.lote-card-clean {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.lote-card-clean:hover {
+  transform: translateY(-3px);
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6), 0 0 15px rgba(16, 185, 129, 0.12) !important;
+}
+
+.siembra-card-detail {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}

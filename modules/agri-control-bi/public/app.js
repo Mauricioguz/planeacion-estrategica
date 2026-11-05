@@ -492,6 +492,21 @@ function updateClimatePanel() {
 /* ==========================================================================
    MÓDULO LOTES & CULTIVOS (CRUD CON CULTIVO DUAL)
    ========================================================================== */
+let loteSeleccionadoId = null;
+
+function toggleQuickActPanel() {
+  const panel = document.getElementById("quick-act-container");
+  const btn = document.getElementById("btn-toggle-quick-act");
+  if (!panel) return;
+  const isHidden = panel.style.display === "none";
+  panel.style.display = isHidden ? "block" : "none";
+  if (btn) {
+    btn.style.background = isHidden ? "rgba(245, 158, 11, 0.2)" : "transparent";
+    btn.style.borderColor = isHidden ? "#f59e0b" : "var(--border-color)";
+    btn.style.color = isHidden ? "#fbbf24" : "var(--text-muted)";
+  }
+}
+
 function renderLotesGrid() {
   const grid = document.getElementById("lotes-container");
   if (!grid) return;
@@ -512,13 +527,7 @@ function renderLotesGrid() {
     const actsTotalLote = STATE.actividades.filter(a => a.loteId === l.id);
     const actsRealizadasLote = actsTotalLote.filter(a => a.cumplida).length;
     const actsPendientesLote = actsTotalLote.filter(a => !a.cumplida).length;
-    const actsLote = actsTotalLote.filter(a => a.cumplida && a.productoNombre);
-    const prodNombres = [...new Set(actsLote.map(a => a.productoNombre))];
 
-    const card = document.createElement("div");
-    card.className = "lote-card";
-    card.id = `lote-card-${l.id}`;
-    
     // Tags de cultivos presentes
     let cropsHtml = `<span class="lote-crop">${escapeHtml(l.cultivo)}</span>`;
     if (l.cultivo2) {
@@ -528,207 +537,107 @@ function renderLotesGrid() {
       cropsHtml += `<span class="lote-crop" style="background: rgba(245,158,11,0.12); color: #fbbf24; margin-left: 5px;">${escapeHtml(l.cultivo3)}</span>`;
     }
 
-    // Datos de Siembra 1
+    // Datos agronómicos
     const a1 = Number(l.arboles1 || 0);
     const s1 = Number(l.distanciaSurco1 || 0);
     const p1 = Number(l.distanciaPlanta1 || 0);
     const pend1 = Number(l.arbolesPendientes1 || 0);
     const densTeor1 = (s1 > 0 && p1 > 0) ? Math.round(10000 / (s1 * p1)) : 0;
-    const densReal1 = (a1 > 0 && l.area > 0) ? Math.round(a1 / l.area) : 0;
 
-    // Datos de Siembra 2
     const a2 = Number(l.arboles2 || 0);
     const s2 = Number(l.distanciaSurco2 || 0);
     const p2 = Number(l.distanciaPlanta2 || 0);
     const pend2 = Number(l.arbolesPendientes2 || 0);
     const densTeor2 = (s2 > 0 && p2 > 0) ? Math.round(10000 / (s2 * p2)) : 0;
-    const densReal2 = (a2 > 0 && l.area > 0) ? Math.round(a2 / l.area) : 0;
 
-    // Datos de Siembra 3
     const a3 = Number(l.arboles3 || 0);
     const s3 = Number(l.distanciaSurco3 || 0);
     const p3 = Number(l.distanciaPlanta3 || 0);
     const pend3 = Number(l.arbolesPendientes3 || 0);
     const densTeor3 = (s3 > 0 && p3 > 0) ? Math.round(10000 / (s3 * p3)) : 0;
-    const densReal3 = (a3 > 0 && l.area > 0) ? Math.round(a3 / l.area) : 0;
 
-    // Totales actuales y pendientes
     const totalArbolesActuales = a1 + a2 + a3;
     const totalPendientes = Number(l.arbolesPendientes || 0) || (pend1 + pend2 + pend3);
     const totalProyectado = totalArbolesActuales + totalPendientes;
 
-    // Capacidad Teórica del lote (según marco dominante o promedio)
     let densTeorDominante = densTeor1 > 0 ? densTeor1 : (densTeor2 > 0 ? densTeor2 : (densTeor3 > 0 ? densTeor3 : 0));
     let capacidadTeorica = (densTeorDominante > 0 && l.area > 0) ? Math.round(densTeorDominante * l.area) : 0;
 
     let pctInstalada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalArbolesActuales / capacidadTeorica) * 100)) : 0;
     let pctProyectada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalProyectado / capacidadTeorica) * 100)) : 0;
     let pctPendiente = Math.max(0, pctProyectada - pctInstalada);
-    let faltanteTeorico = capacidadTeorica > totalProyectado ? (capacidadTeorica - totalProyectado) : 0;
+
+    const card = document.createElement("div");
+    card.className = "lote-card lote-card-clean";
+    card.id = `lote-card-${l.id}`;
+    card.style.cursor = "pointer";
+    card.title = "Haz clic para abrir la Ficha Técnica Completa de este Lote";
+    card.onclick = (e) => {
+      if (!e.target.closest("button")) {
+        abrirFichaTecnicaLote(l.id);
+      }
+    };
 
     card.innerHTML = `
-      <div class="lote-header">
+      <div class="lote-header" style="margin-bottom: 12px;">
         <div>
-          <h3 class="lote-name">${escapeHtml(l.nombre)}</h3>
-          <span class="badge stage-badge mt-2">${escapeHtml(l.etapa)}</span>
+          <h3 class="lote-name" style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 4px 0;">${escapeHtml(l.nombre)}</h3>
+          <span class="badge stage-badge" style="font-size: 0.72rem;">${escapeHtml(l.etapa)}</span>
         </div>
         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
           ${cropsHtml}
         </div>
       </div>
 
-      <div class="lote-stats" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-        <div class="lote-stat-item">
-          <span class="lote-stat-lbl">Área del Lote</span>
-          <span class="lote-stat-val" style="color: #34d399;">${l.area} Ha</span>
+      <!-- Métricas Ejecutivas del Lote -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; background: rgba(0,0,0,0.22); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Área del Lote</span>
+          <strong style="font-size: 1.15rem; color: #34d399; font-weight: 700;">${l.area} Ha</strong>
         </div>
-        <div class="lote-stat-item">
-          <span class="lote-stat-lbl">Total Árboles Sembrados</span>
-          <span class="lote-stat-val" style="color: #fbbf24;">${totalArbolesActuales > 0 ? totalArbolesActuales.toLocaleString() + ' arb.' : 'Sin parametrizar'}</span>
+        <div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Árboles Sembrados</span>
+          <strong style="font-size: 1.15rem; color: #fbbf24; font-weight: 700;">${totalArbolesActuales > 0 ? totalArbolesActuales.toLocaleString() : '0'} <span style="font-size: 0.72rem; font-weight: normal; color: var(--text-muted);">arb.</span></strong>
+          ${totalPendientes > 0 ? `<div style="font-size: 0.7rem; color: #fde68a;">+${totalPendientes.toLocaleString()} pend.</div>` : ''}
         </div>
       </div>
 
-      <!-- PANEL BI: CAPACIDAD INSTALADA VS TEÓRICA -->
-      <div class="lote-capacity-box">
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; margin-bottom: 4px;">
-          <span style="color: #cbd5e1; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-            <i data-lucide="gauge" style="width: 14px; height: 14px; color: #10b981;"></i> Capacidad del Lote:
+      <!-- Barra de Capacidad Minimalista -->
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; margin-bottom: 5px;">
+          <span style="color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="gauge" style="width: 13px; height: 13px; color: #10b981;"></i> Capacidad:
           </span>
-          <span style="font-weight: 700; color: ${pctInstalada >= 80 ? '#10b981' : '#f59e0b'};">
-            ${capacidadTeorica > 0 ? `${pctInstalada}% Instalada` : 'Densidad sin definir'}
-          </span>
+          <strong style="color: ${pctInstalada >= 80 ? '#10b981' : '#f59e0b'};">
+            ${capacidadTeorica > 0 ? `${pctInstalada}% Instalada` : 'Sin distancias'}
+          </strong>
         </div>
-
         ${capacidadTeorica > 0 ? `
-        <div class="lote-capacity-bar-container" title="Verde: Sembrados actuales (${pctInstalada}%) | Amarillo: Pendientes (${pctPendiente}%)">
-          <div class="lote-capacity-installed" style="width: ${pctInstalada}%;"></div>
-          <div class="lote-capacity-pending" style="width: ${pctPendiente}%;"></div>
+        <div class="lote-capacity-bar-container" style="height: 6px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden; display: flex;">
+          <div style="width: ${pctInstalada}%; background: #10b981; height: 100%;"></div>
+          <div style="width: ${pctPendiente}%; background: #f59e0b; height: 100%;"></div>
         </div>
-
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 0.68rem; color: var(--text-muted); text-align: center; margin-top: 6px;">
-          <div style="background: rgba(16,185,129,0.1); padding: 3px 4px; border-radius: 6px;">
-            <div style="color: #34d399; font-weight: 700;">${totalArbolesActuales.toLocaleString()}</div>
-            <div>Sembrados</div>
-          </div>
-          <div style="background: rgba(245,158,11,0.1); padding: 3px 4px; border-radius: 6px;">
-            <div style="color: #fbbf24; font-weight: 700;">+${totalPendientes.toLocaleString()}</div>
-            <div>Pendientes</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 3px 4px; border-radius: 6px;">
-            <div style="color: #fff; font-weight: 700;">${capacidadTeorica.toLocaleString()}</div>
-            <div>Teórica Máx.</div>
-          </div>
-        </div>
-        ` : `
-        <div style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">
-          Ingresa distancias entre surcos y plantas para calcular la capacidad máxima instalada vs teórica.
-        </div>
-        `}
+        ` : ''}
       </div>
 
-      <!-- Detalle Agronómico: Siembra 1 (Cultivo Principal) -->
-      <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-          <strong style="color: #10b981;">🌱 ${escapeHtml(l.cultivo)}</strong>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra ? 'Siembra: ' + escapeHtml(l.fechaSiembra) : 'Sin fecha'}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
-            <strong>${a1 > 0 ? a1.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
-          </div>
-          ${pend1 > 0 ? `
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: #fde68a;">Árboles Pendientes:</span>
-            <strong style="color: #fbbf24;">+${pend1.toLocaleString()} plantas</strong>
-          </div>` : ''}
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Dist. Siembra:</span>
-            <span>${(s1 > 0 && p1 > 0) ? `${s1}m × ${p1}m (${(s1 * p1).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Densidad:</span>
-            <strong style="color: #34d399;">${densReal1 > 0 ? `${densReal1.toLocaleString()} pl/Ha (Real)` : (densTeor1 > 0 ? `${densTeor1.toLocaleString()} pl/Ha (Teórica)` : '<span style="color:var(--text-muted); font-weight:normal;">-</span>')}</strong>
-          </div>
-        </div>
+      <!-- Resumen Compacto de Labores -->
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px; background: rgba(16,185,129,0.05); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.15);">
+        <span style="display: flex; align-items: center; gap: 5px; color: #a7f3d0;">
+          <i data-lucide="calendar" style="width: 13px; height: 13px; color: #10b981;"></i>
+          ${actsTotalLote.length} Labores
+        </span>
+        <span>
+          <strong style="color: #34d399;">${actsRealizadasLote} ✔</strong> | <strong style="color: #fbbf24;">${actsPendientesLote} ⏳</strong>
+        </span>
       </div>
 
-      <!-- Detalle Agronómico: Siembra 2 (Segundo Cultivo o Distinta Fecha) -->
-      ${l.cultivo2 ? `
-      <div style="background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-          <strong style="color: #60a5fa;">🌿 ${escapeHtml(l.cultivo2)}</strong>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra2 ? 'Siembra: ' + escapeHtml(l.fechaSiembra2) : 'Sin fecha'}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
-            <strong>${a2 > 0 ? a2.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
-          </div>
-          ${pend2 > 0 ? `
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: #fde68a;">Árboles Pendientes:</span>
-            <strong style="color: #fbbf24;">+${pend2.toLocaleString()} plantas</strong>
-          </div>` : ''}
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Dist. Siembra:</span>
-            <span>${(s2 > 0 && p2 > 0) ? `${s2}m × ${p2}m (${(s2 * p2).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Densidad:</span>
-            <strong style="color: #60a5fa;">${densReal2 > 0 ? `${densReal2.toLocaleString()} pl/Ha (Real)` : (densTeor2 > 0 ? `${densTeor2.toLocaleString()} pl/Ha (Teórica)` : '<span style="color:var(--text-muted); font-weight:normal;">-</span>')}</strong>
-          </div>
-        </div>
-      </div>
-      ` : ''}
-
-      <!-- Detalle Agronómico: Siembra 3 (Tercer Cultivo / Siembra Adicional) -->
-      ${l.cultivo3 ? `
-      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.22); border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-          <strong style="color: #fbbf24;">🌾 ${escapeHtml(l.cultivo3)}</strong>
-          <span style="font-size: 0.72rem; color: var(--text-muted);">${l.fechaSiembra3 ? 'Siembra: ' + escapeHtml(l.fechaSiembra3) : 'Sin fecha'}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.76rem; color: #cbd5e1;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Árboles Sembrados:</span>
-            <strong>${a3 > 0 ? a3.toLocaleString() + ' plantas' : '<span style="color:var(--text-muted); font-weight:normal;">Sin registrar</span>'}</strong>
-          </div>
-          ${pend3 > 0 ? `
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: #fde68a;">Árboles Pendientes:</span>
-            <strong style="color: #fbbf24;">+${pend3.toLocaleString()} plantas</strong>
-          </div>` : ''}
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Dist. Siembra:</span>
-            <span>${(s3 > 0 && p3 > 0) ? `${s3}m × ${p3}m (${(s3 * p3).toFixed(2)} m²/pl)` : '<span style="color:var(--text-muted);">Sin registrar</span>'}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Densidad:</span>
-            <strong style="color: #fbbf24;">${densReal3 > 0 ? `${densReal3.toLocaleString()} pl/Ha (Real)` : (densTeor3 > 0 ? `${densTeor3.toLocaleString()} pl/Ha (Teórica)` : '<span style="color:var(--text-muted); font-weight:normal;">-</span>')}</strong>
-          </div>
-        </div>
-      </div>
-      ` : ''}
-
-      <div class="lote-active-products">
-        <div class="lote-products-title">Insumos Registrados:</div>
-        <div class="lote-products-list">
-          ${prodNombres.length > 0 
-            ? prodNombres.map(name => `<span class="product-tag">${escapeHtml(name)}</span>`).join("") 
-            : '<span class="text-muted" style="font-size:0.75rem">Ninguno registrado</span>'}
-        </div>
-      </div>
-
-      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
-        <button type="button" class="btn btn-secondary" onclick="verActividadesDeLote('${l.id}')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; font-weight: 600; font-size: 0.8rem; padding: 7px 10px; background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; cursor: pointer;" title="Ver todas las labores realizadas y futuras de este lote">
-          <i data-lucide="calendar" style="width: 15px; height: 15px;"></i>
-          <span>Ver Actividades (${actsTotalLote.length} tot: ${actsRealizadasLote} ✔, ${actsPendientesLote} ⏳)</span>
+      <!-- Acciones de la Tarjeta -->
+      <div style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="abrirFichaTecnicaLote('${l.id}')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 0.78rem; padding: 7px 10px; background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px;">
+          <i data-lucide="info" style="width: 14px; height: 14px;"></i> Ver Ficha Completa
         </button>
-        <div class="lote-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
-          <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote"><i data-lucide="edit-2"></i></button>
-          <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash-2"></i></button>
-        </div>
+        <button class="btn-icon-only" onclick="editarLote('${l.id}')" title="Editar Lote"><i data-lucide="edit-2"></i></button>
+        <button class="btn-icon-only text-danger" onclick="eliminarLote('${l.id}')" title="Eliminar Lote"><i data-lucide="trash-2"></i></button>
       </div>
     `;
     grid.appendChild(card);
@@ -737,7 +646,161 @@ function renderLotesGrid() {
   actualizarSelectorLoteRapido();
   if (window.lucide) lucide.createIcons();
 }
-// Actualización en tiempo real de cálculos en modal de lote
+
+// Abrir Ficha Técnica Completa del Lote (Todo el detalle profundo accesible con 1 clic)
+function abrirFichaTecnicaLote(loteId) {
+  const l = STATE.lotes.find(lote => lote.id === loteId);
+  if (!l) return;
+  loteSeleccionadoId = loteId;
+
+  const modal = document.getElementById("lote-detail-modal");
+  if (!modal) return;
+
+  // Llenar cabecera
+  document.getElementById("lote-detail-nombre").textContent = `Lote ${l.nombre}`;
+  document.getElementById("lote-detail-badge-etapa").textContent = l.etapa || "En Producción";
+  document.getElementById("lote-detail-badge-area").textContent = `${l.area} Ha`;
+
+  // Tags de cultivos
+  const cropsContainer = document.getElementById("lote-detail-crops-tags");
+  if (cropsContainer) {
+    cropsContainer.innerHTML = `<span class="lote-crop">${escapeHtml(l.cultivo)}</span>`;
+    if (l.cultivo2) cropsContainer.innerHTML += `<span class="lote-crop" style="background: rgba(59,130,246,0.12); color: var(--accent-blue); margin-left: 5px;">${escapeHtml(l.cultivo2)}</span>`;
+    if (l.cultivo3) cropsContainer.innerHTML += `<span class="lote-crop" style="background: rgba(245,158,11,0.12); color: #fbbf24; margin-left: 5px;">${escapeHtml(l.cultivo3)}</span>`;
+  }
+
+  // Cálculos de Capacidad
+  const a1 = Number(l.arboles1 || 0);
+  const s1 = Number(l.distanciaSurco1 || 0);
+  const p1 = Number(l.distanciaPlanta1 || 0);
+  const pend1 = Number(l.arbolesPendientes1 || 0);
+  const densTeor1 = (s1 > 0 && p1 > 0) ? Math.round(10000 / (s1 * p1)) : 0;
+  const densReal1 = (a1 > 0 && l.area > 0) ? Math.round(a1 / l.area) : 0;
+
+  const a2 = Number(l.arboles2 || 0);
+  const s2 = Number(l.distanciaSurco2 || 0);
+  const p2 = Number(l.distanciaPlanta2 || 0);
+  const pend2 = Number(l.arbolesPendientes2 || 0);
+  const densTeor2 = (s2 > 0 && p2 > 0) ? Math.round(10000 / (s2 * p2)) : 0;
+  const densReal2 = (a2 > 0 && l.area > 0) ? Math.round(a2 / l.area) : 0;
+
+  const a3 = Number(l.arboles3 || 0);
+  const s3 = Number(l.distanciaSurco3 || 0);
+  const p3 = Number(l.distanciaPlanta3 || 0);
+  const pend3 = Number(l.arbolesPendientes3 || 0);
+  const densTeor3 = (s3 > 0 && p3 > 0) ? Math.round(10000 / (s3 * p3)) : 0;
+  const densReal3 = (a3 > 0 && l.area > 0) ? Math.round(a3 / l.area) : 0;
+
+  const totalArbolesActuales = a1 + a2 + a3;
+  const totalPendientes = Number(l.arbolesPendientes || 0) || (pend1 + pend2 + pend3);
+  const totalProyectado = totalArbolesActuales + totalPendientes;
+
+  let densTeorDominante = densTeor1 > 0 ? densTeor1 : (densTeor2 > 0 ? densTeor2 : (densTeor3 > 0 ? densTeor3 : 0));
+  let capacidadTeorica = (densTeorDominante > 0 && l.area > 0) ? Math.round(densTeorDominante * l.area) : 0;
+
+  let pctInstalada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalArbolesActuales / capacidadTeorica) * 100)) : 0;
+  let pctProyectada = capacidadTeorica > 0 ? Math.min(100, Math.round((totalProyectado / capacidadTeorica) * 100)) : 0;
+  let pctPendiente = Math.max(0, pctProyectada - pctInstalada);
+
+  document.getElementById("lote-detail-cap-pct").textContent = capacidadTeorica > 0 ? `${pctInstalada}% Instalada` : 'Densidad no configurada';
+  document.getElementById("lote-detail-bar-inst").style.width = `${pctInstalada}%`;
+  document.getElementById("lote-detail-bar-pend").style.width = `${pctPendiente}%`;
+
+  document.getElementById("lote-detail-stat-sembrados").textContent = totalArbolesActuales > 0 ? totalArbolesActuales.toLocaleString() : '0';
+  document.getElementById("lote-detail-stat-pendientes").textContent = totalPendientes > 0 ? `+${totalPendientes.toLocaleString()}` : '+0';
+  document.getElementById("lote-detail-stat-teorica").textContent = capacidadTeorica > 0 ? capacidadTeorica.toLocaleString() : '-';
+
+  // Desglose de Siembras
+  const siembrasContainer = document.getElementById("lote-detail-siembras-container");
+  if (siembrasContainer) {
+    siembrasContainer.innerHTML = "";
+
+    // Siembra 1
+    siembrasContainer.innerHTML += `
+      <div class="siembra-card-detail" style="border-left: 3px solid #10b981; margin-bottom: 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong style="color: #10b981; font-size:0.95rem;">🌱 Siembra 1: ${escapeHtml(l.cultivo)}</strong>
+          <span style="font-size:0.75rem; color:var(--text-muted);">${l.fechaSiembra ? 'Fecha: ' + escapeHtml(l.fechaSiembra) : 'Sin fecha'}</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; font-size:0.8rem;">
+          <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Sembrados:</span><strong>${a1 > 0 ? a1.toLocaleString() + ' plantas' : 'Sin registrar'}</strong></div>
+          <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Pendientes:</span><strong style="color:#fbbf24;">${pend1 > 0 ? '+' + pend1.toLocaleString() : '0'}</strong></div>
+          <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Marco (Surco × Planta):</span><strong>${(s1 > 0 && p1 > 0) ? `${s1}m × ${p1}m (${(s1 * p1).toFixed(2)} m²)` : '-'}</strong></div>
+          <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Densidad Real:</span><strong style="color:#34d399;">${densReal1 > 0 ? densReal1.toLocaleString() + ' pl/Ha' : '-'}</strong></div>
+        </div>
+      </div>
+    `;
+
+    // Siembra 2
+    if (l.cultivo2) {
+      siembrasContainer.innerHTML += `
+        <div class="siembra-card-detail" style="border-left: 3px solid #3b82f6; margin-bottom: 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color: #60a5fa; font-size:0.95rem;">🌿 Siembra 2: ${escapeHtml(l.cultivo2)}</strong>
+            <span style="font-size:0.75rem; color:var(--text-muted);">${l.fechaSiembra2 ? 'Fecha: ' + escapeHtml(l.fechaSiembra2) : 'Sin fecha'}</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; font-size:0.8rem;">
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Sembrados:</span><strong>${a2 > 0 ? a2.toLocaleString() + ' plantas' : 'Sin registrar'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Pendientes:</span><strong style="color:#fbbf24;">${pend2 > 0 ? '+' + pend2.toLocaleString() : '0'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Marco (Surco × Planta):</span><strong>${(s2 > 0 && p2 > 0) ? `${s2}m × ${p2}m (${(s2 * p2).toFixed(2)} m²)` : '-'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Densidad Real:</span><strong style="color:#60a5fa;">${densReal2 > 0 ? densReal2.toLocaleString() + ' pl/Ha' : '-'}</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Siembra 3
+    if (l.cultivo3) {
+      siembrasContainer.innerHTML += `
+        <div class="siembra-card-detail" style="border-left: 3px solid #f59e0b; margin-bottom: 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color: #fbbf24; font-size:0.95rem;">🌾 Siembra 3: ${escapeHtml(l.cultivo3)}</strong>
+            <span style="font-size:0.75rem; color:var(--text-muted);">${l.fechaSiembra3 ? 'Fecha: ' + escapeHtml(l.fechaSiembra3) : 'Sin fecha'}</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; font-size:0.8rem;">
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Sembrados:</span><strong>${a3 > 0 ? a3.toLocaleString() + ' plantas' : 'Sin registrar'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Pendientes:</span><strong style="color:#fbbf24;">${pend3 > 0 ? '+' + pend3.toLocaleString() : '0'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Marco (Surco × Planta):</span><strong>${(s3 > 0 && p3 > 0) ? `${s3}m × ${p3}m (${(s3 * p3).toFixed(2)} m²)` : '-'}</strong></div>
+            <div><span style="color:var(--text-muted); display:block; font-size:0.72rem;">Densidad Real:</span><strong style="color:#fbbf24;">${densReal3 > 0 ? densReal3.toLocaleString() + ' pl/Ha' : '-'}</strong></div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Insumos registrados
+  const insumosContainer = document.getElementById("lote-detail-insumos-list");
+  if (insumosContainer) {
+    const actsLote = STATE.actividades.filter(a => a.loteId === l.id && a.productoNombre);
+    const prodNombres = [...new Set(actsLote.map(a => a.productoNombre))];
+    if (prodNombres.length > 0) {
+      insumosContainer.innerHTML = prodNombres.map(name => `<span class="product-tag" style="background: rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:6px; font-size:0.78rem;">${escapeHtml(name)}</span>`).join("");
+    } else {
+      insumosContainer.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem;">Ningún insumo químico ni fertilizante registrado aún.</span>';
+    }
+  }
+
+  modal.classList.add("active");
+  if (window.lucide) lucide.createIcons();
+}
+
+function cerrarFichaTecnicaLote() {
+  const modal = document.getElementById("lote-detail-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function irAActividadesDesdeFichaLote() {
+  const id = loteSeleccionadoId;
+  cerrarFichaTecnicaLote();
+  if (id) verActividadesDeLote(id);
+}
+
+function editarDesdeFichaLote() {
+  const id = loteSeleccionadoId;
+  cerrarFichaTecnicaLote();
+  if (id) editarLote(id);
+}
+
 function actualizarCalculosModalLote() {
   const arboles1 = parseInt(document.getElementById("lote-form-arboles1")?.value) || 0;
   const pend1 = parseInt(document.getElementById("lote-form-pendientes1")?.value) || 0;
