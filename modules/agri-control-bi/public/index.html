@@ -361,7 +361,7 @@
             </div>
           </div>
 
-          <form id="quick-act-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 10px; align-items: flex-end;">
+          <form id="quick-act-form" onsubmit="guardarActividadExpress(); return false;" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 10px; align-items: flex-end;">
             <div>
               <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Lote *</label>
               <select id="quick-act-lote" class="form-control" required style="font-size: 0.85rem; padding: 7px 10px;"></select>
@@ -379,7 +379,7 @@
               <input type="text" id="quick-act-personal" class="form-control" list="personal-suggestions" placeholder="Ej. Henry" required style="font-size: 0.85rem; padding: 7px 10px;">
             </div>
             <div>
-              <button type="submit" class="btn btn-primary" style="white-space: nowrap; height: 38px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+              <button type="button" onclick="guardarActividadExpress()" class="btn btn-primary" style="white-space: nowrap; height: 38px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
                 <i data-lucide="plus"></i> Agendar
               </button>
             </div>

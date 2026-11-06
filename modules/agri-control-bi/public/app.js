@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
   setupClimateToggles();
   setupFormsAndModals();
+  setupQuickActivityForm();
   
   // Cargar datos desde la API al iniciar
   await refreshStateFromAPI();
@@ -504,6 +505,18 @@ function toggleQuickActPanel() {
     btn.style.background = isHidden ? "rgba(245, 158, 11, 0.2)" : "transparent";
     btn.style.borderColor = isHidden ? "#f59e0b" : "var(--border-color)";
     btn.style.color = isHidden ? "#fbbf24" : "var(--text-muted)";
+  }
+  if (isHidden) {
+    actualizarSelectorLoteRapido();
+    const filterLote = document.getElementById("filter-lote")?.value;
+    const loteSel = document.getElementById("quick-act-lote");
+    if (loteSel && filterLote) {
+      loteSel.value = filterLote;
+    }
+    const fechaInp = document.getElementById("quick-act-fecha");
+    if (fechaInp && !fechaInp.value) fechaInp.value = HOY;
+    const tipoInp = document.getElementById("quick-act-tipo");
+    if (tipoInp) tipoInp.focus();
   }
 }
 
@@ -2543,6 +2556,9 @@ function setupFormsAndModals() {
 
     reader.readAsDataURL(file); // Convierte archivo a cadena Base64
   });
+
+  // Configurar barra de agendado exprés
+  setupQuickActivityForm();
 }
 
 /* ==========================================================================
@@ -2676,6 +2692,84 @@ async function eliminarPersonal(name) {
 }
 
 
+// Función para guardar actividad exprés sin recargar la página ni perder el filtro activo
+async function guardarActividadExpress() {
+  const loteId = document.getElementById("quick-act-lote")?.value;
+  const tipo = document.getElementById("quick-act-tipo")?.value.trim();
+  const fecha = document.getElementById("quick-act-fecha")?.value;
+  const personal = document.getElementById("quick-act-personal")?.value.trim();
+
+  if (!loteId || !tipo || !fecha || !personal) {
+    alert("Por favor completa los campos del agendado rápido (Lote, Labor, Fecha y Operario).");
+    return;
+  }
+
+  const lote = STATE.lotes.find(l => l.id === loteId);
+  const cultivoObjetivo = lote ? lote.cultivo : "General";
+  const etapa = lote ? lote.etapa : "Crecimiento";
+
+  // Detectar automáticamente si es Suelo/Piso o Foliar según el nombre de la labor
+  let metodo = "Campo / Manual";
+  const tipoLower = tipo.toLowerCase();
+  if (tipoLower.includes("suelo") || tipoLower.includes("piso") || tipoLower.includes("fertiliz")) {
+    metodo = "Suelo/Piso";
+  } else if (tipoLower.includes("foliar") || tipoLower.includes("plaga") || tipoLower.includes("fumig")) {
+    metodo = "Foliar";
+  }
+
+  const nuevoId = 'act-' + Date.now();
+  const nuevaAct = {
+    id: nuevoId,
+    loteId,
+    cultivoObjetivo,
+    tipo,
+    productoNombre: "",
+    cantidad: 0,
+    unidad: "Kg",
+    fecha,
+    personal,
+    etapa,
+    dosificacion: "",
+    metodo,
+    cumplida: false,
+    notas: "Programada desde barra exprés"
+  };
+
+  // 1. Agregar a memoria local
+  STATE.actividades.unshift(nuevaAct);
+
+  // 2. Refrescar selectores de filtros por si cambiaron conteos
+  poblarSelectoresFiltro();
+
+  // 3. Renderizar la tabla y el resumen sin cambiar de sección ni perder filtros
+  renderAgendaTable();
+  updateDashboard();
+
+  showToast(`⚡ Labor "${tipo}" agendada exitosamente en 1 clic!`);
+
+  // 4. Limpiar solo el campo de labor para facilitar agendar otra consecutiva
+  const inpTipo = document.getElementById("quick-act-tipo");
+  if (inpTipo) {
+    inpTipo.value = "";
+    inpTipo.focus();
+  }
+
+  // 5. Persistir en Neon DB vía API REST en segundo plano
+  try {
+    const res = await fetch('/api/actividades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevaAct)
+    });
+    if (!res.ok) {
+      throw new Error("Error en servidor al guardar actividad");
+    }
+  } catch (err) {
+    console.error("Error al persistir actividad exprés:", err);
+    showToast("⚠️ Advertencia: No se pudo conectar a la base de datos.");
+  }
+}
+
 function setupQuickActivityForm() {
   const form = document.getElementById("quick-act-form");
   if (!form) return;
@@ -2685,57 +2779,13 @@ function setupQuickActivityForm() {
 
   actualizarSelectorLoteRapido();
 
-  form.addEventListener("submit", async (e) => {
+  // Interceptar submit para evitar en 100% de los casos cualquier recarga de página
+  form.onsubmit = (e) => {
     e.preventDefault();
-    const loteId = document.getElementById("quick-act-lote").value;
-    const tipo = document.getElementById("quick-act-tipo").value.trim();
-    const fecha = document.getElementById("quick-act-fecha").value;
-    const personal = document.getElementById("quick-act-personal").value.trim();
-
-    if (!loteId || !tipo || !fecha || !personal) {
-      alert("Por favor completa los campos del agendado rápido.");
-      return;
-    }
-
-    const lote = STATE.lotes.find(l => l.id === loteId);
-    const cultivoObjetivo = lote ? lote.cultivo : "General";
-    const etapa = lote ? lote.etapa : "Crecimiento";
-
-    const nuevoId = 'act-' + Date.now();
-    const nuevaAct = {
-      id: nuevoId,
-      loteId,
-      cultivoObjetivo,
-      tipo,
-      productoNombre: "",
-      cantidad: 0,
-      unidad: "Kg",
-      fecha,
-      personal,
-      etapa,
-      dosificacion: "",
-      metodo: "Campo / Manual",
-      cumplida: false,
-      notas: "Programada desde barra exprés"
-    };
-
-    STATE.actividades.unshift(nuevaAct);
-    renderAgendaTable();
-    updateDashboard();
-    showToast('⚡ Labor "' + tipo + '" agendada exitosamente en 1 clic!');
-
-    document.getElementById("quick-act-tipo").value = "";
-
-    try {
-      await fetch('/api/actividades', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaAct)
-      });
-    } catch (err) {
-      console.error("Error al guardar en segundo plano:", err);
-    }
-  });
+    e.stopPropagation();
+    guardarActividadExpress();
+    return false;
+  };
 }
 
 /* ==========================================================================
