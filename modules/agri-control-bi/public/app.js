@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
   setupClimateToggles();
   setupFormsAndModals();
+  setupProgramacionSection();
   setupQuickActivityForm();
   
   // Cargar datos desde la API al iniciar
@@ -77,6 +78,7 @@ async function refreshStateFromAPI() {
     // Refrescar vistas
     updateDashboard();
     renderLotesGrid();
+    renderProgramacionSection();
     applyFilters();
     renderSuelosGrid();
     updateClimatePanel();
@@ -95,6 +97,14 @@ async function saveState() {
 /* ==========================================================================
    NAVEGACIÓN (Sleek Page Router)
    ========================================================================== */
+function irASeccion(sectionName) {
+  const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+  if (navItem) {
+    navItem.click();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
 function setupNavigation() {
   const navItems = document.querySelectorAll(".nav-item");
   const sections = document.querySelectorAll(".app-section");
@@ -117,6 +127,8 @@ function setupNavigation() {
         updateDashboard();
       } else if (targetSection === "lotes") {
         renderLotesGrid();
+      } else if (targetSection === "programacion") {
+        renderProgramacionSection();
       } else if (targetSection === "agenda") {
         applyFilters();
       } else if (targetSection === "suelos") {
@@ -1960,6 +1972,7 @@ async function toggleActivityStatus(id) {
   const nuevoEstado = act.cumplida;
 
   renderAgendaTable();
+  renderProgramacionProximas();
   updateDashboard();
   showToast(nuevoEstado ? "✔ ¡Labor marcada como CUMPLIDA!" : "⏳ Labor marcada como PENDIENTE");
 
@@ -2786,6 +2799,255 @@ function setupQuickActivityForm() {
     guardarActividadExpress();
     return false;
   };
+}
+
+
+/* ==========================================================================
+   MÓDULO DEDICADO: PROGRAMACIÓN DE LABORES (AGENDAR & CONTROL DE PENDIENTES)
+   ========================================================================== */
+
+function setupProgramacionSection() {
+  const form = document.getElementById("prog-act-form");
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      guardarActividadProgramacion(false);
+      return false;
+    };
+  }
+  const fechaInp = document.getElementById("prog-act-fecha");
+  if (fechaInp && !fechaInp.value) {
+    fechaInp.value = HOY;
+  }
+  actualizarSelectorLoteProgramacion();
+}
+
+function renderProgramacionSection() {
+  actualizarSelectorLoteProgramacion();
+  const fechaInp = document.getElementById("prog-act-fecha");
+  if (fechaInp && !fechaInp.value) {
+    fechaInp.value = HOY;
+  }
+  renderProgramacionProximas();
+  if (window.lucide) lucide.createIcons();
+}
+
+function actualizarSelectorLoteProgramacion() {
+  const sel = document.getElementById("prog-act-lote");
+  const filterSel = document.getElementById("prog-filter-lote");
+  if (!sel) return;
+
+  const currVal = sel.value;
+  sel.innerHTML = '<option value="" disabled ' + (!currVal ? 'selected' : '') + '>-- Selecciona un Lote --</option>';
+
+  if (filterSel) {
+    const currFilter = filterSel.value;
+    filterSel.innerHTML = '<option value="todos">Todos los lotes</option>';
+    STATE.lotes.forEach(l => {
+      filterSel.innerHTML += `<option value="${l.id}">${escapeHtml(l.nombre)}</option>`;
+    });
+    if (currFilter && (currFilter === 'todos' || STATE.lotes.some(l => l.id === currFilter))) {
+      filterSel.value = currFilter;
+    }
+  }
+
+  STATE.lotes.forEach(l => {
+    const totalArb = (Number(l.arboles1 || 0) + Number(l.arboles2 || 0) + Number(l.arboles3 || 0));
+    const arbText = totalArb > 0 ? ' (' + totalArb.toLocaleString() + ' arb.)' : '';
+    sel.innerHTML += `<option value="${l.id}">${escapeHtml(l.nombre)} [${escapeHtml(l.cultivo)}${l.cultivo2 ? ' + ' + escapeHtml(l.cultivo2) : ''}] - ${l.area} Ha${arbText}</option>`;
+  });
+
+  if (currVal && STATE.lotes.some(l => l.id === currVal)) {
+    sel.value = currVal;
+  } else if (STATE.lotes.length > 0) {
+    sel.value = STATE.lotes[0].id;
+  }
+}
+
+function selectProgLabor(labor, cultivo, etapa, metodo) {
+  const inpTipo = document.getElementById("prog-act-tipo");
+  if (inpTipo) inpTipo.value = labor;
+  if (etapa) {
+    const selEtapa = document.getElementById("prog-act-etapa");
+    if (selEtapa) selEtapa.value = etapa;
+  }
+  if (metodo) {
+    const selMetodo = document.getElementById("prog-act-metodo");
+    if (selMetodo) selMetodo.value = metodo;
+  }
+  showToast(`Labor "${labor}" autocompletada.`);
+}
+
+function limpiarFormularioProgramacion() {
+  const inpTipo = document.getElementById("prog-act-tipo");
+  if (inpTipo) inpTipo.value = "";
+  const inpProd = document.getElementById("prog-act-producto");
+  if (inpProd) inpProd.value = "";
+  const inpCant = document.getElementById("prog-act-cantidad");
+  if (inpCant) inpCant.value = "";
+  const inpNotas = document.getElementById("prog-act-notas");
+  if (inpNotas) inpNotas.value = "";
+  const fechaInp = document.getElementById("prog-act-fecha");
+  if (fechaInp) fechaInp.value = HOY;
+  const selCumplida = document.getElementById("prog-act-cumplida");
+  if (selCumplida) selCumplida.value = "false";
+}
+
+async function guardarActividadProgramacion(keepEditing = false) {
+  const loteId = document.getElementById("prog-act-lote")?.value;
+  const tipo = document.getElementById("prog-act-tipo")?.value.trim();
+  const fecha = document.getElementById("prog-act-fecha")?.value;
+  const personal = document.getElementById("prog-act-personal")?.value.trim();
+  const productoNombre = document.getElementById("prog-act-producto")?.value.trim() || "";
+  const metodo = document.getElementById("prog-act-metodo")?.value || "Campo / Manual";
+  const cantidad = parseFloat(document.getElementById("prog-act-cantidad")?.value) || 0;
+  const unidad = document.getElementById("prog-act-unidad")?.value || "Kg";
+  const etapa = document.getElementById("prog-act-etapa")?.value || "Crecimiento";
+  const notas = document.getElementById("prog-act-notas")?.value.trim() || "";
+  const cumplida = document.getElementById("prog-act-cumplida")?.value === "true";
+
+  if (!loteId || !tipo || !fecha || !personal) {
+    alert("Por favor completa los campos obligatorios: Lote, Tipo de Labor, Fecha y Personal Responsable.");
+    return;
+  }
+
+  const lote = STATE.lotes.find(l => l.id === loteId);
+  const cultivoObjetivo = lote ? lote.cultivo : "General";
+
+  const nuevoId = 'act-' + Date.now();
+  const nuevaAct = {
+    id: nuevoId,
+    loteId,
+    cultivoObjetivo,
+    tipo,
+    productoNombre,
+    cantidad,
+    unidad,
+    fecha,
+    personal,
+    etapa,
+    dosificacion: "",
+    metodo,
+    cumplida,
+    notas
+  };
+
+  // 1. Inserción optimista inmediata
+  STATE.actividades.unshift(nuevaAct);
+
+  // 2. Refrescar lista de pendientes y contadores en pantalla
+  renderProgramacionProximas();
+  poblarSelectoresFiltro();
+  updateDashboard();
+
+  showToast(cumplida ? `✔ Labor "${tipo}" registrada como cumplida.` : `✅ Labor "${tipo}" agendada exitosamente.`);
+
+  // 3. Manejo de formulario
+  if (keepEditing) {
+    const inpTipo = document.getElementById("prog-act-tipo");
+    if (inpTipo) {
+      inpTipo.value = "";
+      inpTipo.focus();
+    }
+    const inpProd = document.getElementById("prog-act-producto");
+    if (inpProd) inpProd.value = "";
+    const inpCant = document.getElementById("prog-act-cantidad");
+    if (inpCant) inpCant.value = "";
+    const inpNotas = document.getElementById("prog-act-notas");
+    if (inpNotas) inpNotas.value = "";
+  } else {
+    limpiarFormularioProgramacion();
+  }
+
+  // 4. Persistir a la base de datos
+  try {
+    const res = await fetch('/api/actividades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevaAct)
+    });
+    if (!res.ok) console.warn("Aviso: Respuesta no-OK del servidor al guardar labor:", res.status);
+  } catch (err) {
+    console.error("Error al persistir labor en la API:", err);
+  }
+}
+
+function renderProgramacionProximas() {
+  const container = document.getElementById("programacion-proximas-list");
+  const badge = document.getElementById("prog-pending-badge");
+  if (!container) return;
+
+  const filterLote = document.getElementById("prog-filter-lote")?.value || "todos";
+
+  let pending = STATE.actividades.filter(a => !a.cumplida);
+  if (filterLote !== "todos") {
+    pending = pending.filter(a => a.loteId === filterLote);
+  }
+
+  // Ordenar cronológicamente (más próximas primero)
+  pending.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  if (badge) {
+    badge.textContent = `${pending.length} pendiente${pending.length === 1 ? '' : 's'}`;
+  }
+
+  if (pending.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+        <i data-lucide="check-check" style="width: 42px; height: 42px; color: #10b981; margin-bottom: 8px; display: inline-block;"></i>
+        <h4 style="color: white; margin-bottom: 4px; font-size: 1rem;">¡Todo al día en la programación!</h4>
+        <p style="font-size: 0.85rem; max-width: 420px; margin: 0 auto;">No hay labores pendientes programadas${filterLote !== 'todos' ? ' para este lote' : ''}. Puedes agendar una nueva labor arriba con el formulario.</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">`;
+
+  pending.forEach(a => {
+    const lote = STATE.lotes.find(l => l.id === a.loteId);
+    const loteNombre = lote ? lote.nombre : (a.loteId || 'Lote');
+    const esAtrasada = a.fecha < HOY;
+
+    html += `
+      <div style="background: #0f1c14; border: 1px solid ${esAtrasada ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255,255,255,0.08)'}; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 8px;">
+              📍 ${escapeHtml(loteNombre)}
+            </span>
+            <span style="font-size: 0.75rem; font-weight: 600; color: ${esAtrasada ? '#f87171' : '#fbbf24'}; display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="${esAtrasada ? 'alert-triangle' : 'calendar'}" style="width: 13px; height: 13px;"></i>
+              ${formatFecha(a.fecha)}${esAtrasada ? ' (Atrasada)' : ''}
+            </span>
+          </div>
+
+          <h4 style="color: white; font-size: 0.95rem; margin: 0 0 6px 0; font-weight: 700;">${escapeHtml(a.tipo)}</h4>
+
+          <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 3px;">
+            <div>👤 <strong>Operario:</strong> <span style="color: #f1f5f9;">${escapeHtml(a.personal || 'Sin asignar')}</span></div>
+            ${a.productoNombre ? `<div>🧪 <strong>Insumo:</strong> <span style="color: #a7f3d0;">${escapeHtml(a.productoNombre)} ${a.cantidad > 0 ? `(${a.cantidad} ${a.unidad})` : ''}</span></div>` : ''}
+            ${a.metodo ? `<div>🌱 <strong>Método:</strong> ${escapeHtml(a.metodo)}</div>` : ''}
+            ${a.notas ? `<div style="font-size: 0.75rem; color: #94a3b8; font-style: italic; margin-top: 2px;">💬 "${escapeHtml(a.notas)}"</div>` : ''}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="abrirFichaTecnicaLabor('${a.id}')" title="Ver ficha completa" style="font-size: 0.75rem; padding: 5px 10px;">
+            <i data-lucide="eye" style="width: 13px; height: 13px;"></i> Ficha
+          </button>
+          <button type="button" class="btn btn-primary" onclick="toggleActivityStatus('${a.id}')" style="font-size: 0.78rem; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+            <i data-lucide="check" style="width: 14px; height: 14px;"></i> Marcar Cumplida
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ==========================================================================

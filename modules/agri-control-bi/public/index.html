@@ -42,9 +42,15 @@
             </a>
           </li>
           <li>
+            <a class="nav-item" data-section="programacion">
+              <i data-lucide="calendar-plus"></i>
+              <span>Programar Labores</span>
+            </a>
+          </li>
+          <li>
             <a class="nav-item" data-section="agenda">
-              <i data-lucide="calendar"></i>
-              <span>Agenda Actividades</span>
+              <i data-lucide="clipboard-list"></i>
+              <span>Bitácora &amp; Resumen</span>
             </a>
           </li>
           <li>
@@ -313,13 +319,184 @@
       <!-- ==========================================================================
            SECTION 3: AGENDA DE ACTIVIDADES
            ========================================================================== -->
-      <section id="agenda-section" class="app-section">
+            <!-- SECCIÓN: PROGRAMACIÓN DE LABORES (DEDICADA A AGENDAR, ASIGNAR Y REVISAR PENDIENTES) -->
+      <section id="programacion-section" class="app-section">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
           <div>
-            <h2 style="color:white; font-size:1.5rem;">Bitácora de Labores</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem;">Planifica las labores de la finca, márcalas como cumplidas en 1 clic y programa rápido.</p>
+            <h2 style="color:white; font-size:1.5rem; display:flex; align-items:center; gap:10px;">
+              <span style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:10px; width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; color:#34d399;">
+                <i data-lucide="calendar-plus" style="width:22px; height:22px;"></i>
+              </span>
+              <span>Programación de Labores</span>
+            </h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Planifica las tareas del campo, asigna operarios e insumos y mantén la finca al día.</p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" onclick="irASeccion('agenda')" style="color:#34d399; border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.08); display:flex; align-items:center; gap:6px; font-weight:600;">
+              <i data-lucide="bar-chart-3"></i> Ver Bitácora &amp; Resumen ➔
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="abrirModalPersonal()" title="Gestionar Operarios" style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="users"></i> Operarios
+            </button>
+            <button type="button" class="btn btn-primary" onclick="abrirModalActividad()" style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="clipboard-pen"></i> Formulario Modal Detallado
+            </button>
+          </div>
+        </div>
+
+        <!-- FORMULARIO DE PROGRAMACIÓN LIMPIO Y COMPLETO -->
+        <div style="background: #0c1811; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-weight: 700; color: #34d399; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #fbbf24;"></i>
+              <span>Agendar Nueva Labor de Campo</span>
+            </div>
+            <!-- Sugerencias de Labores frecuentes en 1 Clic -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); margin-right:4px;">Atajos:</span>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Plateo para café', 'Café', 'Crecimiento', 'Campo / Manual')">🌱 Plateo</button>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Guadaña general', 'Ambos Cultivos', 'Crecimiento', 'Campo / Manual')">🚜 Guadaña</button>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Deschuponada de café', 'Café', 'Fructificación', 'Campo / Manual')">🌿 Deschuponada</button>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Control de Plagas', 'Aguacate', 'Floración', 'Foliar')">💊 Control Plagas</button>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Fertilización Foliar', 'Café', 'Crecimiento', 'Foliar')">🧪 Fert. Foliar</button>
+              <button type="button" class="chip-labor" onclick="selectProgLabor('Fertilización Suelo', 'Café', 'Siembra', 'Suelo/Piso')">🌾 Fert. Suelo</button>
+            </div>
+          </div>
+
+          <form id="prog-act-form" onsubmit="guardarActividadProgramacion(false); return false;">
+            <!-- Fila 1: Lote, Labor, Fecha, Operario -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 14px;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #f1f5f9; display: block; margin-bottom: 6px;">Lote Asociado *</label>
+                <select id="prog-act-lote" class="form-control" required style="font-size: 0.85rem; padding: 8px 12px;"></select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #f1f5f9; display: block; margin-bottom: 6px;">Tipo de Labor *</label>
+                <input type="text" id="prog-act-tipo" class="form-control" list="labor-suggestions" placeholder="Ej. Plateo para café nuevo" required style="font-size: 0.85rem; padding: 8px 12px;">
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #f1f5f9; display: block; margin-bottom: 6px;">Fecha Programada *</label>
+                <input type="date" id="prog-act-fecha" class="form-control" required style="font-size: 0.85rem; padding: 8px 12px;">
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600; color: #f1f5f9; display: block; margin-bottom: 6px;">Personal Responsable *</label>
+                <input type="text" id="prog-act-personal" class="form-control" list="personal-suggestions" placeholder="Ej. Ezequiel" required style="font-size: 0.85rem; padding: 8px 12px;">
+              </div>
+            </div>
+
+            <!-- Fila 2: Insumo, Tipo Aplicación, Cantidad, Unidad, Etapa -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 14px;">
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Insumo / Producto (Opcional)</label>
+                <input type="text" id="prog-act-producto" class="form-control" placeholder="Ej. 25-4, Urea, Cal..." style="font-size: 0.85rem; padding: 7px 10px;">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Tipo de Aplicación</label>
+                <select id="prog-act-metodo" class="form-control" style="font-size: 0.85rem; padding: 7px 10px;">
+                  <option value="Campo / Manual">Campo / Manual</option>
+                  <option value="Suelo/Piso">Suelo / Piso</option>
+                  <option value="Foliar">Foliar (Líquida)</option>
+                  <option value="Mecánica">Mecánica</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Cantidad Total</label>
+                <input type="number" step="any" id="prog-act-cantidad" class="form-control" placeholder="Ej. 50" style="font-size: 0.85rem; padding: 7px 10px;">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Unidad de Medida</label>
+                <select id="prog-act-unidad" class="form-control" style="font-size: 0.85rem; padding: 7px 10px;">
+                  <option value="Kg">Kilogramos (Kg)</option>
+                  <option value="L">Litros (L)</option>
+                  <option value="Bultos">Bultos</option>
+                  <option value="Gramos">Gramos (g)</option>
+                  <option value="Canastillas">Canastillas</option>
+                  <option value="Jornales">Jornales</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Etapa del Cultivo</label>
+                <select id="prog-act-etapa" class="form-control" style="font-size: 0.85rem; padding: 7px 10px;">
+                  <option value="Crecimiento">Crecimiento / Vegetativo</option>
+                  <option value="Floración">Floración</option>
+                  <option value="Fructificación">Fructificación / Llenado</option>
+                  <option value="Cosecha">Cosecha</option>
+                  <option value="Zoca">Zoca / Mantenimiento</option>
+                  <option value="Siembra">Siembra / Establecimiento</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Fila 3: Observaciones y Estado Inicial -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 16px;">
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Observaciones / Instrucciones de Campo</label>
+                <input type="text" id="prog-act-notas" class="form-control" placeholder="Detalles de aplicación, lote zoqueado, condiciones o notas especiales..." style="font-size: 0.85rem; padding: 8px 12px;">
+              </div>
+              <div>
+                <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Estado Inicial de la Labor</label>
+                <select id="prog-act-cumplida" class="form-control" style="font-size: 0.85rem; padding: 8px 12px; font-weight: 600;">
+                  <option value="false" selected>⏳ Pendiente por Realizar</option>
+                  <option value="true">✔ Cumplida / Ya Ejecutada</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+              <button type="button" onclick="limpiarFormularioProgramacion()" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 16px;">
+                <i data-lucide="rotate-ccw"></i> Limpiar
+              </button>
+              <button type="button" onclick="guardarActividadProgramacion(true)" class="btn btn-secondary" style="border-color:#10b981; color:#34d399; font-size:0.85rem; padding:8px 18px; font-weight:600;">
+                <i data-lucide="plus-circle"></i> Guardar y Otra
+              </button>
+              <button type="submit" class="btn btn-primary" style="font-size:0.88rem; padding:9px 24px; font-weight:700; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+                <i data-lucide="calendar-check"></i> Agendar Actividad
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LISTA / TABLERO DE PRÓXIMAS LABORES PROGRAMADAS PENDIENTES -->
+        <div style="background: rgba(0,0,0,0.22); border: 1px solid var(--border-color); border-radius: 16px; padding: 18px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h3 style="color: white; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="clock" style="color: #fbbf24; width: 20px; height: 20px;"></i>
+                <span>Próximas Labores Programadas</span>
+              </h3>
+              <span id="prog-pending-badge" style="font-size: 0.78rem; font-weight: 700; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 12px;">
+                0 pendientes
+              </span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="prog-filter-lote" class="form-control" onchange="renderProgramacionProximas()" style="font-size: 0.8rem; padding: 6px 12px; width: auto; min-width: 180px;">
+                <option value="todos">Todos los lotes</option>
+              </select>
+              <button type="button" class="btn btn-secondary" onclick="renderProgramacionProximas()" title="Refrescar lista" style="padding: 6px 10px;">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="programacion-proximas-list">
+            <!-- Renderizado dinámico de tarjetas/filas de labores pendientes -->
+          </div>
+        </div>
+      </section>
+
+<section id="agenda-section" class="app-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 style="color:white; font-size:1.5rem; display:flex; align-items:center; gap:10px;">
+              <span style="background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.3); border-radius:10px; width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; color:#34d399;">
+                <i data-lucide="clipboard-list" style="width:22px; height:22px;"></i>
+              </span>
+              <span>Bitácora &amp; Resumen de Labores</span>
+            </h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Hojas de resumen, gráficos consolidados, avance y fichas técnicas detalladas por lote.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <div style="display:flex; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:3px;">
               <button type="button" id="btn-view-summary" class="btn btn-secondary" onclick="switchAgendaView('summary')" style="font-size:0.78rem; padding:6px 12px; border-radius:8px; background:rgba(16,185,129,0.2); color:#34d399; border:none; display:flex; align-items:center; gap:5px;">
                 <i data-lucide="bar-chart-3"></i> Resumen &amp; Gráficos
@@ -331,59 +508,13 @@
                 <i data-lucide="table"></i> Tabla Detallada
               </button>
             </div>
-            <button type="button" class="btn btn-secondary" id="btn-toggle-quick-act" onclick="toggleQuickActPanel()" title="Desplegar barra de programación rápida" style="display:flex; align-items:center; gap:6px;">
-              <i data-lucide="zap" style="color:#fbbf24; width:15px; height:15px;"></i> Programar Rápido
+            <button class="btn btn-primary" onclick="irASeccion('programacion')" style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="calendar-plus"></i> Programar Labor
             </button>
             <button class="btn btn-secondary" onclick="abrirModalPersonal()" title="Gestionar Operarios">
               <i data-lucide="users"></i> Operarios
             </button>
-            <button class="btn btn-primary" onclick="abrirModalActividad()">
-              <i data-lucide="calendar-plus"></i> Programar Detallado
-            </button>
           </div>
-        </div>
-
-        <!-- BARRA DE PROGRAMACIÓN RÁPIDA (EXPRÉS - COLAPSABLE) -->
-        <div id="quick-act-container" style="display: none; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-            <div style="font-weight: 700; color: #10b981; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="zap" style="width: 17px; height: 17px; color: #fbbf24;"></i>
-              <span>Programación Exprés (Agendado Rápido en 1 Clic)</span>
-            </div>
-            <!-- Sugerencias de Labores frecuentes -->
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Plateo para café', 'Café', 'Crecimiento')">🌱 Plateo</button>
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Guadaña general', 'Ambos Cultivos', 'Crecimiento')">🚜 Guadaña</button>
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Deschuponada de café', 'Café', 'Fructificación')">🌿 Deschuponada</button>
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Control de Plagas', 'Aguacate', 'Floración')">💊 Control Plagas</button>
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Fertilización Foliar', 'Café', 'Crecimiento')">🧪 Fert. Foliar</button>
-              <button type="button" class="chip-labor" onclick="selectQuickLabor('Fertilización Suelo', 'Café', 'Siembra')">🌾 Fert. Suelo</button>
-            </div>
-          </div>
-
-          <form id="quick-act-form" onsubmit="guardarActividadExpress(); return false;" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) auto; gap: 10px; align-items: flex-end;">
-            <div>
-              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Lote *</label>
-              <select id="quick-act-lote" class="form-control" required style="font-size: 0.85rem; padding: 7px 10px;"></select>
-            </div>
-            <div>
-              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Labor a Realizar *</label>
-              <input type="text" id="quick-act-tipo" class="form-control" list="labor-suggestions" placeholder="Ej. Plateo para café nuevo" required style="font-size: 0.85rem; padding: 7px 10px;">
-            </div>
-            <div>
-              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Fecha *</label>
-              <input type="date" id="quick-act-fecha" class="form-control" required style="font-size: 0.85rem; padding: 7px 10px;">
-            </div>
-            <div>
-              <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Operario *</label>
-              <input type="text" id="quick-act-personal" class="form-control" list="personal-suggestions" placeholder="Ej. Henry" required style="font-size: 0.85rem; padding: 7px 10px;">
-            </div>
-            <div>
-              <button type="button" onclick="guardarActividadExpress()" class="btn btn-primary" style="white-space: nowrap; height: 38px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-                <i data-lucide="plus"></i> Agendar
-              </button>
-            </div>
-          </form>
         </div>
 
         <!-- Pestañas de Vista Rápida de Agenda -->
